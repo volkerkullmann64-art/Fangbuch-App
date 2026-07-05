@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASV Fangbuch - Galerie</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+--primary-color: #2e5a44;
+--secondary-color: #4a7c59;
+--accent-color: #d68c45;
+--bg-color: #f4f7f5;
+--text-color: #333;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; display: flex; flex-direction: column; align-items: center; }
+.container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+h2 { color: var(--primary-color); text-align: center; margin-bottom: 20px; }
+
+/* Tab-Navigations-Leiste */
+.tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; font-size: 15px; background: none; border: none; cursor: pointer; color: #666; transition: all 0.3s; }
+.tab-btn.active { color: var(--primary-color); border-bottom: 4px solid var(--primary-color); }
+
+/* Galerie Grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+.card { background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+.card img { width: 100%; height: 180px; object-fit: cover; background: #eee; }
+.card-content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.card-title { font-size: 16px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; }
+.card-meta { font-size: 14px; color: #555; }
+.card-date { font-size: 12px; color: #999; margin-top: 8px; text-align: right; }
+
+.no-data { text-align: center; color: #777; padding: 40px 0; font-style: italic; }
+.back-btn { display: block; width: 100%; max-width: 600px; text-align: center; padding: 12px; margin-top: 15px; background: #757575; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; text-decoration: none; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🏆 Fang-Galerie</h2>
+    
+    <!-- Tab Schalter -->
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('privat')">Meine Rekorde</button>
+        <button class="tab-btn" onclick="switchTab('verein')">Vereins-Hitparade</button>
+    </div>
+
+    <!-- Galerie Grid -->
+    <div id="galerie-grid" class="grid"></div>
+</div>
+
+<button class="back-btn" onclick="location.href='index.html'">↩ Zurück zum Dashboard</button>
+
+<script src="galerie.js"></script>
+
+
+</body>
+</html>

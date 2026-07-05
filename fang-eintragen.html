@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vereins-Fangbuch - Ruhr (Offline-Optimiert)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+--primary-color: #2e5a44;
+--secondary-color: #4a7c59;
+--accent-color: #d68c45;
+--warning-color: #c0392b;
+--bg-color: #f4f7f5;
+--text-color: #333;
+}
+* { box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+body { background-color: var(--bg-color);
+color: var(--text-color);
+padding: 15px;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+.container { width: 100%;
+max-width: 500px;
+background: white;
+padding: 20px;
+border-radius: 12px;
+box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+h2 { color: var(--primary-color);
+text-align: center;
+margin-bottom: 20px;
+}
+.form-group { margin-bottom: 18px;
+}
+.row { display: flex;
+gap: 10px;
+}
+.row .form-group { flex: 1;
+}
+label { display: block;
+font-weight: bold;
+margin-bottom: 6px;
+color: #444;
+}
+input[type="text"], input[type="number"], input[type="date"], select { width: 100%;
+padding: 12px;
+border: 2px solid #ddd;
+border-radius: 8px;
+font-size: 16px;
+outline: none;
+transition: border-color 0.3s;
+}
+input:focus, select:focus { border-color: var(--secondary-color);
+}
+.input-with-btn { display: flex;
+gap: 8px;
+}
+.luftdruck-wrapper { display: flex;
+align-items: center;
+gap: 8px;
+}
+.trend-pfeil { font-size: 24px;
+user-select: none;
+min-width: 28px;
+text-align: center;
+}
+.icon-btn { background-color: var(--secondary-color);
+color: white;
+border: none;
+border-radius: 8px;
+padding: 0 15px;
+font-size: 20px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.icon-btn:active { background-color: var(--primary-color);
+}
+.hint-box { margin-top: 5px;
+font-size: 14px;
+font-weight: bold;
+display: none;
+padding: 8px;
+border-radius: 6px;
+}
+.hint-box.warning { background: #fadbd8;
+color: var(--warning-color);
+border: 1px solid var(--warning-color);
+}
+.hint-box.ok { background: #d4efdf;
+color: var(--primary-color);
+border: 1px solid var(--primary-color);
+}
+.fisch-info-box { margin-top: 8px;
+background: #fcfcfc;
+border: 1px solid #ddd;
+border-radius: 8px;
+padding: 10px;
+display: none;
+text-align: center;
+}
+.fisch-info-box img { width: 100%;
+max-height: 180px;
+object-fit: contain;
+border-radius: 6px;
+background: #fff;
+border: 1px solid #eee;
+margin-bottom: 6px;
+padding: 5px;
+}
+.fisch-info-box span { font-size: 14px;
+font-weight: bold;
+color: var(--primary-color);
+display: block;
+}
+.switch-container { display: flex;
+align-items: center;
+justify-content: space-between;
+background: #eee;
+padding: 12px;
+border-radius: 8px;
+margin-top: 10px;
+}
+.switch { position: relative;
+display: inline-block;
+width: 50px;
+height: 26px;
+}
+.switch input { display: none;
+}
+.slider { position: absolute;
+cursor: pointer;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-color: #ccc;
+transition: .4s;
+border-radius: 34px;
+}
+.slider:before { position: absolute;
+content: "";
+height: 18px;
+width: 18px;
+left: 4px;
+bottom: 4px;
+background-color: white;
+transition: .4s;
+border-radius: 50%;
+}
+input:checked + .slider { background-color: var(--secondary-color);
+}
+input:checked + .slider:before { transform: translateX(24px);
+}
+.submit-btn { width: 100%;
+background-color: var(--primary-color);
+color: white;
+border: none;
+padding: 14px;
+font-size: 18px;
+font-weight: bold;
+border-radius: 8px;
+cursor: pointer;
+margin-top: 15px;
+transition: background 0.3s;
+}
+.submit-btn:hover { background-color: var(--secondary-color);
+}
+.delete-btn { width: 100%;
+background-color: var(--warning-color);
+color: white;
+border: none;
+padding: 14px;
+font-size: 18px;
+font-weight: bold;
+border-radius: 8px;
+cursor: pointer;
+margin-top: 10px;
+display: none;
+}
+.sync-badge { background-color: var(--accent-color);
+color: white;
+padding: 12px;
+border-radius: 6px;
+font-size: 14px;
+font-weight: bold;
+text-align: center;
+margin-bottom: 15px;
+width: 100%;
+max-width: 500px;
+display: none;
+}
+</style>
+</head>
+<body>
+<div id="sync-status" class="sync-badge">⚠️ 0 Fänge warten auf Internetverbindung...</div>
+<div class="container">
+<h2 id="form-titel">Fang eintragen (Ruhr)</h2>
+<form id="fang-form" onsubmit="event.preventDefault();">
+<div class="row">
+<div class="form-group">
+<label for="datum">Datum</label>
+<input type="date" id="datum" onchange="validateFisch()" required>
+</div>
+<div class="form-group">
+<label for="uhrzeit">Uhrzeit (15-Min)</label>
+<select id="uhrzeit" required></select>
+</div>
+</div>
+<div class="form-group">
+<label for="fischart">Fischart</label>
+<select id="fischart" onchange="validateFisch()" required>
+<option value="" disabled selected>Bitte wählen...</option>
+<optgroup label="Edelfische / Raubfische">
+<option value="Bachforelle">Bachforelle</option>
+<option value="Äsche">Äsche</option>
+<option value="Hecht">Hecht</option>
+<option value="Zander">Zander</option>
+<option value="Flussbarsch">Flussbarsch</option>
+<option value="Aal">Aal</option>
+<option value="Wels">Wels</option>
+</optgroup>
+<optgroup label="Friedfische (Karpfenartige)">
+<option value="Barbe">Barbe</option><option value="Nase">Nase</option><option value="Karpfen">Karpfen</option><option value="Schleie">Schleie</option><option value="Döbel">Döbel</option><option value="Brassen">Brassen (Blei)</option><option value="Aland">Aland</option><option value="Rotauge">Rotauge</option><option value="Rotfeder">Rotfeder</option>
+</optgroup>
+<optgroup label="Kleinfische & Begleitarten">
+<option value="Kaulbarsch">Kaulbarsch</option><option value="Bachschmerle">Bachschmerle</option><option value="Gründling">Gründling</option><option value="Elritze">Elritze</option>
+</optgroup>
+<optgroup label="Invasive Arten (Meldepflichtig)">
+<option value="Schwarzmund-Grundel">Schwarzmund-Grundel</option>
+</optgroup>
+<optgroup label="Ganzjährig geschützte Arten (Rote Liste)">
+<option value="Groppe">Groppe (Mühlkoppe)</option><option value="Bitterling">Bitterling</option><option value="Moderlieschen">Moderlieschen</option>
+</optgroup>
+</select>
+<div id="fisch-erkennung" class="fisch-info-box">
+<img id="fisch-erkennung-bild" src="" alt="Fischbild zur Erkennung">
+<span id="fisch-erkennung-name"></span>
+</div>
+</div>
+<div class="form-group">
+<label for="laenge">Länge (cm)</label>
+<input type="number" id="laenge" min="0" placeholder="z.B. 45" oninput="validateFisch()" required>
+<div id="status-hint" class="hint-box"></div>
+</div>
+<div class="form-group">
+<label for="gewicht">Gewicht (g)</label>
+<input type="number" id="gewicht" min="0" placeholder="Wird automatisch geschätzt...">
+<small style="color: #777; display:block; margin-top:2px;">Kann manuell überschrieben werden.</small>
+</div>
+<div class="form-group">
+<label for="verbleib">Verbleib des Fisches</label>
+<select id="verbleib" required></select>
+</div>
+<div class="row">
+<div class="form-group">
+<label for="wetter">Wetter</label>
+<select id="wetter">
+<option value="Sonnig">Sonnig</option><option value="Leicht bewölkt">Leicht bewölkt</option><option value="Bewölkt" selected>Bewölkt</option><option value="Stark bewölkt">Stark bewölkt</option><option value="Regen">Regen</option><option value="Nebel">Nebel</option>
+</select>
+</div>
+<div class="form-group">
+<label for="luftdruck">Luftdruck (hPa)</label>
+<div class="luftdruck-wrapper">
+<input type="number" id="luftdruck" placeholder="Wird geladen..." min="900" max="1100">
+<span id="luftdruck-pfeil" class="trend-pfeil" title="Tendenz">➡️</span>
+</div>
+</div>
+</div>
+<div class="form-group">
+<label for="truebung">Wassertrübung (Ruhr)</label>
+<select id="truebung" required>
+<option value="" disabled selected>Bitte wählen...</option>
+<option value="Klar">Klar</option><option value="Leicht angetrübt">Leicht angetrübt</option><option value="Trüb / Hochwasser">Trüb / Hochwasser</option>
+</select>
+</div>
+<div class="form-group">
+<label for="fangort">Fangort / Stelle</label>
+<select id="fangort" required>
+<option value="" disabled selected>Stelle auswählen...</option>
+<option value="Ostholzbach">Ostholzbach</option><option value="Bei Kloppert">Bei Kloppert</option><option value="Wehr bis Kanuclub">Wehr bis Kanuclub</option><option value="Kanuclub bis Kuhbrücke">Kanuclub bis Kuhbrücke</option><option value="Kuhbrücke bis Ende">Kuhbrücke bis Ende</option>
+</select>
+</div>
+<div class="form-group">
+<label for="notiz">Zusatznotiz / Kommentar</label>
+<div class="input-with-btn">
+<input type="text" id="notiz" placeholder="Köder oder Notizen einsprechen...">
+<button type="button" class="icon-btn" id="mic-btn" onclick="startSpeechRecognition()">🎙️</button>
+</div>
+</div>
+<div class="form-group">
+<div class="switch-container">
+<span>Mit Angelkollegen teilen?</span>
+<label class="switch">
+<input type="checkbox" id="teilen-status" checked>
+<span class="slider"></span>
+</label>
+</div>
+</div>
+<button type="button" id="speichern-btn" class="submit-btn" onclick="saveFang()" disabled>Fang speichern</button>
+<button type="button" id="loeschen-btn" class="delete-btn" onclick="loescheAktuellenFang()">Fang löschen</button>
+<button type="button" class="submit-btn" style="background-color: #757575; margin-top: 10px;" onclick="location.href='index.html'">↩ Zurück</button>
+</form>
+</div>
+<script src="fang-eintragen.js"></script>
+</body>
+</html>

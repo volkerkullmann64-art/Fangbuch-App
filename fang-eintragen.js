@@ -278,4 +278,3 @@ function pruefePflichtfelder() {
         btn.style.cursor = "not-allowed";
     }
 }
-//test

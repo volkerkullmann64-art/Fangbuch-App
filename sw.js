@@ -34,3 +34,12 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+self.addEventListener('install', (event) => {
+    // Zwingt den neuen Service Worker, sofort aktiv zu werden, ohne auf das Schließen der Tabs zu warten
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    // Übernimmt sofort die Kontrolle über alle offenen Tabs der App
+    event.waitUntil(self.clients.claim());
+});

@@ -1,19 +1,21 @@
-const CACHE_NAME = 'asv-fangbuch-V7';
+const CACHE_NAME = 'asv-fangbuch-V8';
 
 // Hier stehen alle deine vorhandenen Dateien, die das Handy offline sichern MUSS
 const ASSETS = [
-  'index.html',
-  'Index.js',
-  'manifest.json',
-  'fang-eintragen.html',
-  'fang-eintragen.js',
-  'auswertung.html',
-  'galerie.html',
-  'galerie.js'
+  './',
+  './index.html',
+  './Index.js',
+  './manifest.json',
+  './fang-eintragen.html',
+  './fang-eintragen.js',
+  './auswertung.html',
+  './galerie.html',
+  './galerie.js'
 ];
 
 // 1. Dateien beim ersten Online-Besuch auf dem Handy einfrieren
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Zwingt den neuen Service Worker, sofort aktiv zu werden
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(ASSETS);
@@ -21,9 +23,25 @@ self.addEventListener('install', event => {
   );
 });
 
-// 2. Wenn offline, liefere die eingefrorenen Dateien aus
+// 2. Altes Cache-Aufräumen bei Aktivierung (wirft V7 komplett raus!)
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            console.log('Lösche alten Cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim()) // Übernimmt sofort die Kontrolle über alle offenen Tabs
+  );
+});
+
+// 3. Wenn offline, liefere die eingefrorenen Dateien aus
 self.addEventListener('fetch', event => {
-  // Supabase-Datenbank-Anfragen und Wetter-Abfragen ignorieren (das regeln wir direkt im Code)
+  // Supabase-Datenbank-Anfragen und Wetter-Abfragen ignorieren
   if (event.request.url.includes('supabase.co') || event.request.url.includes('open-meteo.com')) {
     return;
   }
@@ -33,13 +51,4 @@ self.addEventListener('fetch', event => {
       return cachedResponse || fetch(event.request);
     })
   );
-});
-self.addEventListener('install', (event) => {
-    // Zwingt den neuen Service Worker, sofort aktiv zu werden, ohne auf das Schließen der Tabs zu warten
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    // Übernimmt sofort die Kontrolle über alle offenen Tabs der App
-    event.waitUntil(self.clients.claim());
 });

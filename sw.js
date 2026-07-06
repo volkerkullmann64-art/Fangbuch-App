@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asv-fangbuch-v1';
+const CACHE_NAME = 'asv-fangbuch-v2';
 
 // Hier stehen alle deine vorhandenen Dateien, die das Handy offline sichern MUSS
 const ASSETS = [

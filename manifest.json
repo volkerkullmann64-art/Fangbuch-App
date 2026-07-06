@@ -1,9 +1,17 @@
 {
-  "name": "ASV Fangbuch Langschede",
+  "name": "ASV Langschede Fangbuch",
   "short_name": "Fangbuch",
+  "description": "Das digitale Fangbuch für den ASV Langschede",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#e8f5e9",
-  "theme-color": "#2e7d32",
-  "orientation": "portrait"
+  "background_color": "#2ed573",
+  "theme_color": "#2ed573",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

@@ -1,10 +1,9 @@
-const CACHE_NAME = 'asv-fangbuch-V20';
+const CACHE_NAME = 'asv-fangbuch-V21';
 
 // Hier stehen jetzt ALLE Dateien drin, die zu deiner App gehören!
 const ASSETS = [
   './',
   './index.html',
-  './index.js',
   './icon.png',
   './manifest.json',
   './fang-eintragen.html',

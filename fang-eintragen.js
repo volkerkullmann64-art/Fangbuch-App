@@ -7,6 +7,7 @@ let editFangId = null;
 window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
     editFangId = urlParams.get('editId');
+
     
     initFormDefaults();
 
@@ -34,7 +35,7 @@ window.addEventListener('load', function() {
 async function loescheAktuellenFang() {
     const { error } = await _supabase.from('fangbuch-asv-langschede').delete().eq('id', editFangId);
     if (!error) {
-        alert("Fang wurde gelöscht.");
+        // Zack, das alert ist weg! Es leitet dich jetzt sofort und blitzschnell weiter.
         location.href = 'auswertung.html';
     } else {
         alert("Fehler beim Löschen: " + error.message);
@@ -270,7 +271,7 @@ function pruefePflichtfelder() {
     // Prüfen, ob Pflichtfelder gefüllt sind
     if (datum && uhrzeit && fischart && laenge) {
         btn.disabled = false;
-        btn.style.backgroundColor = '#2e5a44'; // Das ist dein ursprüngliches Vereins-Grün
+        btn.style.backgroundColor = '#2e5a44'; 
         btn.style.cursor = "pointer";
     } else {
         btn.disabled = true;

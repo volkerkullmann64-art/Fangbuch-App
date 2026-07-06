@@ -8,7 +8,7 @@
 
 
 
-        
+
         // Zeige die Auswahl-Buttons
         function showDashboard() {
             document.getElementById('app').innerHTML = `
@@ -173,19 +173,20 @@ async function trySyncOfflineFange() {
     let q = [];
     try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
 
-    // NEU: Wenn die Warteschlange leer ist, brich sofort ab und frage Supabase gar nicht erst!
+    // Wenn die Warteschlange leer ist, blende die Box komplett aus
     if (!q || q.length === 0) {
         if(syncStatusBadge) syncStatusBadge.style.display = 'none';
         return;
     }
 
+    // Box anzeigen (sie sitzt jetzt sicher über den Buttons)
     if(syncStatusBadge) {
         syncStatusBadge.style.display = 'block';
-        syncStatusBadge.textContent = `⚠️ ${q.length} Fang/Fänge warten auf Internetverbindung...`;
+        syncStatusBadge.textContent = `${q.length} Fang/Fänge im Funkloch gespeichert. Automatische Synchronisation läuft, sobald Internet da ist...`;
     }
 
     if (navigator.onLine) {
-        if(syncStatusBadge) syncStatusBadge.textContent = `🔄 Synchronisiere ${q.length} Fänge mit Supabase...`;
+        if(syncStatusBadge) syncStatusBadge.textContent = `🔄 Synchronisiere ${q.length} Fänge mit der Datenbank...`;
         
         let erfolgreicheIndizes = [];
         for (let i = 0; i < q.length; i++) {
@@ -204,7 +205,7 @@ async function trySyncOfflineFange() {
             if(syncStatusBadge) syncStatusBadge.style.display = 'none';
             alert("🎉 Deine Offline-Fänge wurden erfolgreich im Hintergrund hochgeladen!");
         } else {
-            if(syncStatusBadge) syncStatusBadge.textContent = `⚠️ ${q.length} Fänge konnten nicht synchronisiert werden.`;
+            if(syncStatusBadge) syncStatusBadge.textContent = `⚠️ ${q.length} Fänge warten auf stabilere Verbindung.`;
         }
     }
 }

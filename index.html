@@ -1,8 +1,12 @@
-<!DOCTYPE html>
-<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Hier sind die neuen, wichtigen Zeilen für dein Fisch-Icon -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <title>ASV Langschede Fangbuch</title>
     <!-- Supabase Client Bibliothek laden -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,14 +21,3 @@
         #sync-status { width: 320px; box-sizing: border-box; background-color: #fff9c4; color: #f57f17; padding: 12px; margin-bottom: 15px; border-radius: 10px; text-align: center; font-weight: bold; border: 1px solid #fbc02d; font-size: 14px; }
     </style>
 </head>
-<body>
-
-<!-- HIER SITZT SIE JETZT AUSSERHALB UND SICHER VOR DEM JAVASCRIPT -->
-<div id="sync-status" style="display: none;">⚠️ Fänge warten auf Internetverbindung</div>
-
-<div id="app" class="container">
-</div>
-
-<script src="Index.js"></script>
-</body>
-</html>

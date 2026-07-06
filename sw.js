@@ -1,16 +1,17 @@
-const CACHE_NAME = 'asv-fangbuch-V18';
+cconst CACHE_NAME = 'asv-fangbuch-V19';
 
 // Hier stehen jetzt ALLE Dateien drin, die zu deiner App gehören!
 const ASSETS = [
   './',
   './index.html',
-  './Index.js',
+  './index.js',
+  './icon.png',
   './manifest.json',
   './fang-eintragen.html',
   './fang-eintragen.js',
   './auswertung.html',
-  './auswertung.js',     // NEU: Damit die Auswertung offline Logik hat!
-  './partner.html',      // NEU: Damit die Partner-Seite offline existiert!
+  './auswertung.js',
+  './partner.html',
   './galerie.html',
   './galerie.js'
 ];
@@ -25,7 +26,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// 2. Altes Cache-Aufräumen bei Aktivierung (wirft V8 komplett raus!)
+// 2. Altes Cache-Aufräumen bei Aktivierung
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {

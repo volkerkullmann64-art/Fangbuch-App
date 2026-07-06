@@ -51,21 +51,41 @@ async function triggerAutomaticWeatherFetch() {
         const data = await response.json();
         
         if (data && data.current_weather) {
+            // 1. Wetterzustand setzen
             const code = data.current_weather.weathercode;
             let wetterSelect = document.getElementById('wetter');
-            if (code === 0) wetterSelect.value = "Sonnig";
-            else if (code >= 1 && code <= 3) wetterSelect.value = "Bewölkt";
-            else if (code >= 45 && code <= 48) wetterSelect.value = "Nebel";
-            else if (code >= 51 && code <= 67) wetterSelect.value = "Regen";
-            
-            const currentHourIso = data.current_weather.time;
-            const timeIndex = data.hourly.time.indexOf(currentHourIso);
-            if(timeIndex !== -1) {
-                document.getElementById('luftdruck').value = Math.round(data.hourly.surface_pressure[timeIndex]);
+            if (wetterSelect) {
+                if (code === 0) wetterSelect.value = "Sonnig";
+                else if (code >= 1 && code <= 3) wetterSelect.value = "Bewölkt";
+                else if (code >= 45 && code <= 48) wetterSelect.value = "Nebel";
+                else if (code >= 51 && code <= 67) wetterSelect.value = "Regen";
             }
+            
+            // 2. Luftdruck setzen (Fehlersicher!)
+            const currentHourIso = data.current_weather.time;
+            let timeIndex = data.hourly.time.indexOf(currentHourIso);
+            
+            // Falls die exakte Stunde nicht gefunden wird, nimm den ersten verfügbaren Wert
+            if (timeIndex === -1 && data.hourly.surface_pressure.length > 0) {
+                timeIndex = 0; 
+            }
+            
+            if (timeIndex !== -1 && data.hourly.surface_pressure[timeIndex]) {
+                document.getElementById('luftdruck').value = Math.round(data.hourly.surface_pressure[timeIndex]);
+            } else {
+                // Falls kein Wert da ist, Ladehinweis löschen
+                document.getElementById('luftdruck').value = "";
+                document.getElementById('luftdruck').placeholder = "z.B. 1013";
+            }
+        } else {
+            // Falls API-Antwort fehlerhaft, Feld freigeben
+            document.getElementById('luftdruck').value = "";
+            document.getElementById('luftdruck').placeholder = "z.B. 1013";
         }
     } catch (e) {
         console.error("Wetter konnte nicht automatisch geladen werden:", e);
+        // Im Fehlerfall (Keller/Funkloch) sofort das Laden beenden!
+        document.getElementById('luftdruck').value = "";
         document.getElementById('luftdruck').placeholder = "Manuell eintragen";
     }
 }

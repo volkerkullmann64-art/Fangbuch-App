@@ -15,8 +15,27 @@
     </style>
 </head>
 <body>
+
+
+
+
 <div id="app" class="container">
 </div>
     <script src="Index.js"></script>
+
+
+<div id="sync-status" style="display: none; background-color: #d68c45; color: white; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; text-align: center; margin: 10px auto; max-width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    ⚠️ Fänge warten auf Internetverbindung...
+</div>
+
+<script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Offline-Manager aktiv!', reg))
+                    .catch(err => console.error('Offline-Manager Fehler:', err));
+            });
+        }
+    </script>
 </body>
 </html>

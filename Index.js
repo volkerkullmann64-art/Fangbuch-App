@@ -20,46 +20,52 @@
             document.getElementById('app').innerHTML = `
                 <h2>ASV Fangbuch</h2>
                 <input type="email" id="email" placeholder="Deine E-Mail Adresse">
+
+
                 <button class="btn" onclick="performLogin()">Anmelden</button>
             `;
         }
 
         // Login Logik
-        async function performLogin() {
-            const emailInput = document.getElementById('email').value.trim().toLowerCase();
-            if(emailInput !== "") {
+       async function performLogin() {
+    const emailInput = document.getElementById('email').value.trim().toLowerCase();
+    if(emailInput !== "") {
+        
+        // NEU: Verhindert Login-Versuche im Funkloch
+        if (!navigator.onLine) {
+            alert("Für den ersten Login wird eine Internetverbindung benötigt.");
+            return;
+        }
+
+        const { data, error } = await _supabase
+            .from('mitglieder')
+            .select('email, kennung')
+            .eq('email', emailInput)
+            .single();
+
+        if (error || !data) {
+            alert("Zugriff verweigert: E-Mail nicht registriert.");
+        } else {
+            if (data.kennung === "0000") {
+                alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+                return;
+            }
+
+            if (data.kennung) {
+                localStorage.setItem('userKennung', data.kennung);
+                localStorage.setItem('userEmailCache', emailInput); // NEU: Wichtig für Offline-Sitzungen!
                 
-                // Abgleich mit der Datenbank 'mitglieder'
-                const { data, error } = await _supabase
-                    .from('mitglieder')
-                    .select('email, kennung')
-                    .eq('email', emailInput)
-                    .single();
-
-                if (error || !data) {
-                    alert("Zugriff verweigert: E-Mail nicht registriert.");
-                } else {
-                    // Falls die Kennung auf 0000 steht, blockieren
-                    if (data.kennung === "0000") {
-                        alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
-                        return;
-                    }
-
-                    // E-Mail gefunden, Kennung lokal und Session setzen
-                    if (data.kennung) {
-                        localStorage.setItem('userKennung', data.kennung);
-                        sessionStorage.setItem('userEmail', emailInput);
-                        sessionStorage.setItem('angemeldet', 'ja');
-                        showDashboard();
-                    } else {
-                        alert("Fehler: Keine Kennung hinterlegt.");
-                    }
-                }
-
+                sessionStorage.setItem('userEmail', emailInput);
+                sessionStorage.setItem('angemeldet', 'ja');
+                showDashboard();
             } else {
-                alert("Bitte E-Mail eingeben");
+                alert("Fehler: Keine Kennung hinterlegt.");
             }
         }
+    } else {
+        alert("Bitte E-Mail eingeben");
+    }
+}
 
         // Funktion zum Beenden des Programms
         function beendeProgramm() {
@@ -78,27 +84,93 @@
 
         // Beim Starten della Seite prüfen
         window.onload = async function() {
-            const gespeicherteKennung = localStorage.getItem('userKennung');
+    const gespeicherteKennung = localStorage.getItem('userKennung');
+    const gecachteEmail = localStorage.getItem('userEmailCache');
 
-            if (gespeicherteKennung) {
-                // Live-Prüfung gegen Supabase wegen der 0000-Steuerung
-                const { data, error } = await _supabase
-                    .from('mitglieder')
-                    .select('email, kennung')
-                    .eq('kennung', gespeicherteKennung)
-                    .maybeSingle();
+    // NEU: Prüfe sofort bei App-Start, ob noch ungesendete Offline-Fänge vorliegen
+    trySyncOfflineFange();
+    window.addEventListener('online', trySyncOfflineFange);
 
-                if (error || !data || data.kennung === "0000") {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    showLogin();
-                } else {
-                    // Kennung ist gültig -> befeuere die Session für die anderen HTML-Seiten
-                    sessionStorage.setItem('userEmail', data.email);
-                    sessionStorage.setItem('angemeldet', 'ja');
-                    showDashboard();
-                }
-            } else {
+    if (gespeicherteKennung) {
+        // NEU: OFFLINE-FALL (Angler steht ohne Netz am Wasser)
+        if (!navigator.onLine) {
+            console.log("App läuft im Offline-Modus. Nutze lokalen Speicher.");
+            sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
+            sessionStorage.setItem('angemeldet', 'ja');
+            showDashboard();
+            return;
+        }
+
+        // ONLINE-FALL (Deine bestehende Logik bleibt exakt gleich)
+        try {
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('email, kennung')
+                .eq('kennung', gespeicherteKennung)
+                .maybeSingle();
+
+            if (error || !data || data.kennung === "0000") {
+                localStorage.clear();
+                sessionStorage.clear();
                 showLogin();
+            } else {
+                localStorage.setItem('userEmailCache', data.email);
+                sessionStorage.setItem('userEmail', data.email);
+                sessionStorage.setItem('angemeldet', 'ja');
+                showDashboard();
             }
-        };
+        } catch (e) {
+            // Failsafe bei Netzwerkproblemen während der Abfrage
+            sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
+            sessionStorage.setItem('angemeldet', 'ja');
+            showDashboard();
+        }
+    } else {
+        showLogin();
+    }
+}
+
+
+
+
+
+async function trySyncOfflineFange() {
+    const syncStatusBadge = document.getElementById('sync-status');
+    let q = [];
+    try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
+
+    // NEU: Wenn die Warteschlange leer ist, brich sofort ab und frage Supabase gar nicht erst!
+    if (!q || q.length === 0) {
+        if(syncStatusBadge) syncStatusBadge.style.display = 'none';
+        return;
+    }
+
+    if(syncStatusBadge) {
+        syncStatusBadge.style.display = 'block';
+        syncStatusBadge.textContent = `⚠️ ${q.length} Fang/Fänge warten auf Internetverbindung...`;
+    }
+
+    if (navigator.onLine) {
+        if(syncStatusBadge) syncStatusBadge.textContent = `🔄 Synchronisiere ${q.length} Fänge mit Supabase...`;
+        
+        let erfolgreicheIndizes = [];
+        for (let i = 0; i < q.length; i++) {
+            try {
+                const { error } = await _supabase.from('fangbuch-asv-langschede').insert([q[i]]);
+                if (!error) erfolgreicheIndizes.push(i);
+            } catch(e) {
+                console.error("Netzwerkfehler beim automatischen Sync:", e);
+            }
+        }
+
+        q = q.filter((item, index) => !erfolgreicheIndizes.includes(index));
+        localStorage.setItem('offlineFange', JSON.stringify(q));
+
+        if (q.length === 0) {
+            if(syncStatusBadge) syncStatusBadge.style.display = 'none';
+            alert("🎉 Deine Offline-Fänge wurden erfolgreich im Hintergrund hochgeladen!");
+        } else {
+            if(syncStatusBadge) syncStatusBadge.textContent = `⚠️ ${q.length} Fänge konnten nicht synchronisiert werden.`;
+        }
+    }
+}

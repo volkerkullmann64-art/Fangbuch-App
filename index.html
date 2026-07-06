@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASV Langschede Fangbuch</title>
-    <div id="sync-status" style="display: none; background-color: #fff9c4; color: #f57f17; padding: 12px; margin: 15px 0; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #fbc02d;"></div>
     <!-- Supabase Client Bibliothek laden -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -17,14 +16,14 @@
 </head>
 <body>
 
-
-
-
 <div id="app" class="container">
+    <!-- DIE GELBE BOX SITZT JETZT PERFEKT HIER IM WEISSEN KASTEN GANZ OBEN -->
+    <div id="sync-status" style="display: none; background-color: #fff9c4; color: #f57f17; padding: 12px; margin: 0 0 15px 0; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #fbc02d; font-size: 14px;"></div>
 </div>
-    <script src="Index.js"></script>
 
-
+<script src="Index.js"></script>
+</body>
+</html>
 <div id="sync-status" style="display: none; background-color: #d68c45; color: white; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; text-align: center; margin: 10px auto; max-width: 320px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
     ⚠️ Fänge warten auf Internetverbindung...
 </div>

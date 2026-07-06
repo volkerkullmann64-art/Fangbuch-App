@@ -3,6 +3,12 @@
         const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+
+
+
+
+
+        
         // Zeige die Auswahl-Buttons
         function showDashboard() {
             document.getElementById('app').innerHTML = `
@@ -15,6 +21,10 @@
             `;
         }
 
+
+
+
+
         // Zeige das Login-Formular
         function showLogin() {
             document.getElementById('app').innerHTML = `
@@ -26,12 +36,16 @@
             `;
         }
 
+
+
+
+
+
         // Login Logik
-       async function performLogin() {
+      async function performLogin() {
     const emailInput = document.getElementById('email').value.trim().toLowerCase();
     if(emailInput !== "") {
         
-        // NEU: Verhindert Login-Versuche im Funkloch
         if (!navigator.onLine) {
             alert("Für den ersten Login wird eine Internetverbindung benötigt.");
             return;
@@ -52,8 +66,9 @@
             }
 
             if (data.kennung) {
-                localStorage.setItem('userKennung', data.kennung);
-                localStorage.setItem('userEmailCache', emailInput); // NEU: Wichtig für Offline-Sitzungen!
+                // HIER SICHERN WIR ES JETZT BOMBENFEST DAUERHAFT:
+                localStorage.setItem('userKennung', String(data.kennung));
+                localStorage.setItem('userEmailCache', String(emailInput));
                 
                 sessionStorage.setItem('userEmail', emailInput);
                 sessionStorage.setItem('angemeldet', 'ja');
@@ -66,6 +81,10 @@
         alert("Bitte E-Mail eingeben");
     }
 }
+
+
+
+
 
         // Funktion zum Beenden des Programms
         function beendeProgramm() {
@@ -82,26 +101,37 @@
             `;
         }
 
+
+
+
+
+
         // Beim Starten della Seite prüfen
-        window.onload = async function() {
+      window.onload = async function() {
+    // Holt die Daten aus dem dauerhaften Handyspeicher
     const gespeicherteKennung = localStorage.getItem('userKennung');
     const gecachteEmail = localStorage.getItem('userEmailCache');
 
-    // NEU: Prüfe sofort bei App-Start, ob noch ungesendete Offline-Fänge vorliegen
+    // Prüfe sofort bei App-Start, ob noch ungesendete Offline-Fänge vorliegen
     trySyncOfflineFange();
     window.addEventListener('online', trySyncOfflineFange);
 
-    if (gespeicherteKennung) {
-        // NEU: OFFLINE-FALL (Angler steht ohne Netz am Wasser)
-        if (!navigator.onLine) {
-            console.log("App läuft im Offline-Modus. Nutze lokalen Speicher.");
+    // NEU: Absoluter Offline-Failsafe für das Funkloch
+    if (!navigator.onLine) {
+        if (gecachteEmail || gespeicherteKennung) {
+            console.log("Offline-Modus aktiv. Verwende gecachte Sitzung.");
             sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
             sessionStorage.setItem('angemeldet', 'ja');
             showDashboard();
             return;
+        } else {
+            // Wenn das Handy noch NIE online eingeloggt war und kein Cache da ist
+            showLogin();
+            return;
         }
-
-        // ONLINE-FALL (Deine bestehende Logik bleibt exakt gleich)
+    }
+    // ONLINE-FALL (Deine originale Prüfung gegen Supabase läuft nur, wenn Netz da ist)
+    if (gespeicherteKennung) {
         try {
             const { data, error } = await _supabase
                 .from('mitglieder')
@@ -115,21 +145,25 @@
                 showLogin();
             } else {
                 localStorage.setItem('userEmailCache', data.email);
+                localStorage.setItem('userKennung', data.kennung);
                 sessionStorage.setItem('userEmail', data.email);
                 sessionStorage.setItem('angemeldet', 'ja');
                 showDashboard();
             }
         } catch (e) {
-            // Failsafe bei Netzwerkproblemen während der Abfrage
-            sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
-            sessionStorage.setItem('angemeldet', 'ja');
-            showDashboard();
+            // Falls das Internet mitten in der Abfrage wegstirbt
+            if (gecachteEmail) {
+                sessionStorage.setItem('userEmail', gecachteEmail);
+                sessionStorage.setItem('angemeldet', 'ja');
+                showDashboard();
+            } else {
+                showLogin();
+            }
         }
     } else {
         showLogin();
     }
-}
-
+};
 
 
 

@@ -1,6 +1,6 @@
-const CACHE_NAME = 'asv-fangbuch-V8';
+const CACHE_NAME = 'asv-fangbuch-V9';
 
-// Hier stehen alle deine vorhandenen Dateien, die das Handy offline sichern MUSS
+// Hier stehen jetzt ALLE Dateien drin, die zu deiner App gehören!
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,8 @@ const ASSETS = [
   './fang-eintragen.html',
   './fang-eintragen.js',
   './auswertung.html',
+  './auswertung.js',     // NEU: Damit die Auswertung offline Logik hat!
+  './partner.html',      // NEU: Damit die Partner-Seite offline existiert!
   './galerie.html',
   './galerie.js'
 ];
@@ -23,7 +25,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// 2. Altes Cache-Aufräumen bei Aktivierung (wirft V7 komplett raus!)
+// 2. Altes Cache-Aufräumen bei Aktivierung (wirft V8 komplett raus!)
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {

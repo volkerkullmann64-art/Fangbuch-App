@@ -215,6 +215,15 @@ pruefePflichtfelder();
 }
 
 async function saveFang() {
+    const speicherBtn = document.getElementById('speichern-btn');
+    
+    // SICHERHEITS-RIEGEL: Button sofort sperren und Text ändern
+    speicherBtn.disabled = true;
+    const originalText = speicherBtn.innerText;
+    speicherBtn.innerText = "⏳ Wird gespeichert...";
+    speicherBtn.style.backgroundColor = '#757575';
+    speicherBtn.style.cursor = 'not-allowed';
+
     const schnelleEmail = sessionStorage.getItem('userEmail') || 'test@angler.de';
     const ldruckRaw = document.getElementById('luftdruck').value;
     const ldruckVal = ldruckRaw ? parseFloat(ldruckRaw) : null;
@@ -222,23 +231,17 @@ async function saveFang() {
     const fangDaten = {
         fischart: document.getElementById('fischart').value,
         laenge: parseFloat(document.getElementById('laenge').value),
-
-       
         gewicht: (function() {
-    const gewichtInput = document.getElementById('gewicht');
-    // 1. Wenn der Angler selbst eine Zahl eingetippt hat, nimm diese
-    if (gewichtInput.value.trim() !== "") {
-        return parseFloat(gewichtInput.value);
-    }
-    // 2. Wenn das Feld leer ist, aber ein Schätzwert im Placeholder steht, extrahiere die Zahl
-    if (gewichtInput.placeholder && gewichtInput.placeholder.includes("ca.")) {
-        const geschaetzterWert = gewichtInput.placeholder.replace(/[^\d]/g, ''); // Filtert alle Zahlen heraus
-        return geschaetzterWert ? parseFloat(geschaetzterWert) : null;
-    }
-    // 3. Falls gar nichts da ist
-    return null;
-})(),
-
+            const gewichtInput = document.getElementById('gewicht');
+            if (gewichtInput.value.trim() !== "") {
+                return parseFloat(gewichtInput.value);
+            }
+            if (gewichtInput.placeholder && gewichtInput.placeholder.includes("ca.")) {
+                const geschaetzterWert = gewichtInput.placeholder.replace(/[^\d]/g, ''); 
+                return geschaetzterWert ? parseFloat(geschaetzterWert) : null;
+            }
+            return null;
+        })(),
         datum: document.getElementById('datum').value,
         uhrzeit: document.getElementById('uhrzeit').value,
         verbleib: document.getElementById('verbleib').value,
@@ -250,52 +253,38 @@ async function saveFang() {
         angler_email: schnelleEmail
     };
 
-    
-       if (navigator.onLine) {
-        if (editFangId) {
-            const { error } = await _supabase.from('fangbuch-asv-langschede').update(fangDaten).eq('id', editFangId);
-            if (!error) { 
-                // Nach dem Bearbeiten geht es wie gewohnt zur Auswertung zurück
-                location.href = 'auswertung.html'; 
-                return; 
-            } else { 
-                alert("⚠️ Achtung: Fehler beim Ändern! " + error.message); 
+    try {
+        if (navigator.onLine) {
+            if (editFangId) {
+                const { error } = await _supabase.from('fangbuch-asv-langschede').update(fangDaten).eq('id', editFangId);
+                if (!error) { 
+                    location.href = 'auswertung.html'; 
+                    return; 
+                } else { 
+                    throw new Error(error.message);
+                }
+            } else {
+                const { error } = await _supabase.from('fangbuch-asv-langschede').insert([fangDaten]);
+                if (!error) { 
+                    document.getElementById('fang-form').reset(); 
+                    location.href = 'index.html'; 
+                    return; 
+                } else { 
+                    throw new Error(error.message);
+                }
             }
         } else {
-            const { error } = await _supabase.from('fangbuch-asv-langschede').insert([fangDaten]);
-            if (!error) { 
-                document.getElementById('fang-form').reset(); 
-                // Springt nach dem erfolgreichen Speichern sofort zurück zum Dashboard
-                location.href = 'index.html'; 
-                return; 
-            } else { 
-                alert("⚠️ Achtung: Konnte nicht gespeichert werden! " + error.message); 
-            }
+            let q = []; try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
+            q.push(fangDaten); localStorage.setItem('offlineFange', JSON.stringify(q));
+            document.getElementById('fang-form').reset();
+            location.href = 'index.html';
         }
-    } else {
-        let q = []; try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
-        q.push(fangDaten); localStorage.setItem('offlineFange', JSON.stringify(q));
-        document.getElementById('fang-form').reset();
-        // Auch im Offline-Modus springt er jetzt direkt zurück zur Hauptmaske
-        location.href = 'index.html';
-    }
-}
-function pruefePflichtfelder() {
-    const datum = document.getElementById('datum').value;
-    const uhrzeit = document.getElementById('uhrzeit').value;
-    const fischart = document.getElementById('fischart').value;
-    const laenge = document.getElementById('laenge').value.trim();
-    
-    const btn = document.getElementById('speichern-btn');
-    
-    // Prüfen, ob Pflichtfelder gefüllt sind
-    if (datum && uhrzeit && fischart && laenge) {
-        btn.disabled = false;
-        btn.style.backgroundColor = '#2e5a44'; 
-        btn.style.cursor = "pointer";
-    } else {
-        btn.disabled = true;
-        btn.style.backgroundColor = '#cccccc'; // Ein deutliches Grau
-        btn.style.cursor = "not-allowed";
+    } catch (error) {
+        alert("⚠️ Achtung: Konnte nicht gespeichert werden! " + error.message);
+        // Nur im Fehlerfall den Button wieder freigeben:
+        speicherBtn.disabled = false;
+        speicherBtn.innerText = originalText;
+        speicherBtn.style.backgroundColor = '#2e5a44';
+        speicherBtn.style.cursor = 'pointer';
     }
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asv-fangbuch-V22';
+const CACHE_NAME = 'asv-fangbuch-V23';
 
 // Hier stehen jetzt ALLE Dateien drin, die zu deiner App gehören!
 const ASSETS = [

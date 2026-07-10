@@ -29,7 +29,27 @@ window.addEventListener('load', function() {
     } catch(e) { console.error("Init-Fehler abgefangen:", e); }
 
     // HIER EINFÜGEN: Prüfe sofort beim Start, damit der Button direkt grau wird
-    pruefePflichtfelder(); 
+   function pruefePflichtfelder() {
+    const datum = document.getElementById('datum').value;
+    const uhrzeit = document.getElementById('uhrzeit').value;
+    const fischart = document.getElementById('fischart').value;
+    const laenge = document.getElementById('laenge').value.trim();
+    
+    const btn = document.getElementById('speichern-btn');
+    
+    // NEU: Wenn der Riegel gerade aktiv ist, das Überprüfen einfach überspringen!
+    if (btn.innerText.includes("Wird gespeichert...")) return;
+    
+    if (datum && uhrzeit && fischart && laenge) {
+        btn.disabled = false;
+        btn.style.backgroundColor = '#2e5a44'; 
+        btn.style.cursor = "pointer";
+    } else {
+        btn.disabled = true;
+        btn.style.backgroundColor = '#cccccc'; 
+        btn.style.cursor = "not-allowed";
+    }
+}
 });
 
 async function loescheAktuellenFang() {

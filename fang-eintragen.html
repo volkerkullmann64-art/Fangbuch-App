@@ -39,11 +39,29 @@ margin-bottom: 20px;
 }
 .form-group { margin-bottom: 18px;
 }
-.row { display: flex;
-gap: 10px;
+
+
+.row { 
+    display: flex; 
+    gap: 10px; 
+    width: 100%;
 }
-.row .form-group { flex: 1;
+
+.row .form-group { 
+    flex: 1 1 50%; /* Zwingt beide Felder, exakt 50% der Breite einzunehmen */
+    min-width: 0;  /* Verhindert, dass Safari die Boxen ungleichmäßig zusammendrückt */
 }
+
+/* Verhindert, dass Safari die inneren Eingabefelder kleiner macht */
+input[type="date"], 
+input[type="time"] {
+    width: 100% !important;
+    box-sizing: border-box;
+    -webkit-appearance: none; /* Erzwingt eine saubere Darstellung auf iOS */
+    min-height: 48px; /* Sorgt für eine bequeme Finger-Bedienung */
+}
+
+
 label { display: block;
 font-weight: bold;
 margin-bottom: 6px;

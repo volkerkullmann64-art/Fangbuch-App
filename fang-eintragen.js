@@ -209,29 +209,79 @@ else if (modus === "invasiv") { verbleibSelect.options.add(new Option("Entnommen
 else { verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); }
 }
 
+
+
+
 function validateFisch() {
-const fischart = document.getElementById('fischart').value;
-const laenge = parseFloat(document.getElementById('laenge').value);
-const datumVal = document.getElementById('datum').value;
-const statusHint = document.getElementById('status-hint');
-const gewichtInput = document.getElementById('gewicht');
-const erkennungsBox = document.getElementById('fisch-erkennung');
+    const fischart = document.getElementById('fischart').value;
+    const laenge = parseFloat(document.getElementById('laenge').value);
+    const datumVal = document.getElementById('datum').value;
+    const statusHint = document.getElementById('status-hint');
+    const gewichtInput = document.getElementById('gewicht');
+    const erkennungsBox = document.getElementById('fisch-erkennung');
 
-if (!fischart) { erkennungsBox.style.display = 'none'; return; }
-const daten = fischDatenbank[fischart];
-if (!daten) return;
+    if (!fischart) { erkennungsBox.style.display = 'none'; return; }
+    const daten = fischDatenbank[fischart];
+    if (!daten) return;
 
-let infoTexte = []; let istWarnung = false; let aktuellerModus = "masig";
-if (daten.geschuetzt || fischart === "Nase") { infoTexte.push("⚠️ STRENG GESCHÜTZT!"); istWarnung = true; aktuellerModus = "schonzeit"; }
-else if (daten.invasiv) { infoTexte.push("🚨 INVASIVE ART!"); istWarnung = true; aktuellerModus = "invasiv"; }
-if (!isNaN(laenge) && laenge > 0) {
-    if (daten.k) gewichtInput.placeholder = `ca. ${Math.round((daten.k * Math.pow(laenge, 3)) / 100)} g`;
-    if (!daten.geschuetzt && fischart !== "Nase" && !daten.invasiv && daten.mass && laenge < daten.mass) { infoTexte.push("⚠️ Untermaßig!"); istWarnung = true; if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; }
+    let infoTexte = []; let istWarnung = false; let aktuellerModus = "masig";
+    if (daten.geschuetzt || fischart === "Nase") { infoTexte.push("⚠️ STRENG GESCHÜTZT!"); istWarnung = true; aktuellerModus = "schonzeit"; }
+    else if (daten.invasiv) { infoTexte.push("🚨 INVASIVE ART!"); istWarnung = true; aktuellerModus = "invasiv"; }
+    
+    if (!isNaN(laenge) && laenge > 0) {
+        if (daten.k) gewichtInput.placeholder = `ca. ${Math.round((daten.k * Math.pow(laenge, 3)) / 100)} g`;
+        
+        if (!daten.geschuetzt && fischart !== "Nase" && !daten.invasiv && daten.mass && laenge < daten.mass) { 
+            infoTexte.push("⚠️ Untermaßig!"); 
+            istWarnung = true; 
+            if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
+        }
+
+        // --- NEU: HIER KLINKT SICH DIE HITPARADE EIN ---
+        holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
+            const hitparadeBox = document.getElementById("hitparade-meldung");
+            
+            // Wenn der Fisch größer als Platz 3 ist (und die Art nicht geschützt/invasiv ist)
+            if (laenge > mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
+                if (hitparadeBox) {
+                    hitparadeBox.style.display = "block";
+                    hitparadeBox.innerHTML = `
+                        <div style="background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            🎉 <b>Petri Heil, Kollege!</b><br>
+                            Das ist ein absoluter Spitzenfang! Dieser Fisch knackt die Top 3 der Vereins-Hitparade!<br><br>
+                            Möchtest du diesen Prachtburschen mit einem Foto in der öffentlichen Galerie verewigen?<br>
+                            <small>(Das Foto wird direkt am Wasser geschossen und hochgeladen)</small>
+                            <div style="margin-top: 10px;">
+                                <button type="button" id="btn-hitparade-foto" class="btn btn-success btn-sm">📸 Foto schießen</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Ausblenden, wenn die Länge nicht reicht oder der Fisch geschützt/invasiv ist
+                if (hitparadeBox) hitparadeBox.style.display = "none";
+            }
+        });
+        // -----------------------------------------------
+    } else {
+        // Falls gar keine Länge eingetragen ist, Hitparaden-Box ebenfalls ausblenden
+        const hitparadeBox = document.getElementById("hitparade-meldung");
+        if (hitparadeBox) hitparadeBox.style.display = "none";
+    }
+
+    updateVerbleibOptions(aktuellerModus);
+    if (infoTexte.length > 0) { 
+        statusHint.style.display = 'block'; 
+        statusHint.innerHTML = infoTexte.join("<br>"); 
+        statusHint.className = istWarnung ? "hint-box warning" : "hint-box ok"; 
+    } else { 
+        statusHint.style.display = 'none'; 
+    }
+    pruefePflichtfelder();
 }
-updateVerbleibOptions(aktuellerModus);
-if (infoTexte.length > 0) { statusHint.style.display = 'block'; statusHint.innerHTML = infoTexte.join("<br>"); statusHint.className = istWarnung ? "hint-box warning" : "hint-box ok"; } else { statusHint.style.display = 'none'; }
-pruefePflichtfelder();
-}
+
+
+
 
 async function saveFang() {
     const speicherBtn = document.getElementById('speichern-btn');
@@ -300,5 +350,102 @@ async function saveFang() {
         // Falls ein Fehler auftritt, machen wir den Button einfach wieder klickbar
         speicherBtn.disabled = false;
         speicherBtn.style.cursor = 'pointer';
+    }
+}
+function pruefeRuhrStandort() {
+    return new Promise((resolve) => {
+        // 1. Prüfen, ob das Gerät überhaupt GPS-Ortung unterstützt
+        if (!navigator.geolocation) {
+            console.log("GPS wird von diesem Gerät nicht unterstützt.");
+            resolve(false); 
+            return;
+        }
+
+        // 2. Die echten GPS-Koordinaten vom Smartphone abfragen
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const spielerLat = position.coords.latitude;
+                const spielerLon = position.coords.longitude;
+
+                // Eure 11 Stecknadeln: Lückenlose Kette vom Ostholzbach bis 200m vor der Schoofsbrücke
+                const ruhrPunkte = [
+                    { name: "1: Anfang Ostholzbach (Mündung)", lat: 51.4782, lon: 7.7785 },
+                    { name: "2: Ruhrwiesen oberhalb Kanu-Club", lat: 51.4768, lon: 7.7740 },
+                    { name: "3: Kanu-Club / Sportplatz", lat: 51.4755, lon: 7.7695 },
+                    { name: "4: Kurve vor dem Wehr", lat: 51.4748, lon: 7.7670 },
+                    { name: "5: Wehr Langschede", lat: 51.4744, lon: 7.7652 },
+                    { name: "6: Ruhrbrücke B63 (Mendener Str.)", lat: 51.4735, lon: 7.7595 },
+                    { name: "7: Ruhrwiesen unterhalb Brücke", lat: 51.4725, lon: 7.7540 },
+                    { name: "8: Erste große Flusskurve West", lat: 51.4712, lon: 7.7490 },
+                    { name: "9: Mitten in den Ruhrwiesen", lat: 51.4705, lon: 7.7470 },
+                    { name: "10: Gerade Strecke vor Ende", lat: 51.4692, lon: 7.7410 },
+                    { name: "11: Streckenende vor Schoofsbrücke", lat: 51.4682, lon: 7.7375 }
+                ];
+
+                const R = 6371e3; // Erdradius in Metern für die Berechnung
+                let anDerRuhr = false;
+
+                // 3. Die App läuft jetzt alle 11 Punkte nacheinander durch
+                for (let punkt of ruhrPunkte) {
+                    const phi1 = spielerLat * Math.PI / 180;
+                    const phi2 = punkt.lat * Math.PI / 180;
+                    const deltaPhi = (punkt.lat - spielerLat) * Math.PI / 180;
+                    const deltaLambda = (punkt.lon - spielerLon) * Math.PI / 180;
+
+                    // Haversine-Formel zur Berechnung der exakten Luftlinie auf der Erdkugel
+                    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                              Math.cos(phi1) * Math.cos(phi2) *
+                              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    const entfernung = R * c; // Ergebnis in Metern
+
+                    console.log(`Entfernung zu ${punkt.name}: ${Math.round(entfernung)} Meter.`);
+
+                    // 4. Wenn du zu IRGENDEINEM der 11 Punkte weniger als 100 Meter Abstand hast
+                    if (entfernung <= 100) {
+                        anDerRuhr = true;
+                        console.log(`✅ Standort erfolgreich bestätigt bei: ${punkt.name}`);
+                        break; // Treffer! Wir können die Schleife sofort abbrechen
+                    }
+                }
+
+                // Gibt true (Ja) oder false (Nein) zurück
+                resolve(anDerRuhr);
+            },
+            (error) => {
+                console.error("GPS-Fehler beim Abrufen der Position:", error);
+                resolve(false); // Falls der Angler die Ortung ablehnt, wird "false" zurückgegeben
+            },
+            { 
+                enableHighAccuracy: true, // Erzwingt die Nutzung von echtem GPS (nicht nur ungenaues WLAN)
+                timeout: 7000             // Wartet maximal 7 Sekunden auf das Signal
+            }
+        );
+    });
+}
+async function holeMindestLaengeFuerHitparade(fischart) {
+    try {
+        const { data, error } = await _supabase
+            .from('fangbuch-asv-langschede')
+            .select('laenge')
+            .eq('fischart', fischart)
+            .order('laenge', { ascending: false }) // Die größten zuerst
+            .range(0, 2); // Hole maximal die Plätze 1, 2 und 3
+
+        if (error) throw error;
+
+        // Wenn es im Verein noch weniger als 3 Fische dieser Art gibt,
+        // kommt JEDER Fisch automatisch in die Hitparade! (Mindestlänge = 0)
+        if (!data || data.length < 3) {
+            return 0; 
+        }
+
+        // Der dritte Fisch in der Liste bestimmt die magische Grenze
+        const platz3 = data[data.length - 1];
+        return platz3.laenge ? parseFloat(platz3.laenge) : 0;
+
+    } catch (e) {
+        console.error("Fehler beim Laden der Hitparaden-Grenze:", e);
+        return 0; // Im Zweifel erlauben wir den Hinweis
     }
 }

@@ -8,7 +8,6 @@ window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
     editFangId = urlParams.get('editId');
 
-    
     initFormDefaults();
 
     if (editFangId) {
@@ -24,21 +23,22 @@ window.addEventListener('load', function() {
         if(typeof trySyncOfflineFange === 'function') trySyncOfflineFange();
     } catch(e) { console.error("Init-Fehler abgefangen:", e); }
 
-   try {
+    try {
         if(typeof trySyncOfflineFange === 'function') trySyncOfflineFange();
     } catch(e) { console.error("Init-Fehler abgefangen:", e); }
 
-    // HIER EINFÜGEN: Prüfe sofort beim Start, damit der Button direkt grau wird
-   function pruefePflichtfelder() {
+    // Rufe die Prüfung auf, die jetzt sicher weiter unten liegt
+    pruefePflichtfelder(); 
+});
+
+// Die Funktion steht jetzt sauber außerhalb und ist für das ganze Programm sichtbar!
+function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
     const uhrzeit = document.getElementById('uhrzeit').value;
     const fischart = document.getElementById('fischart').value;
     const laenge = document.getElementById('laenge').value.trim();
     
     const btn = document.getElementById('speichern-btn');
-    
-    // NEU: Wenn der Riegel gerade aktiv ist, das Überprüfen einfach überspringen!
-    if (btn.innerText.includes("Wird gespeichert...")) return;
     
     if (datum && uhrzeit && fischart && laenge) {
         btn.disabled = false;
@@ -50,7 +50,6 @@ window.addEventListener('load', function() {
         btn.style.cursor = "not-allowed";
     }
 }
-});
 
 async function loescheAktuellenFang() {
     const { error } = await _supabase.from('fangbuch-asv-langschede').delete().eq('id', editFangId);

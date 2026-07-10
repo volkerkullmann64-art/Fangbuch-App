@@ -237,11 +237,8 @@ pruefePflichtfelder();
 async function saveFang() {
     const speicherBtn = document.getElementById('speichern-btn');
     
-    // SICHERHEITS-RIEGEL: Button sofort sperren und Text ändern
+    // UNSICHTBARER RIEGEL: Schützt vor Mehrfachklicks, verändert aber weder Text noch Farbe!
     speicherBtn.disabled = true;
-    const originalText = speicherBtn.innerText;
-    speicherBtn.innerText = "⏳ Wird gespeichert...";
-    speicherBtn.style.backgroundColor = '#757575';
     speicherBtn.style.cursor = 'not-allowed';
 
     const schnelleEmail = sessionStorage.getItem('userEmail') || 'test@angler.de';
@@ -301,10 +298,8 @@ async function saveFang() {
         }
     } catch (error) {
         alert("⚠️ Achtung: Konnte nicht gespeichert werden! " + error.message);
-        // Nur im Fehlerfall den Button wieder freigeben:
+        // Falls ein Fehler auftritt, machen wir den Button einfach wieder klickbar
         speicherBtn.disabled = false;
-        speicherBtn.innerText = originalText;
-        speicherBtn.style.backgroundColor = '#2e5a44';
         speicherBtn.style.cursor = 'pointer';
     }
 }

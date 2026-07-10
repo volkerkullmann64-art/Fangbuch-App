@@ -212,7 +212,94 @@ else { verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (K
 
 
 
-function validateFisch
+function validateFisch() {
+    const fischart = document.getElementById('fischart').value;
+    const laenge = parseFloat(document.getElementById('laenge').value);
+    const datumVal = document.getElementById('datum').value;
+    const statusHint = document.getElementById('status-hint');
+    const gewichtInput = document.getElementById('gewicht');
+    const erkennungsBox = document.getElementById('fisch-erkennung');
+    
+    // Holt den Text aus der Zusatznotiz und macht ihn komplett klein, damit "Test" und "test" funktionieren
+    const notizFeld = document.getElementById('notiz');
+    const notizText = notizFeld ? notizFeld.value.toLowerCase().trim() : ""; 
+
+    if (!fischart) { erkennungsBox.style.display = 'none'; return; }
+    const daten = fischDatenbank[fischart];
+    if (!daten) return;
+
+    let infoTexte = []; let istWarnung = false; let aktuellerModus = "masig";
+    if (daten.geschuetzt || fischart === "Nase") { infoTexte.push("⚠️ STRENG GESCHÜTZT!"); istWarnung = true; aktuellerModus = "schonzeit"; }
+    else if (daten.invasiv) { infoTexte.push("🚨 INVASIVE ART!"); istWarnung = true; aktuellerModus = "invasiv"; }
+    
+    if (!isNaN(laenge) && laenge > 0) {
+        if (daten.k) gewichtInput.placeholder = `ca. ${Math.round((daten.k * Math.pow(laenge, 3)) / 100)} g`;
+        
+        if (!daten.geschuetzt && fischart !== "Nase" && !daten.invasiv && daten.mass && laenge < daten.mass) { 
+            infoTexte.push("⚠️ Untermaßig!"); 
+            istWarnung = true; 
+            if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
+        }
+
+        // --- HITPARADEN-PRÜFUNG MIT SOFA-TESTMODUS ---
+        holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
+            const hitparadeBox = document.getElementById("hitparade-meldung");
+            
+            // Wenn die Länge reicht und der Fisch erlaubt ist
+            if (laenge > mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
+                
+                // PRÜFUNG: Wenn im Kommentar "test" oder "sofa" steht, überspringen wir das GPS!
+                if (notizText.includes("test") || notizText.includes("sofa")) {
+                    console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
+                    ZeigeHitparadeMeldung(hitparadeBox);
+                } else {
+                    // Das ist der scharfe Modus fürs Wasser
+                    pruefeRuhrStandort().then((amWasser) => {
+                        if (amWasser) {
+                            ZeigeHitparadeMeldung(hitparadeBox);
+                        } else {
+                            if (hitparadeBox) hitparadeBox.style.display = "none";
+                            console.log("❌ Fisch wäre Hitparade, aber du bist nicht an der Ruhr!");
+                        }
+                    });
+                }
+
+            } else {
+                if (hitparadeBox) hitparadeBox.style.display = "none";
+            }
+        });
+    } else {
+        const hitparadeBox = document.getElementById("hitparade-meldung");
+        if (hitparadeBox) hitparadeBox.style.display = "none";
+    }
+
+    updateVerbleibOptions(aktuellerModus);
+    if (infoTexte.length > 0) { 
+        statusHint.style.display = 'block'; 
+        statusHint.innerHTML = infoTexte.join("<br>"); 
+        statusHint.className = istWarnung ? "hint-box warning" : "hint-box ok"; 
+    } else { 
+        statusHint.style.display = 'none'; 
+    }
+    pruefePflichtfelder();
+}
+
+// Hilfsfunktion für die grüne Box (muss auch in der Datei sein)
+function ZeigeHitparadeMeldung(hitparadeBox) {
+    if (!hitparadeBox) return;
+    hitparadeBox.style.display = "block";
+    hitparadeBox.innerHTML = `
+        <div style="background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 15px;">
+            🎉 <b>Petri Heil, Kollege!</b><br>
+            Das ist ein absoluter Spitzenfang! Dieser Fisch knackt die Top 3 der Vereins-Hitparade!<br><br>
+            Möchtest du diesen Prachtburschen mit einem Foto in der öffentlichen Galerie verewigen?<br>
+            <small>(Das Foto wird direkt am Wasser geschossen und hochgeladen)</small>
+            <div style="margin-top: 10px;">
+                <button type="button" id="btn-hitparade-foto" class="btn btn-success btn-sm">📸 Foto schießen</button>
+            </div>
+        </div>
+    `;
+}
 
 
 

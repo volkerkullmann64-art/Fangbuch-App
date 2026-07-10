@@ -212,74 +212,7 @@ else { verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (K
 
 
 
-function validateFisch() {
-    const fischart = document.getElementById('fischart').value;
-    const laenge = parseFloat(document.getElementById('laenge').value);
-    const datumVal = document.getElementById('datum').value;
-    const statusHint = document.getElementById('status-hint');
-    const gewichtInput = document.getElementById('gewicht');
-    const erkennungsBox = document.getElementById('fisch-erkennung');
-
-    if (!fischart) { erkennungsBox.style.display = 'none'; return; }
-    const daten = fischDatenbank[fischart];
-    if (!daten) return;
-
-    let infoTexte = []; let istWarnung = false; let aktuellerModus = "masig";
-    if (daten.geschuetzt || fischart === "Nase") { infoTexte.push("⚠️ STRENG GESCHÜTZT!"); istWarnung = true; aktuellerModus = "schonzeit"; }
-    else if (daten.invasiv) { infoTexte.push("🚨 INVASIVE ART!"); istWarnung = true; aktuellerModus = "invasiv"; }
-    
-    if (!isNaN(laenge) && laenge > 0) {
-        if (daten.k) gewichtInput.placeholder = `ca. ${Math.round((daten.k * Math.pow(laenge, 3)) / 100)} g`;
-        
-        if (!daten.geschuetzt && fischart !== "Nase" && !daten.invasiv && daten.mass && laenge < daten.mass) { 
-            infoTexte.push("⚠️ Untermaßig!"); 
-            istWarnung = true; 
-            if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
-        }
-
-        // --- NEU: HIER KLINKT SICH DIE HITPARADE EIN ---
-        holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
-            const hitparadeBox = document.getElementById("hitparade-meldung");
-            
-            // Wenn der Fisch größer als Platz 3 ist (und die Art nicht geschützt/invasiv ist)
-            if (laenge > mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
-                if (hitparadeBox) {
-                    hitparadeBox.style.display = "block";
-                    hitparadeBox.innerHTML = `
-                        <div style="background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                            🎉 <b>Petri Heil, Kollege!</b><br>
-                            Das ist ein absoluter Spitzenfang! Dieser Fisch knackt die Top 3 der Vereins-Hitparade!<br><br>
-                            Möchtest du diesen Prachtburschen mit einem Foto in der öffentlichen Galerie verewigen?<br>
-                            <small>(Das Foto wird direkt am Wasser geschossen und hochgeladen)</small>
-                            <div style="margin-top: 10px;">
-                                <button type="button" id="btn-hitparade-foto" class="btn btn-success btn-sm">📸 Foto schießen</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            } else {
-                // Ausblenden, wenn die Länge nicht reicht oder der Fisch geschützt/invasiv ist
-                if (hitparadeBox) hitparadeBox.style.display = "none";
-            }
-        });
-        // -----------------------------------------------
-    } else {
-        // Falls gar keine Länge eingetragen ist, Hitparaden-Box ebenfalls ausblenden
-        const hitparadeBox = document.getElementById("hitparade-meldung");
-        if (hitparadeBox) hitparadeBox.style.display = "none";
-    }
-
-    updateVerbleibOptions(aktuellerModus);
-    if (infoTexte.length > 0) { 
-        statusHint.style.display = 'block'; 
-        statusHint.innerHTML = infoTexte.join("<br>"); 
-        statusHint.className = istWarnung ? "hint-box warning" : "hint-box ok"; 
-    } else { 
-        statusHint.style.display = 'none'; 
-    }
-    pruefePflichtfelder();
-}
-
+function validateFisch
 
 
 

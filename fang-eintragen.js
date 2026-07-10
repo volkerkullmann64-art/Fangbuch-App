@@ -169,31 +169,33 @@ const fischDatenbank = {
 
 
 function initFormDefaults() {
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('datum').value = today;
-const select = document.getElementById('uhrzeit');
-select.innerHTML = "";
-let currentMinutes = new Date().getMinutes();
-let roundedMinutes = Math.round(currentMinutes / 15) * 15;
-let currentHour = new Date().getHours();
-if(roundedMinutes === 60) { roundedMinutes = 0; currentHour += 1; }
-const defaultTimeStr = `${String(currentHour).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
-for (let h = 0; h < 24; h++) {
-for (let m = 0; m < 60; m += 15) {
-const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-const option = document.createElement('option');
-option.value = timeStr;
-option.textContent = timeStr + " Uhr";
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('datum').value = today;
+    const select = document.getElementById('uhrzeit');
+    select.innerHTML = "";
+    let currentMinutes = new Date().getMinutes();
+    let roundedMinutes = Math.round(currentMinutes / 15) * 15;
+    let currentHour = new Date().getHours();
+    if(roundedMinutes === 60) { roundedMinutes = 0; currentHour += 1; }
+    const defaultTimeStr = `${String(currentHour).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 15) {
+            const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            const option = document.createElement('option');
+            option.value = timeStr;
+            option.textContent = timeStr + " Uhr";
 
-if(timeStr === defaultTimeStr) option.selected = true;
-        select.appendChild(option);
+            if(timeStr === defaultTimeStr) option.selected = true;
+            select.appendChild(option);
         }
     }
-    // HIER ERGÄNZEN: Wenn der Angler die Uhrzeit ändert, soll geprüft werden
+    // Wenn der Angler die Uhrzeit manuell ändert, wird geprüft
     select.onchange = pruefePflichtfelder;
 
     updateVerbleibOptions("masig");
 
+    // Direkt beim Laden einmal prüfen, damit die Uhrzeit als "ausgefüllt" gilt
+    pruefePflichtfelder();
 }
 
 
@@ -219,12 +221,19 @@ function validateFisch() {
     const statusHint = document.getElementById('status-hint');
     const gewichtInput = document.getElementById('gewicht');
     const erkennungsBox = document.getElementById('fisch-erkennung');
+    const hitparadeBox = document.getElementById("hitparade-meldung");
     
     // Holt den Text aus der Zusatznotiz und macht ihn komplett klein, damit "Test" und "test" funktionieren
     const notizFeld = document.getElementById('notiz');
     const notizText = notizFeld ? notizFeld.value.toLowerCase().trim() : ""; 
 
-    if (!fischart) { erkennungsBox.style.display = 'none'; return; }
+    // Sicherheits-Check: Wenn keine Fischart gewählt ist, alles unsichtbar machen und raus
+    if (!fischart) { 
+        if (erkennungsBox) erkennungsBox.style.display = 'none'; 
+        if (hitparadeBox) hitparadeBox.style.display = 'none';
+        return; 
+    }
+    
     const daten = fischDatenbank[fischart];
     if (!daten) return;
 
@@ -243,8 +252,8 @@ function validateFisch() {
 
         // --- HITPARADEN-PRÜFUNG MIT SOFA-TESTMODUS ---
         holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
-            const hitparadeBox = document.getElementById("hitparade-meldung");
-            
+            if (!hitparadeBox) return;
+
             // Wenn die Länge reicht und der Fisch erlaubt ist
             if (laenge > mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
                 
@@ -258,18 +267,17 @@ function validateFisch() {
                         if (amWasser) {
                             ZeigeHitparadeMeldung(hitparadeBox);
                         } else {
-                            if (hitparadeBox) hitparadeBox.style.display = "none";
+                            hitparadeBox.style.display = "none";
                             console.log("❌ Fisch wäre Hitparade, aber du bist nicht an der Ruhr!");
                         }
                     });
                 }
 
             } else {
-                if (hitparadeBox) hitparadeBox.style.display = "none";
+                hitparadeBox.style.display = "none";
             }
         });
     } else {
-        const hitparadeBox = document.getElementById("hitparade-meldung");
         if (hitparadeBox) hitparadeBox.style.display = "none";
     }
 
@@ -283,7 +291,6 @@ function validateFisch() {
     }
     pruefePflichtfelder();
 }
-
 // Hilfsfunktion für die grüne Box (muss auch in der Datei sein)
 function ZeigeHitparadeMeldung(hitparadeBox) {
     if (!hitparadeBox) return;

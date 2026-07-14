@@ -4,6 +4,7 @@ const CACHE_NAME = 'asv-fangbuch-V31';
 const ASSETS = [
   './',
   './index.html',
+  './index.js', // NEU: Muss mit in den Cache, da hier jetzt dein Login drinsteckt!
   './icon.png',
   './manifest.json',
   './fang-eintragen.html',

@@ -26,9 +26,16 @@ function showLogin() {
     document.getElementById('app').innerHTML = `
         <h2>ASV Fangbuch V34</h2>
         <input type="email" id="email" placeholder="Deine E-Mail Adresse">
-        <button class="btn" onclick="pruefeEmailUndWeiter()">Weiter</button>
+        <button class="btn" onclick="performLogin()">Anmelden</button>
     `;
 }
+
+
+
+
+
+
+
 
 // SCHRITT 1: Prüfen, ob die E-Mail existiert
 async function pruefeEmailUndWeiter() {

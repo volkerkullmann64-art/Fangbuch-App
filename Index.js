@@ -1,301 +1,410 @@
-// ==========================================
-// 1. DATENBANK-INITIALISIERUNG (SUPABASE)
-// ==========================================
-const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Supabase initialisieren (Bitte URL und Key aus deiner anderen Datei einfügen!)
 
-// ==========================================
-// 2. OBERFLÄCHEN-STEUERUNG (VIEWS)
-// ==========================================
+        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
 
-// Zeigt das Haupt-Dashboard mit den Menü-Buttons
-function showDashboard() {
-    document.getElementById('app').innerHTML = `
-        <h2>Willkommen</h2>
-        <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
-        <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
-        <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
-        <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
-        <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
-    `;
-}
+        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 
-// Zeigt die Anmeldemaske
-function showLogin() {
-    document.getElementById('app').innerHTML = `
-        <h2>ASV Fangbuch</h2>
-        <input type="email" id="email" placeholder="Deine E-Mail Adresse">
-        <button class="btn" onclick="performLogin()">Anmelden</button>
-    `;
-}
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Zeigt die Registrierungsmaske für neue Vereinsmitglieder
-function showRegistration(email) {
-    document.getElementById('app').innerHTML = `
-        <h2>Mitglied registrieren</h2>
-        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-            Deine E-Mail ist noch nicht registriert. Bitte trage kurz deinen Namen ein, um dich einmalig anzumelden.
-        </p>
-        <input type="hidden" id="reg-email" value="${email}">
-        <input type="text" id="vorname" placeholder="Vorname">
-        <input type="text" id="nachname" placeholder="Nachname">
-        <button class="btn" onclick="performRegistration()">Registrieren & Anmelden</button>
-        <button class="btn" style="background-color: #757575; margin-top: 10px;" onclick="showLogin()">↩ Zurück</button>
-    `;
-}
 
-// ==========================================
-// 3. ANMELDUNG & REGISTRIERUNG LOGIK
-// ==========================================
 
-// Verarbeitet den Login-Versuch
-async function performLogin() {
-    const emailInput = document.getElementById('email').value.trim().toLowerCase();
-    if (emailInput !== "") {
-        
-        // Erster Login erfordert zwingend Internetverbindung
-        if (!navigator.onLine) {
-            alert("Für den ersten Login wird eine Internetverbindung benötigt.");
-            return;
+
+        // Zeige die Auswahl-Buttons
+
+        function showDashboard() {
+
+            document.getElementById('app').innerHTML = `
+
+                <h2>Willkommen</h2>
+
+                <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
+
+                <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
+
+                <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
+
+                <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
+
+                <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
+
+            `;
+
         }
+
+
+
+
+
+
+
+
+
+
+
+        // Zeige das Login-Formular
+
+        function showLogin() {
+
+            document.getElementById('app').innerHTML = `
+
+                <h2>ASV Fangbuch</h2>
+
+                <input type="email" id="email" placeholder="Deine E-Mail Adresse">
+
+
+
+
+
+                <button class="btn" onclick="performLogin()">Anmelden</button>
+
+            `;
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Login Logik
+
+      async function performLogin() {
+
+    const emailInput = document.getElementById('email').value.trim().toLowerCase();
+
+    if(emailInput !== "") {
+
+       
+
+        if (!navigator.onLine) {
+
+            alert("Für den ersten Login wird eine Internetverbindung benötigt.");
+
+            return;
+
+        }
+
+
 
         const { data, error } = await _supabase
+
             .from('mitglieder')
+
             .select('email, kennung')
+
             .eq('email', emailInput)
-            .maybeSingle();
 
-        if (error) {
-            console.error("Datenbankfehler bei Login:", error);
-            alert("Fehler bei der Anmeldung. Bitte versuche es erneut.");
-            return;
-        }
+            .single();
 
-        if (!data) {
-            // E-Mail noch nicht registriert -> Weiterleitung zur Registrierung
-            showRegistration(emailInput);
+
+
+        if (error || !data) {
+
+            alert("Zugriff verweigert: E-Mail nicht registriert.");
+
         } else {
+
             if (data.kennung === "0000") {
-                alert("Dieses Konto wurde zurückgesetzt oder gesperrt. Bitte wende dich an den Admin.");
+
+                alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+
                 return;
+
             }
+
+
 
             if (data.kennung) {
-                // Daten dauerhaft im Handy und temporär in der Session sichern
+
+                // HIER SICHERN WIR ES JETZT BOMBENFEST DAUERHAFT:
+
                 localStorage.setItem('userKennung', String(data.kennung));
+
                 localStorage.setItem('userEmailCache', String(emailInput));
-                
+
+               
+
                 sessionStorage.setItem('userEmail', emailInput);
+
                 sessionStorage.setItem('angemeldet', 'ja');
+
                 showDashboard();
+
             } else {
+
                 alert("Fehler: Keine Kennung hinterlegt.");
+
             }
+
         }
+
     } else {
+
         alert("Bitte E-Mail eingeben");
+
     }
+
 }
 
-// Verarbeitet die einmalige Neuregistrierung
-async function performRegistration() {
-    const email = document.getElementById('reg-email').value;
-    const vorname = document.getElementById('vorname').value.trim();
-    const nachname = document.getElementById('nachname').value.trim();
 
-    if (vorname === "" || nachname === "") {
-        alert("Bitte Vorname und Nachname eingeben!");
-        return;
-    }
 
-    // Erzeugt eine zufällige, 6-stellige Mitgliedsnummer
-    const neueKennung = String(Math.floor(100000 + Math.random() * 900000));
 
-    // In Supabase-Tabelle 'mitglieder' eintragen
-    const { error } = await _supabase
-        .from('mitglieder')
-        .insert([
-            { 
-                email: email, 
-                vorname: vorname, 
-                nachname: nachname, 
-                kennung: neueKennung 
-            }
-        ]);
 
-    if (error) {
-        console.error("Registrierungsfehler:", error);
-        alert("Fehler bei der Registrierung: " + error.message);
-        return;
-    }
 
-    // Direkt nach erfolgreichem Eintrag einloggen
-    localStorage.setItem('userKennung', neueKennung);
-    localStorage.setItem('userEmailCache', email);
-    
-    sessionStorage.setItem('userEmail', email);
-    sessionStorage.setItem('angemeldet', 'ja');
-    
-    alert(`Willkommen beim ASV, ${vorname}! Dein Gerät wurde erfolgreich freigeschaltet.`);
-    showDashboard();
-}
 
-// Löscht die temporäre Session und verabschiedet den Nutzer sauber
-function beendeProgramm() {
-    sessionStorage.clear();
-    
-    window.close(); // Versucht den Tab zu schließen
-    
-    // Fallback falls Browser das Schließen blockiert
-    document.getElementById('app').innerHTML = `
-        <h2>Auf Wiedersehen!</h2>
-        <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
-        <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
-    `;
-}
 
-// ==========================================
-// 4. OFFLINE-FALLBACKS & AUTO-SYNC
-// ==========================================
 
-// Versucht lokal zwischengespeicherte Fänge zu Supabase zu übertragen
-async function trySyncOfflineFange() {
-    const syncStatusBadge = document.getElementById('sync-status');
-    let q = [];
-    try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
 
-    // Wenn keine Offline-Fänge da sind, die Infobox komplett ausblenden
-    if (!q || q.length === 0) {
-        if (syncStatusBadge) syncStatusBadge.style.display = 'none';
-        return;
-    }
 
-    // Box anzeigen (platziert über dem App-Dashboard)
-    if (syncStatusBadge) {
-        syncStatusBadge.style.display = 'block';
-        syncStatusBadge.textContent = `${q.length} Fang/Fänge im Funkloch gespeichert. Automatische Synchronisation läuft bei Internetverbindung...`;
-    }
+        // Funktion zum Beenden des Programms
 
-    // Wenn Netz da ist, direkt abarbeiten
-    if (navigator.onLine) {
-        if (syncStatusBadge) syncStatusBadge.textContent = `🔄 Synchronisiere ${q.length} Fänge mit der Datenbank...`;
-        
-        let erfolgreicheIndizes = [];
-        for (let i = 0; i < q.length; i++) {
-            try {
-                const { error } = await _supabase.from('fangbuch-asv-langschede').insert([q[i]]);
-                if (!error) erfolgreicheIndizes.push(i);
-            } catch(e) {
-                console.error("Netzwerkfehler beim automatischen Sync:", e);
-            }
+        function beendeProgramm() {
+
+            sessionStorage.clear(); // Löscht die temporäre Anmeldung für die Unterseiten
+
+           
+
+            // Erst versuchen wir das Fenster zu schließen
+
+            window.close();
+
+           
+
+            // Falls der Browser das Schließen blockiert, zeigen wir eine saubere Verabschiedung
+
+            document.getElementById('app').innerHTML = `
+
+                <h2>Auf Wiedersehen!</h2>
+
+                <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
+
+                <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
+
+            `;
+
         }
 
-        // Erfolgreiche Einträge aus der Warteschlange filtern
-        q = q.filter((item, index) => !erfolgreicheIndizes.includes(index));
-        localStorage.setItem('offlineFange', JSON.stringify(q));
 
-        if (q.length === 0) {
-            if (syncStatusBadge) syncStatusBadge.style.display = 'none';
-            alert("🎉 Deine Offline-Fänge wurden erfolgreich im Hintergrund hochgeladen!");
-        } else {
-            if (syncStatusBadge) syncStatusBadge.textContent = `⚠️ ${q.length} Fänge warten auf stabilere Verbindung.`;
-        }
-    }
-}
 
-// Initialisierung beim Laden der App
-window.onload = async function() {
+
+
+
+
+
+
+
+
+
+
+        // Beim Starten della Seite prüfen
+
+      window.onload = async function() {
+
+    // Holt die Daten aus dem dauerhaften Handyspeicher
+
     const gespeicherteKennung = localStorage.getItem('userKennung');
+
     const gecachteEmail = localStorage.getItem('userEmailCache');
 
-    // Sofortige Überprüfung auf Offline-Fänge und EventListener für Netzwechsel
+
+
+    // Prüfe sofort bei App-Start, ob noch ungesendete Offline-Fänge vorliegen
+
     trySyncOfflineFange();
+
     window.addEventListener('online', trySyncOfflineFange);
 
-    // ABSOLUTER OFFLINE-FAILSAFE: Einloggen im Funkloch ermöglichen
+
+
+    // NEU: Absoluter Offline-Failsafe für das Funkloch
+
     if (!navigator.onLine) {
+
         if (gecachteEmail || gespeicherteKennung) {
+
             console.log("Offline-Modus aktiv. Verwende gecachte Sitzung.");
+
             sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
+
             sessionStorage.setItem('angemeldet', 'ja');
+
             showDashboard();
+
             return;
+
         } else {
+
+            // Wenn das Handy noch NIE online eingeloggt war und kein Cache da ist
+
             showLogin();
+
             return;
+
         }
+
     }
 
-    // ONLINE-FALL: Aktiver Abgleich gegen die Supabase-Datenbank
+    // ONLINE-FALL (Deine originale Prüfung gegen Supabase läuft nur, wenn Netz da ist)
+
     if (gespeicherteKennung) {
+
         try {
+
             const { data, error } = await _supabase
+
                 .from('mitglieder')
+
                 .select('email, kennung')
+
                 .eq('kennung', gespeicherteKennung)
+
                 .maybeSingle();
 
+
+
             if (error || !data || data.kennung === "0000") {
-                // Bei Misserfolg oder ungültiger Kennung den Cache bereinigen
+
                 localStorage.clear();
+
                 sessionStorage.clear();
+
                 showLogin();
+
             } else {
+
                 localStorage.setItem('userEmailCache', data.email);
+
                 localStorage.setItem('userKennung', data.kennung);
+
                 sessionStorage.setItem('userEmail', data.email);
+
                 sessionStorage.setItem('angemeldet', 'ja');
+
                 showDashboard();
+
             }
+
         } catch (e) {
-            // Falls beim API-Call das Netz einbricht, auf den lokalen Cache ausweichen
+
+            // Falls das Internet mitten in der Abfrage wegstirbt
+
             if (gecachteEmail) {
+
                 sessionStorage.setItem('userEmail', gecachteEmail);
+
                 sessionStorage.setItem('angemeldet', 'ja');
+
                 showDashboard();
+
             } else {
+
                 showLogin();
+
             }
+
         }
+
     } else {
+
         showLogin();
+
     }
+
 };
 
-// ==========================================
-// 5. SERVICE WORKER REGISTRIERUNG
-// ==========================================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-                console.log('Service Worker registriert!', reg);
-                
-                // Auf Hintergrund-Updates prüfen
-                reg.onupdatefound = () => {
-                    const installingWorker = reg.installing;
-                    if (installingWorker) {
-                        installingWorker.onstatechange = () => {
-                            if (installingWorker.state === 'installed') {
-                                if (navigator.serviceWorker.controller) {
-                                    console.log('Neue App-Version installiert. Lade neu...');
-                                    window.location.reload();
-                                }
-                            }
-                        };
-                    }
-                };
-            })
-            .catch(err => console.error('Service Worker Fehler:', err));
-    });
-    
-    // Verhindert Endlosschleifen beim Neuladen nach Update
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
+
+
+
+
+
+
+
+
+async function trySyncOfflineFange() {
+
+    const syncStatusBadge = document.getElementById('sync-status');
+
+    let q = [];
+
+    try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
+
+
+
+    // Wenn die Warteschlange leer ist, blende die Box komplett aus
+
+    if (!q || q.length === 0) {
+
+        if(syncStatusBadge) syncStatusBadge.style.display = 'none';
+
+        return;
+
+    }
+
+
+
+    // Box anzeigen (sie sitzt jetzt sicher über den Buttons)
+
+    if(syncStatusBadge) {
+
+        syncStatusBadge.style.display = 'block';
+
+        syncStatusBadge.textContent = `${q.length} Fang/Fänge im Funkloch gespeichert. Automatische Synchronisation läuft, sobald Internet da ist...`;
+
+    }
+
+
+
+    if (navigator.onLine) {
+
+        if(syncStatusBadge) syncStatusBadge.textContent = `🔄 Synchronisiere ${q.length} Fänge mit der Datenbank...`;
+
+       
+
+        let erfolgreicheIndizes = [];
+
+        for (let i = 0; i < q.length; i++) {
+
+            try {
+
+                const { error } = await _supabase.from('fangbuch-asv-langschede').insert([q[i]]);
+
+                if (!error) erfolgreicheIndizes.push(i);
+
+            } catch(e) {
+
+                console.error("Netzwerkfehler beim automatischen Sync:", e);
+
+            }
+
         }
-    });
-}
+
+
+
+        q = q.filter((item, index) => !erfolgreicheIndizes.includes(index));
+
+        localStorage.setItem('offlineFange', JSON.stringify(q));
+
+
+
+        if (q.length === 0) {
+
+            if(syncStatusBadge) syncStatusBadge.style.display = 'none';
+
+            alert("🎉 Deine Offline-Fänge wurden erfolgreich im Hintergrund hochgeladen!");
+
+        } else {
+
+            if(syncStatusBadge) syncStatusBadge.textContent = `⚠️ ${q.length} Fänge warten auf stabilere Verbindung.`;
+
+        }
+
+    }
+
+} 

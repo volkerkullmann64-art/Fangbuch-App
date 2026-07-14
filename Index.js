@@ -1,15 +1,15 @@
-// Supabase initialisieren
+/ Supabase initialisieren
 const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Hilfsfunktion: Generiert eine zufällige Kennung (z.B. ASV-4829)
 function generiereKennung() {
-    const zufallsZahl = Math.floor(1000 + Math.random() * 9000); // 4-stellige Zahl
+    const zufallsZahl = Math.floor(1000 + Math.random() * 9000);
     return `ASV-${zufallsZahl}`;
 }
 
-// Zeige die Auswahl-Buttons
+// Zeige die Auswahl-Buttons (Dashboard)
 function showDashboard() {
     document.getElementById('app').innerHTML = `
         <h2>Willkommen</h2>
@@ -21,7 +21,7 @@ function showDashboard() {
     `;
 }
 
-// Zeige das Login-Formular (Schritt 1: Nur E-Mail)
+// Zeige das Login-Formular (V34)
 function showLogin() {
     document.getElementById('app').innerHTML = `
         <h2>ASV Fangbuch V34</h2>
@@ -30,61 +30,62 @@ function showLogin() {
     `;
 }
 
-
-
-
-
-
-
-
-// SCHRITT 1: Prüfen, ob die E-Mail existiert
-async function pruefeEmailUndWeiter() {
+// Login-Weiche
+async function performLogin() {
     const emailInput = document.getElementById('email').value.trim().toLowerCase();
-    
-    if(emailInput !== "") {
+    if (emailInput !== "") {
         if (!navigator.onLine) {
             alert("Für den ersten Login wird eine Internetverbindung benötigt.");
             return;
         }
 
-        // Suchen in der Supabase-Tabelle "mitglieder"
-        const { data, error } = await _supabase
-            .from('mitglieder')
-            .select('email, kennung')
-            .eq('email', emailInput)
-            .maybeSingle(); // Verhindert Fehler, wenn kein Eintrag gefunden wird
+        try {
+            // Suchen in der Supabase-Tabelle "mitglieder"
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('email, kennung')
+                .eq('email', emailInput)
+                .maybeSingle(); // maybeSingle() crasht nicht bei unbekannten E-Mails
 
-        if (error) {
-            alert("Fehler bei der Datenbankabfrage: " + error.message);
-            return;
-        }
-
-        if (data) {
-            // FALL A: E-Mail existiert bereits -> Direkt einloggen
-            if (data.kennung === "0000") {
-                alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+            if (error) {
+                alert("Fehler bei der Datenbankabfrage: " + error.message);
                 return;
             }
 
-            localStorage.setItem('userKennung', String(data.kennung));
-            localStorage.setItem('userEmailCache', String(emailInput));
-            sessionStorage.setItem('userEmail', emailInput);
-            sessionStorage.setItem('angemeldet', 'ja');
-            showDashboard();
-        } else {
-            // FALL B: E-Mail existiert NICHT -> Felder für Registrierung einblenden
-            zeigeRegistrierung(emailInput);
+            if (data) {
+                // FALL A: E-Mail existiert bereits -> Normaler Login
+                if (data.kennung === "0000") {
+                    alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+                    return;
+                }
+
+                if (data.kennung) {
+                    localStorage.setItem('userKennung', String(data.kennung));
+                    localStorage.setItem('userEmailCache', String(emailInput));
+                    
+                    sessionStorage.setItem('userEmail', emailInput);
+                    sessionStorage.setItem('angemeldet', 'ja');
+                    showDashboard();
+                } else {
+                    alert("Fehler: Keine Kennung hinterlegt.");
+                }
+            } else {
+                // FALL B: E-Mail existiert NICHT -> Registrierungs-Felder einblenden
+                zeigeRegistrierung(emailInput);
+            }
+        } catch (e) {
+            alert("Fehler beim Login: " + e.message);
         }
     } else {
         alert("Bitte E-Mail eingeben");
     }
 }
 
-// SCHRITT 2: Neue Eingabemaske für Vorname und Name anzeigen
+// Eingabemaske für Vorname und Name anzeigen
 function zeigeRegistrierung(email) {
     document.getElementById('app').innerHTML = `
-        <h2>Neu registrieren</h2>
-        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+        <h2>Neu registrieren V34</h2>
+        <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
             Deine E-Mail <b>${email}</b> ist noch nicht registriert. Bitte trage deine Daten ein:
         </p>
         <input type="text" id="vorname" placeholder="Vorname">
@@ -94,7 +95,7 @@ function zeigeRegistrierung(email) {
     `;
 }
 
-// SCHRITT 3: Neuen User in Supabase speichern
+// Neuen User in Supabase speichern
 async function performRegistrierung(email) {
     const vornameInput = document.getElementById('vorname').value.trim();
     const nachnameInput = document.getElementById('nachname').value.trim();
@@ -104,36 +105,37 @@ async function performRegistrierung(email) {
         return;
     }
 
-    // Kurze Sicherheitsabfrage
     const bestaetigung = confirm(`Sind diese Daten korrekt?\n\nVorname: ${vornameInput}\nName: ${nachnameInput}\nE-Mail: ${email}`);
     if (!bestaetigung) return;
 
-    // Generiere neue Kennung
     const neueKennung = generiereKennung();
 
-    // In Supabase eintragen (Spalten klein: vorname, name, email, kennung)
-    const { error } = await _supabase
-        .from('mitglieder')
-        .insert([
-            { 
-                vorname: vornameInput, 
-                name: nachnameInput, 
-                email: email, 
-                kennung: neueKennung 
-            }
-        ]);
+    try {
+        const { error } = await _supabase
+            .from('mitglieder')
+            .insert([
+                { 
+                    vorname: vornameInput, 
+                    name: nachnameInput, 
+                    email: email, 
+                    kennung: neueKennung 
+                }
+            ]);
 
-    if (error) {
-        alert("Registrierung fehlgeschlagen: " + error.message);
-    } else {
-        // Erfolgreich eingetragen -> Lokal sichern und ab ins Dashboard
-        localStorage.setItem('userKennung', neueKennung);
-        localStorage.setItem('userEmailCache', email);
-        sessionStorage.setItem('userEmail', email);
-        sessionStorage.setItem('angemeldet', 'ja');
-        
-        alert(`Willkommen beim ASV Langschede!\nDeine persönliche Kennung lautet: ${neueKennung}`);
-        showDashboard();
+        if (error) {
+            alert("Registrierung fehlgeschlagen: " + error.message);
+        } else {
+            // Erfolgreich eingetragen -> Lokal speichern und einloggen
+            localStorage.setItem('userKennung', neueKennung);
+            localStorage.setItem('userEmailCache', email);
+            sessionStorage.setItem('userEmail', email);
+            sessionStorage.setItem('angemeldet', 'ja');
+            
+            alert(`Willkommen beim ASV Langschede!\nDeine persönliche Kennung lautet: ${neueKennung}`);
+            showDashboard();
+        }
+    } catch (e) {
+        alert("Fehler bei der Registrierung: " + e.message);
     }
 }
 
@@ -142,7 +144,7 @@ function beendeProgramm() {
     sessionStorage.clear();
     window.close();
     document.getElementById('app').innerHTML = `
-        <h2>Auf Wiedersehen!</h2>
+        <h2>Auf Wiedersehen! (V34)</h2>
         <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
         <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
     `;
@@ -202,7 +204,7 @@ window.onload = async function() {
     }
 };
 
-// Offline-Synchronisation
+// Offline-Fänge im Funkloch synchronisieren
 async function trySyncOfflineFange() {
     const syncStatusBadge = document.getElementById('sync-status');
     let q = [];

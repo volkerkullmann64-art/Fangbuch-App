@@ -1,50 +1,46 @@
-  // Supabase initialisieren (Bitte URL und Key aus deiner anderen Datei einfügen!)
-        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Supabase initialisieren (Bitte URL und Key aus deiner anderen Datei einfügen!)
+const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Zeige die Auswahl-Buttons
+function showDashboard() {
+    document.getElementById('app').innerHTML = `
+        <h2>Willkommen</h2>
+        <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
+        <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
+        <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
+        <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
+        <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
+    `;
+}
 
+// Zeige das Login-Formular
+function showLogin() {
+    document.getElementById('app').innerHTML = `
+        <h2>ASV Fangbuch</h2>
+        <input type="email" id="email" placeholder="Deine E-Mail Adresse">
+        <button class="btn" onclick="performLogin()">Anmelden</button>
+    `;
+}
 
+// Zeige die einmalige Registrierung, falls die E-Mail unbekannt ist
+function showRegistration(email) {
+    document.getElementById('app').innerHTML = `
+        <h2>Mitglied registrieren</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Deine E-Mail ist noch nicht registriert. Bitte trage kurz deinen Namen ein, um dich einmalig anzumelden.</p>
+        <input type="hidden" id="reg-email" value="${email}">
+        <input type="text" id="vorname" placeholder="Vorname">
+        <input type="text" id="nachname" placeholder="Nachname">
+        <button class="btn" onclick="performRegistration()">Registrieren & Anmelden</button>
+        <button class="btn" style="background-color: #757575; margin-top: 10px;" onclick="showLogin()">↩ Zurück</button>
+    `;
+}
 
-
-
-
-        // Zeige die Auswahl-Buttons
-        function showDashboard() {
-            document.getElementById('app').innerHTML = `
-                <h2>Willkommen</h2>
-                <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
-                <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
-                <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
-                <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
-                <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
-            `;
-        }
-
-
-
-
-
-        // Zeige das Login-Formular
-        function showLogin() {
-            document.getElementById('app').innerHTML = `
-                <h2>ASV Fangbuch</h2>
-                <input type="email" id="email" placeholder="Deine E-Mail Adresse">
-
-
-                <button class="btn" onclick="performLogin()">Anmelden</button>
-            `;
-        }
-
-
-
-
-
-
-        // Login Logik
-      async function performLogin() {
+// Login Logik
+async function performLogin() {
     const emailInput = document.getElementById('email').value.trim().toLowerCase();
-    if(emailInput !== "") {
+    if (emailInput !== "") {
         
         if (!navigator.onLine) {
             alert("Für den ersten Login wird eine Internetverbindung benötigt.");
@@ -55,13 +51,20 @@
             .from('mitglieder')
             .select('email, kennung')
             .eq('email', emailInput)
-            .single();
+            .maybeSingle(); // Verhindert einen Fehler, falls die E-Mail nicht existiert
 
-        if (error || !data) {
-            alert("Zugriff verweigert: E-Mail nicht registriert.");
+        if (error) {
+            console.error("Datenbankfehler bei Login:", error);
+            alert("Fehler bei der Anmeldung. Bitte versuche es erneut.");
+            return;
+        }
+
+        if (!data) {
+            // E-Mail unbekannt -> Registrierungs-Fenster anzeigen
+            showRegistration(emailInput);
         } else {
             if (data.kennung === "0000") {
-                alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+                alert("Dieses Konto wurde zurückgesetzt oder gesperrt. Bitte wende dich an den Admin.");
                 return;
             }
 
@@ -82,32 +85,66 @@
     }
 }
 
+// Einmalige Registrierungs-Logik
+async function performRegistration() {
+    const email = document.getElementById('reg-email').value;
+    const vorname = document.getElementById('vorname').value.trim();
+    const nachname = document.getElementById('nachname').value.trim();
 
+    if (vorname === "" || nachname === "") {
+        alert("Bitte Vorname und Nachname eingeben!");
+        return;
+    }
 
+    // Generiert eine zufällige, eindeutige 6-stellige Kennung (z.B. 741938)
+    const neueKennung = String(Math.floor(100000 + Math.random() * 900000));
 
+    // Neuen Angler in die Tabelle eintragen
+    const { error } = await _supabase
+        .from('mitglieder')
+        .insert([
+            { 
+                email: email, 
+                vorname: vorname, 
+                nachname: nachname, 
+                kennung: neueKennung 
+            }
+        ]);
 
-        // Funktion zum Beenden des Programms
-        function beendeProgramm() {
-            sessionStorage.clear(); // Löscht die temporäre Anmeldung für die Unterseiten
-            
-            // Erst versuchen wir das Fenster zu schließen
-            window.close();
-            
-            // Falls der Browser das Schließen blockiert, zeigen wir eine saubere Verabschiedung
-            document.getElementById('app').innerHTML = `
-                <h2>Auf Wiedersehen!</h2>
-                <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
-                <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
-            `;
-        }
+    if (error) {
+        console.error("Registrierungsfehler:", error);
+        alert("Fehler bei der Registrierung: " + error.message);
+        return;
+    }
 
+    // Erfolgreich registriert! Direkt einloggen
+    localStorage.setItem('userKennung', neueKennung);
+    localStorage.setItem('userEmailCache', email);
+    
+    sessionStorage.setItem('userEmail', email);
+    sessionStorage.setItem('angemeldet', 'ja');
+    
+    alert(`Willkommen beim ASV, ${vorname}! Dein Gerät wurde erfolgreich freigeschaltet.`);
+    showDashboard();
+}
 
+// Funktion zum Beenden des Programms
+function beendeProgramm() {
+    sessionStorage.clear(); // Löscht die temporäre Anmeldung für die Unterseiten
+    
+    // Erst versuchen wir das Fenster zu schließen
+    window.close();
+    
+    // Falls der Browser das Schließen blockiert, zeigen wir eine saubere Verabschiedung
+    document.getElementById('app').innerHTML = `
+        <h2>Auf Wiedersehen!</h2>
+        <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
+        <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
+    `;
+}
 
-
-
-
-        // Beim Starten della Seite prüfen
-      window.onload = async function() {
+// Beim Starten der Seite prüfen
+window.onload = async function() {
     // Holt die Daten aus dem dauerhaften Handyspeicher
     const gespeicherteKennung = localStorage.getItem('userKennung');
     const gecachteEmail = localStorage.getItem('userEmailCache');
@@ -164,9 +201,6 @@
         showLogin();
     }
 };
-
-
-
 
 async function trySyncOfflineFange() {
     const syncStatusBadge = document.getElementById('sync-status');

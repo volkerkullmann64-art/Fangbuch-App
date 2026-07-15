@@ -18,7 +18,7 @@ function showDashboard() {
 // Zeige das Login-Formular
 function showLogin() {
     document.getElementById('app').innerHTML = `
-        <h2>ASV FangbuchV46</h2>
+        <h2>ASV FangbuchV47</h2>
         <input type="email" id="email" placeholder="Deine E-Mail Adresse">
         
         <div id="register-fields" style="display: none; margin-bottom: 15px; text-align: left;">
@@ -143,26 +143,43 @@ function beendeProgramm() {
         console.log("Browser blockiert Schließen:", e);
     }
     
-    // 3. Das Verabschiedungs-Fenster sicher in das 'app'-Element schreiben
-    const appBox = document.getElementById('app');
-    if (appBox) {
-        appBox.innerHTML = `
-            <h2>Auf Wiedersehen!</h2>
-            <p style="color: #2e7d32; font-weight: bold; margin-top: 20px;">Das Programm wurde ordnungsgemäß beendet.</p>
-            <p style="color: #666; font-size: 14px; margin-top: 10px;">Deine Sitzung wurde sicher geschlossen.</p>
-            <p style="color: #999; font-size: 14px; margin-top: 20px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
-        `;
-    } else {
-        // Sicherheits-Fallback, falls 'app' nicht gefunden wird (überschreibt die ganze Seite)
-        document.body.innerHTML = `
-            <div style="text-align: center; margin-top: 100px; font-family: sans-serif;">
-                <h2>Auf Wiedersehen!</h2>
-                <p>Das Programm wurde ordnungsgemäß beendet.</p>
-                <p>Du kannst diesen Tab jetzt schließen.</p>
+    // 3. Wir schreiben das Verabschiedungs-Fenster direkt auf den gesamten Bildschirm (body).
+    // Das klappt GARANTIERT immer, egal in welchem Zustand die App gerade ist!
+    document.body.innerHTML = `
+        <div style="
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            text-align: center; 
+            font-family: Arial, sans-serif; 
+            background-color: #f9f9f9; 
+            padding: 20px; 
+            box-sizing: border-box;
+        ">
+            <div style="
+                background: white; 
+                padding: 30px; 
+                border-radius: 12px; 
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+                max-width: 400px; 
+                width: 100%;
+            ">
+                <h2 style="color: #2e7d32; margin-top: 0;">Auf Wiedersehen!</h2>
+                <p style="color: #2e7d32; font-weight: bold; margin-top: 20px;">Das Programm wurde ordnungsgemäß beendet.</p>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">Deine Sitzung wurde sicher geschlossen.</p>
+                <p style="color: #999; font-size: 14px; margin-top: 20px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
             </div>
-        `;
-    }
+        </div>
+    `;
 }
+
+
+
+
+
+
 
 // Beim Starten der Seite prüfen
 window.onload = async function() {

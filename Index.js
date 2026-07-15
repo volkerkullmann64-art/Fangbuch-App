@@ -144,7 +144,7 @@ async function trySyncOfflineFange() {
     let q = [];
     try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
 
-    // Wenn die Warteschlange leer ist, blende die Box komplett aus
+    // Wenn die Warteschlange leer ist, blende die Box komplett auss
     if (!q || q.length === 0) {
         if(syncStatusBadge) syncStatusBadge.style.display = 'none';
         return;

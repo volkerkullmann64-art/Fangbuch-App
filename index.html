@@ -1,57 +1,452 @@
 <!DOCTYPE html>
+
 <html lang="de">
+
 <head>
 
+
+
     <meta name="apple-mobile-web-app-capable" content="yes">
+
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="ASV Fangbuch V34">
+
+    <meta name="apple-mobile-web-app-title" content="ASV Fangbuch">
+
     <link rel="apple-touch-icon" href="icon.png">
+
+
 
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
+   
+
     <!-- Hier sind die neuen, wichtigen Zeilen für dein Fisch-Icon -->
+
     <link rel="manifest" href="manifest.json">
+
     <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+
     <link rel="apple-touch-icon" href="icon.png">
 
+
+
     <title>ASV Langschede Fangbuch</title>
+
     <!-- Supabase Client Bibliothek laden -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
+
         body { font-family: 'Segoe UI', sans-serif; background-color: #e8f5e9; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+
         .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 320px; box-sizing: border-box; }
+
         h2 { color: #2e7d32; margin-bottom: 20px; }
+
         .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; background-color: #2e7d32; color: white; font-size: 16px; cursor: pointer; }
+
         input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        
+
+       
+
         /* Die Box kriegt ein festes Layout, damit sie niemals zur Seite rutschen kann */
+
         #sync-status { width: 320px; box-sizing: border-box; background-color: #fff9c4; color: #f57f17; padding: 12px; margin-bottom: 15px; border-radius: 10px; text-align: center; font-weight: bold; border: 1px solid #fbc02d; font-size: 14px; }
+
     </style>
+
 </head>
+
 <body>
 
+
+
     <!-- Die Status-Box für das Funkloch -->
+
     <div id="sync-status" style="display: none;"></div>
 
+
+
     <!-- Die Hauptbox, in die das Programm das Login oder die Knöpfe zeichnet -->
+
     <div class="container" id="app">
+
         <h2>Lade Programm...</h2>
+
     </div>
 
-    <!-- HIER binden wir jetzt deine externe index.js sauber an -->
-    <script src="index.js?v=34"></script>
 
-    <!-- Der Anlasser für deinen Service-Worker -->
+
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registriert!', reg))
-                    .catch(err => console.error('Service Worker Fehler:', err));
-            });
+
+        // Supabase initialisieren
+
+        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+
+        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+
+        // Zeige die Auswahl-Buttons
+
+        function showDashboard() {
+
+            document.getElementById('app').innerHTML = `
+
+                <h2>Willkommen</h2>
+
+                <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
+
+                <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
+
+                <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
+
+                <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
+
+                <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
+
+            `;
+
         }
+
+
+
+        // Zeige das Login-Formular
+
+        function showLogin() {
+
+            document.getElementById('app').innerHTML = `
+
+                <h2>ASV Fangbuch</h2>
+
+                <input type="email" id="email" placeholder="Deine E-Mail Adresse">
+
+                <button class="btn" onclick="performLogin()">Anmelden</button>
+
+            `;
+
+        }
+
+
+
+        // Login Logik
+
+        async function performLogin() {
+
+            const emailInput = document.getElementById('email').value.trim().toLowerCase();
+
+            if(emailInput !== "") {
+
+                if (!navigator.onLine) {
+
+                    alert("Für den ersten Login wird eine Internetverbindung benötigt.");
+
+                    return;
+
+                }
+
+
+
+                const { data, error } = await _supabase
+
+                    .from('mitglieder')
+
+                    .select('email, kennung')
+
+                    .eq('email', emailInput)
+
+                    .single();
+
+
+
+                if (error || !data) {
+
+                    alert("Zugriff verweigert: E-Mail nicht registriert.");
+
+                } else {
+
+                    if (data.kennung === "0000") {
+
+                        alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+
+                        return;
+
+                    }
+
+
+
+                    if (data.kennung) {
+
+                        localStorage.setItem('userKennung', String(data.kennung));
+
+                        localStorage.setItem('userEmailCache', String(emailInput));
+
+                       
+
+                        sessionStorage.setItem('userEmail', emailInput);
+
+                        sessionStorage.setItem('angemeldet', 'ja');
+
+                        showDashboard();
+
+                    } else {
+
+                        alert("Fehler: Keine Kennung hinterlegt.");
+
+                    }
+
+                }
+
+            } else {
+
+                alert("Bitte E-Mail eingeben");
+
+            }
+
+        }
+
+
+
+        // Funktion zum Beenden des Programms
+
+        function beendeProgramm() {
+
+            sessionStorage.clear();
+
+            window.close();
+
+            document.getElementById('app').innerHTML = `
+
+                <h2>Auf Wiedersehen!</h2>
+
+                <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
+
+                <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
+
+            `;
+
+        }
+
+
+
+        // Beim Starten der Seite prüfen
+
+        window.onload = async function() {
+
+            const gespeicherteKennung = localStorage.getItem('userKennung');
+
+            const gecachteEmail = localStorage.getItem('userEmailCache');
+
+
+
+            trySyncOfflineFange();
+
+            window.addEventListener('online', trySyncOfflineFange);
+
+
+
+            if (!navigator.onLine) {
+
+                if (gecachteEmail || gespeicherteKennung) {
+
+                    console.log("Offline-Modus aktiv. Verwende gecachte Sitzung.");
+
+                    sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
+
+                    sessionStorage.setItem('angemeldet', 'ja');
+
+                    showDashboard();
+
+                    return;
+
+                } else {
+
+                    showLogin();
+
+                    return;
+
+                }
+
+            }
+
+
+
+            if (gespeicherteKennung) {
+
+                try {
+
+                    const { data, error } = await _supabase
+
+                        .from('mitglieder')
+
+                        .select('email, kennung')
+
+                        .eq('kennung', gespeicherteKennung)
+
+                        .maybeSingle();
+
+
+
+                    if (error || !data || data.kennung === "0000") {
+
+                        localStorage.clear();
+
+                        sessionStorage.clear();
+
+                        showLogin();
+
+                    } else {
+
+                        localStorage.setItem('userEmailCache', data.email);
+
+                        localStorage.setItem('userKennung', data.kennung);
+
+                        sessionStorage.setItem('userEmail', data.email);
+
+                        sessionStorage.setItem('angemeldet', 'ja');
+
+                        showDashboard();
+
+                    }
+
+                } catch (e) {
+
+                    if (gecachteEmail) {
+
+                        sessionStorage.setItem('userEmail', gecachteEmail);
+
+                        sessionStorage.setItem('angemeldet', 'ja');
+
+                        showDashboard();
+
+                    } else {
+
+                        showLogin();
+
+                    }
+
+                }
+
+            } else {
+
+                showLogin();
+
+            }
+
+        };
+
+
+
+        async function trySyncOfflineFange() {
+
+            const syncStatusBadge = document.getElementById('sync-status');
+
+            let q = [];
+
+            try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
+
+
+
+            if (!q || q.length === 0) {
+
+                if(syncStatusBadge) syncStatusBadge.style.display = 'none';
+
+                return;
+
+            }
+
+
+
+            if(syncStatusBadge) {
+
+                syncStatusBadge.style.display = 'block';
+
+                syncStatusBadge.textContent = `${q.length} Fang/Fänge im Funkloch gespeichert. Automatische Synchronisation läuft, sobald Internet da ist...`;
+
+            }
+
+
+
+            if (navigator.onLine) {
+
+                if(syncStatusBadge) syncStatusBadge.textContent = `🔄 Synchronisiere ${q.length} Fänge mit der Datenbank...`;
+
+               
+
+                let erfolgreicheIndizes = [];
+
+                for (let i = 0; i < q.length; i++) {
+
+                    try {
+
+                        const { error } = await _supabase.from('fangbuch-asv-langschede').insert([q[i]]);
+
+                        if (!error) erfolgreicheIndizes.push(i);
+
+                    } catch(e) {
+
+                        console.error("Netzwerkfehler beim automatischen Sync:", e);
+
+                    }
+
+                }
+
+
+
+                q = q.filter((item, index) => !erfolgreicheIndizes.includes(index));
+
+                localStorage.setItem('offlineFange', JSON.stringify(q));
+
+
+
+                if (q.length === 0) {
+
+                    if(syncStatusBadge) syncStatusBadge.style.display = 'none';
+
+                    alert("🎉 Deine Offline-Fänge wurden erfolgreich im Hintergrund hochgeladen!");
+
+                } else {
+
+                    if(syncStatusBadge) syncStatusBadge.textContent = `⚠️ ${q.length} Fänge warten auf stabilere Verbindung.`;
+
+                }
+
+            }
+
+        }
+
     </script>
 
+
+
+    <!-- Der Anlasser für deinen Service-Worker -->
+
+    <script>
+
+        if ('serviceWorker' in navigator) {
+
+            window.addEventListener('load', () => {
+
+                navigator.serviceWorker.register('./sw.js')
+
+                    .then(reg => console.log('Service Worker registriert!', reg))
+
+                    .catch(err => console.error('Service Worker Fehler:', err));
+
+            });
+
+        }
+
+    </script>
+
+
+
 </body>
-</html>
+
+</html> 
+

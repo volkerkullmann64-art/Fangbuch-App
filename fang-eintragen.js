@@ -476,3 +476,36 @@ async function holeMindestLaengeFuerHitparade(fischart) {
         return 0; // Im Zweifel erlauben wir den Hinweis
     }
 }
+function beendeProgrammAusUnterseite() {
+    sessionStorage.clear(); 
+    window.close();
+    
+    document.body.innerHTML = `
+        <div style="
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background-color: #f4f7f5;
+            text-align: center;
+            padding: 15px;
+        ">
+            <div style="
+                background: white; 
+                padding: 40px 20px; 
+                border-radius: 12px; 
+                box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+                max-width: 320px;
+                width: 100%;
+                box-sizing: border-box;
+            ">
+                <h2 style="color: #2e5a44; margin-bottom: 20px;">Auf Wiedersehen!</h2>
+                <p style="color: #333; font-weight: bold; margin-bottom: 10px;">Das Programm wurde ordnungsgemäß beendet.</p>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Deine Sitzung wurde sicher geschlossen.</p>
+                <p style="color: #999; font-size: 13px; line-height: 1.4;">Du kannst diesen Browser-Tab jetzt einfach schließen oder wegwischen.</p>
+            </div>
+        </div>
+    `;
+}

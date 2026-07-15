@@ -37,7 +37,7 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    }).then(() => self.clients.claim()) // Übernimmt sofort die Kontrolle über alle offenen Tabs
+    }).then(() => self.clients.claim()) // Übernimmt sofort die Kontrolle über alle offenen Tabss
   );
 });
 

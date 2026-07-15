@@ -6,7 +6,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Zeige die Auswahl-Buttons
 function showDashboard() {
     document.getElementById('app').innerHTML = `
-        <h2>WillkommenV42</h2>
+        <h2>WillkommenV43</h2>
         <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
         <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>

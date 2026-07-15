@@ -2,18 +2,17 @@ const CACHE_NAME = 'asv-fangbuch-V37';
 
 // Hier stehen jetzt ALLE Dateien drin, die zu deiner App gehören!
 const ASSETS = [
-  './',
-  './index.html',
-  './index.js', // NEU: Muss mit in den Cache, da hier jetzt dein Login drinsteckt!
-  './icon.png',
-  './manifest.json',
-  './fang-eintragen.html',
-  './fang-eintragen.js',
-  './auswertung.html',
-  './auswertung.js',
-  './partner.html',
-  './galerie.html',
-  './galerie.js'
+  'index.html',
+  'index.js',
+  'icon.png',
+  'manifest.json',
+  'fang-eintragen.html',
+  'fang-eintragen.js',
+  'auswertung.html',
+  'auswertung.js',
+  'partner.html',
+  'galerie.html',
+  'galerie.js'
 ];
 
 // 1. Dateien beim ersten Online-Besuch auf dem Handy einfrieren

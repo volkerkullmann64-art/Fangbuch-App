@@ -6,7 +6,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Zeige die Auswahl-Buttons
 function showDashboard() {
     document.getElementById('app').innerHTML = `
-        <h2>WillkommenV43</h2>
+        <h2>Willkommen (V46)</h2>
         <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
         <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
@@ -33,7 +33,7 @@ function showLogin() {
     `;
 }
 
-// Login Logik
+// Login Logik (Nur noch EINMAL vorhanden!)
 async function performLogin() {
     const emailInput = document.getElementById('email').value.trim().toLowerCase();
     if (emailInput !== "") {
@@ -42,41 +42,46 @@ async function performLogin() {
             return;
         }
 
-        const { data, error } = await _supabase
-            .from('mitglieder')
-            .select('email, kennung')
-            .eq('email', emailInput)
-            .single();
+        const registerFields = document.getElementById('register-fields');
+        const istRegistrierungSichtbar = registerFields && registerFields.style.display === 'block';
 
-        if (error || !data) {
-            alert("Zugriff verweigert: E-Mail nicht registriert.");
-        } else {
-            if (data.kennung === "0000") {
-                alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
-                return;
-            }
+        // Wenn die Namensfelder noch NICHT sichtbar sind, prüfen wir die E-Mail
+        if (!istRegistrierungSichtbar) {
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('email, kennung')
+                .eq('email', emailInput)
+                .maybeSingle();
 
-            if (data.kennung) {
-                // HIER SICHERN WIR ES JETZT BOMBENFEST DAUERHAFT:
+            // Wenn die E-Mail NICHT existiert (oder ein Fehler auftritt)
+            if (error || !data) {
+                // Wir nutzen genau deinen Punkt: Statt Fehlermeldung zeigen wir die Felder!
+                if (registerFields) {
+                    registerFields.style.display = 'block';
+                    document.getElementById('login-btn').innerText = "Registrieren & Anmelden";
+                }
+            } else {
+                // E-Mail existiert -> Ganz normaler Login wie bisher
+                if (data.kennung === "0000") {
+                    alert("Dieses Konto wurde zurückgesetzt. Bitte wende dich an den Admin.");
+                    return;
+                }
+
                 localStorage.setItem('userKennung', String(data.kennung));
                 localStorage.setItem('userEmailCache', String(emailInput));
-                
                 sessionStorage.setItem('userEmail', emailInput);
                 sessionStorage.setItem('angemeldet', 'ja');
                 showDashboard();
-            } else {
-                alert("Fehler: Keine Kennung hinterlegt.");
             }
+        } else {
+            // Das passiert erst beim zweiten Klick, wenn die Felder schon da sind!
+            // Hier stoppen wir erst mal für den Test in Schritt 1.
+            alert("Erfolg! Die Felder sind da. Nun können wir im nächsten Schritt das Speichern programmieren.");
         }
     } else {
         alert("Bitte E-Mail eingeben");
     }
 }
-
-// Funktion zum Beenden des Programms
-
-
-
 
 // Funktion zum Beenden des Programms
 function beendeProgramm() {
@@ -114,13 +119,6 @@ function beendeProgramm() {
         `;
     }
 }
-
-
-
-
-
-
-
 
 // Beim Starten der Seite prüfen
 window.onload = async function() {
@@ -187,7 +185,7 @@ async function trySyncOfflineFange() {
     let q = [];
     try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
 
-    // Wenn die Warteschlange leer ist, blende die Box komplett auss
+    // Wenn die Warteschlange leer ist, blende die Box komplett aus
     if (!q || q.length === 0) {
         if(syncStatusBadge) syncStatusBadge.style.display = 'none';
         return;

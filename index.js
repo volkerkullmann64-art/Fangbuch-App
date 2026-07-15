@@ -74,19 +74,53 @@ async function performLogin() {
 }
 
 // Funktion zum Beenden des Programms
+
+
+
+
+// Funktion zum Beenden des Programms
 function beendeProgramm() {
-    sessionStorage.clear(); // Löscht die temporäre Anmeldung für die Unterseiten
+    try {
+        // 1. Sitzung löschen
+        sessionStorage.clear(); 
+    } catch (e) {
+        console.log("Session konnte nicht gelöscht werden:", e);
+    }
     
-    // Erst versuchen wir das Fenster zu schließen
-    window.close();
+    // 2. Versuche das Fenster direkt zu schließen
+    try {
+        window.close();
+    } catch (e) {
+        console.log("Browser blockiert Schließen:", e);
+    }
     
-    // Falls der Browser das Schließen blockiert, zeigen wir eine saubere Verabschiedung
-    document.getElementById('app').innerHTML = `
-        <h2>Auf Wiedersehen!</h2>
-        <p style="color: #666; margin-top: 20px;">Das Programm wurde sicher beendet.</p>
-        <p style="color: #999; font-size: 14px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
-    `;
+    // 3. Das Verabschiedungs-Fenster sicher in das 'app'-Element schreiben
+    const appBox = document.getElementById('app');
+    if (appBox) {
+        appBox.innerHTML = `
+            <h2>Auf Wiedersehen!</h2>
+            <p style="color: #2e7d32; font-weight: bold; margin-top: 20px;">Das Programm wurde ordnungsgemäß beendet.</p>
+            <p style="color: #666; font-size: 14px; margin-top: 10px;">Deine Sitzung wurde sicher geschlossen.</p>
+            <p style="color: #999; font-size: 14px; margin-top: 20px;">Du kannst diesen Browser-Tab jetzt schließen.</p>
+        `;
+    } else {
+        // Sicherheits-Fallback, falls 'app' nicht gefunden wird (überschreibt die ganze Seite)
+        document.body.innerHTML = `
+            <div style="text-align: center; margin-top: 100px; font-family: sans-serif;">
+                <h2>Auf Wiedersehen!</h2>
+                <p>Das Programm wurde ordnungsgemäß beendet.</p>
+                <p>Du kannst diesen Tab jetzt schließen.</p>
+            </div>
+        `;
+    }
 }
+
+
+
+
+
+
+
 
 // Beim Starten der Seite prüfen
 window.onload = async function() {

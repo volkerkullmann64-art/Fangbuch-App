@@ -6,7 +6,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Zeige die Auswahl-Buttons
 function showDashboard() {
     document.getElementById('app').innerHTML = `
-        <h2>Willkommen (V46)</h2>
+        <h2>Willkommen</h2>
         <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
         <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
@@ -18,7 +18,7 @@ function showDashboard() {
 // Zeige das Login-Formular
 function showLogin() {
     document.getElementById('app').innerHTML = `
-        <h2>ASV Fangbuch</h2>
+        <h2>ASV FangbuchV46</h2>
         <input type="email" id="email" placeholder="Deine E-Mail Adresse">
         
         <div id="register-fields" style="display: none; margin-bottom: 15px; text-align: left;">
@@ -55,7 +55,6 @@ async function performLogin() {
 
             // Wenn die E-Mail NICHT existiert (oder ein Fehler auftritt)
             if (error || !data) {
-                // Wir nutzen genau deinen Punkt: Statt Fehlermeldung zeigen wir die Felder!
                 if (registerFields) {
                     registerFields.style.display = 'block';
                     document.getElementById('login-btn').innerText = "Registrieren & Anmelden";
@@ -74,14 +73,59 @@ async function performLogin() {
                 showDashboard();
             }
         } else {
-            // Das passiert erst beim zweiten Klick, wenn die Felder schon da sind!
-            // Hier stoppen wir erst mal für den Test in Schritt 1.
-            alert("Erfolg! Die Felder sind da. Nun können wir im nächsten Schritt das Speichern programmieren.");
+            // DAS PASSIERT BEIM ZWEITEN KLICK (Registrierung absenden)
+            const vornameInput = document.getElementById('vorname').value.trim();
+            const nachnameInput = document.getElementById('nachname').value.trim();
+
+            if (vornameInput === "" || nachnameInput === "") {
+                alert("Bitte trage deinen Vornamen und Nachnamen ein.");
+                return;
+            }
+
+            // Wir erzeugen eine eindeutige Kennung aus dem Millisekunden-Zeitstempel.
+            // .slice(-8) nimmt die letzten 8 Ziffern. Da diese Millisekunden immer weiterzählen,
+            // ist diese Kennung garantiert für jeden Angler einzigartig und wiederholt sich nie!
+            const neueKennung = String(Date.now()).slice(-8); 
+
+            // Jetzt schreiben wir den neuen Angler in die Supabase-Tabelle 'mitglieder'
+            const { error: insertError } = await _supabase
+                .from('mitglieder')
+                .insert([
+                    { 
+                        email: emailInput, 
+                        vorname: vornameInput, 
+                        nachname: nachnameInput, 
+                        kennung: neueKennung 
+                    }
+                ]);
+
+            if (insertError) {
+                alert("Fehler bei der Registrierung: " + insertError.message);
+                return;
+            }
+
+            // Wenn das Speichern geklappt hat, loggen wir den neuen User direkt ein
+            localStorage.setItem('userKennung', neueKennung);
+            localStorage.setItem('userEmailCache', emailInput);
+            sessionStorage.setItem('userEmail', emailInput);
+            sessionStorage.setItem('angemeldet', 'ja');
+            
+            alert(`Willkommen beim ASV! Du wurdest registriert. Deine persönliche Kennung lautet: ${neueKennung}`);
+            showDashboard();
         }
     } else {
         alert("Bitte E-Mail eingeben");
     }
 }
+
+
+
+
+
+
+
+
+
 
 // Funktion zum Beenden des Programms
 function beendeProgramm() {

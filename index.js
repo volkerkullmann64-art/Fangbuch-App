@@ -20,7 +20,16 @@ function showLogin() {
     document.getElementById('app').innerHTML = `
         <h2>ASV Fangbuch</h2>
         <input type="email" id="email" placeholder="Deine E-Mail Adresse">
-        <button class="btn" onclick="performLogin()">Anmelden</button>
+        
+        <div id="register-fields" style="display: none; margin-bottom: 15px; text-align: left;">
+            <p style="color: #2e7d32; font-size: 14px; margin-bottom: 10px; font-weight: bold; text-align: center;">
+                E-Mail neu! Bitte Name eingeben:
+            </p>
+            <input type="text" id="vorname" placeholder="Vorname" style="margin-bottom: 10px;">
+            <input type="text" id="nachname" placeholder="Nachname">
+        </div>
+        
+        <button class="btn" id="login-btn" onclick="performLogin()">Anmelden</button>
     `;
 }
 

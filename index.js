@@ -1,3 +1,27 @@
+// Blockiert das Herunterziehen zum Aktualisieren (Pull-to-Refresh) auf dem Handy
+let touchStart_Y = 0;
+document.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+        touchStart_Y = e.touches[0].clientY;
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+    const touchMove_Y = e.touches[0].clientY;
+    const touchDiff_Y = touchMove_Y - touchStart_Y;
+
+    // Wenn der Nutzer nach unten zieht und wir ganz oben am Seitenanfang stehen
+    if (window.scrollY === 0 && touchDiff_Y > 0) {
+        // Verhindere das Standardverhalten des Browsers (das Neuladen!)
+        e.preventDefault();
+    }
+}, { passive: false });
+
+
+
+
+
+
 // iOS-Aufweck-Schutz: NUR neu laden, wenn wirklich noch das Beenden-Fenster da steht!
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {

@@ -17,7 +17,7 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Zeige die Auswahl-Buttons (Mit Vorname)
 function showDashboard() {
     const vorname = sessionStorage.getItem('userVorname') || localStorage.getItem('userVornameCache') || "";
-    const begruessung = vorname ? `Willkommen, ${vorname}!` : "Willkommen";
+    const begruessung = vorname ? `Willkommen ${vorname}` : "Willkommen";
 
     document.getElementById('app').innerHTML = `
         <h2>${begruessung}</h2>

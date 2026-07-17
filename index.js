@@ -1,10 +1,9 @@
-/ iOS-Aufweck-Schutz: Wenn das iPhone die App aus dem Hintergrund holt
+// iOS-Aufweck-Schutz: NUR neu laden, wenn wirklich noch das Beenden-Fenster da steht!
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
-        const istAngemeldet = sessionStorage.getItem('angemeldet');
         const aktuellerInhalt = document.body.innerHTML;
-
-        if (istAngemeldet !== 'ja' || aktuellerInhalt.includes('Wiedersehen')) {
+        // Absolut sicher: Keine Endlosschleife mehr beim Login!
+        if (aktuellerInhalt.includes('Wiedersehen') || aktuellerInhalt.includes('ordnungsgemaess')) {
             window.location.reload();
         }
     }
@@ -15,12 +14,9 @@ const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Zeige die Auswahl-Buttons (Jetzt mit sanftem Namens-Einbau!)
+// Zeige die Auswahl-Buttons (Mit Vorname)
 function showDashboard() {
-    // NEU: Wir holen uns den Vornamen aus dem Speicher (Sitzung oder Dauerspeicher)
     const vorname = sessionStorage.getItem('userVorname') || localStorage.getItem('userVornameCache') || "";
-    
-    // NEU: Wenn ein Vorname da ist, begrüßen wir persönlich. Wenn nicht, wie bisher!
     const begruessung = vorname ? `Willkommen, ${vorname}!` : "Willkommen";
 
     document.getElementById('app').innerHTML = `
@@ -66,7 +62,7 @@ async function performLogin() {
         if (!istRegistrierungSichtbar) {
             const { data, error } = await _supabase
                 .from('mitglieder')
-                .select('email, kennung, vorname') // NEU: vorname aus DB mit abfragen!
+                .select('email, kennung, vorname')
                 .eq('email', emailInput)
                 .maybeSingle();
 
@@ -83,10 +79,10 @@ async function performLogin() {
 
                 localStorage.setItem('userKennung', String(data.kennung));
                 localStorage.setItem('userEmailCache', String(emailInput));
-                localStorage.setItem('userVornameCache', String(data.vorname || '')); // NEU: Name auf Handy sichern
+                localStorage.setItem('userVornameCache', String(data.vorname || ''));
                 
                 sessionStorage.setItem('userEmail', emailInput);
-                sessionStorage.setItem('userVorname', String(data.vorname || '')); // NEU: Name für aktuelle Sitzung
+                sessionStorage.setItem('userVorname', String(data.vorname || ''));
                 sessionStorage.setItem('angemeldet', 'ja');
                 showDashboard();
             }
@@ -119,10 +115,10 @@ async function performLogin() {
 
             localStorage.setItem('userKennung', neueKennung);
             localStorage.setItem('userEmailCache', emailInput);
-            localStorage.setItem('userVornameCache', vornameInput); // NEU: Bei Registrierung direkt Name auf Handy sichern
+            localStorage.setItem('userVornameCache', vornameInput);
             
             sessionStorage.setItem('userEmail', emailInput);
-            sessionStorage.setItem('userVorname', vornameInput); // NEU: Für aktuelle Sitzung
+            sessionStorage.setItem('userVorname', vornameInput);
             sessionStorage.setItem('angemeldet', 'ja');
             
             alert(`Willkommen beim ASV! Du wurdest registriert. Deine persönliche Kennung lautet: ${neueKennung}`);
@@ -133,7 +129,7 @@ async function performLogin() {
     }
 }
 
-// Funktion zum Beenden des Programms
+// Beenden-Funktion
 function beendeProgramm() {
     try {
         const appBox = document.getElementById('app');
@@ -174,17 +170,16 @@ function beendeProgramm() {
 window.onload = async function() {
     const gespeicherteKennung = localStorage.getItem('userKennung');
     const gecachteEmail = localStorage.getItem('userEmailCache');
-    const gecachterVorname = localStorage.getItem('userVornameCache'); // NEU: Name aus Handyspeicher laden
+    const gecachterVorname = localStorage.getItem('userVornameCache');
 
     trySyncOfflineFange();
     window.addEventListener('online', trySyncOfflineFange);
 
-    // Hilfsfunktion für den schnellen Offline-Einstieg
     function geheInOfflineModus() {
         if (gecachteEmail || gespeicherteKennung) {
             console.log("Offline-Modus aktiv. Verwende gecachte Sitzung.");
             sessionStorage.setItem('userEmail', gecachteEmail || "offline@user.de");
-            sessionStorage.setItem('userVorname', gecachterVorname || ""); // NEU: Name offline mit übergeben
+            sessionStorage.setItem('userVorname', gecachterVorname || "");
             sessionStorage.setItem('angemeldet', 'ja');
             showDashboard();
         } else {
@@ -192,13 +187,11 @@ window.onload = async function() {
         }
     }
 
-    // 1. Sofortiger Stopp, wenn das Handy selbst sagt, es ist offline
     if (!navigator.onLine) {
         geheInOfflineModus();
         return;
     }
 
-    // 2. ONLINE-PRÜFUNG mit eingebautem Wecker (Timeout von 1,5 Sekunden)
     if (gespeicherteKennung) {
         const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error("Supabase-Timeout")), 1500)
@@ -207,7 +200,7 @@ window.onload = async function() {
         try {
             const dbPromise = _supabase
                 .from('mitglieder')
-                .select('email, kennung, vorname') // NEU: vorname aus DB mit abfragen!
+                .select('email, kennung, vorname')
                 .eq('kennung', gespeicherteKennung)
                 .maybeSingle();
 
@@ -220,10 +213,10 @@ window.onload = async function() {
             } else {
                 localStorage.setItem('userEmailCache', data.email);
                 localStorage.setItem('userKennung', data.kennung);
-                localStorage.setItem('userVornameCache', data.vorname || ''); // NEU: Name auf Handy aktualisieren
+                localStorage.setItem('userVornameCache', data.vorname || '');
                 
                 sessionStorage.setItem('userEmail', data.email);
-                sessionStorage.setItem('userVorname', data.vorname || ''); // NEU: Name für aktuelle Sitzung
+                sessionStorage.setItem('userVorname', data.vorname || '');
                 sessionStorage.setItem('angemeldet', 'ja');
                 showDashboard();
             }

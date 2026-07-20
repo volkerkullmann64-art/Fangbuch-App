@@ -476,3 +476,53 @@ async function holeMindestLaengeFuerHitparade(fischart) {
         return 0; // Im Zweifel erlauben wir den Hinweis
     }
 }
+// --- REPARATUR: SPRACHEINGABE FÜR NOTIZEN ---
+function startSpeechRecognition() {
+    const micBtn = document.getElementById('mic-btn');
+    const notizFeld = document.getElementById('notiz');
+
+    // Prüfen, ob das Browser-System Spracheingabe unterstützt
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        alert("🚨 Spracheingabe wird von diesem Browser leider nicht unterstützt.");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'de-DE'; // Auf deutsche Sprache einstellen
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    // Visuelles Feedback: Mikrofon wird rot, während es zuhört
+    micBtn.style.backgroundColor = '#c0392b';
+    micBtn.textContent = '🛑';
+
+    recognition.start();
+
+    // Wenn der Angler fertig gesprochen hat
+    recognition.onresult = function(event) {
+        const gesprochenerText = event.results[0][0].transcript;
+        
+        // Den Text an bestehende Notizen anhängen (falls schon was drin steht)
+        if (notizFeld.value.trim() !== "") {
+            notizFeld.value += " " + gesprochenerText;
+        } else {
+            notizFeld.value = gesprochenerText;
+        }
+        
+        // Pflichtfelder neu prüfen, falls der "Sofa-Testmodus" (test/sofa) eingesprochen wurde
+        if (typeof validateFisch === 'function') validateFisch();
+    };
+
+    // Wenn ein Fehler passiert oder das Sprechen vorbei ist
+    recognition.onerror = function(event) {
+        console.error("Sprachfehler:", event.error);
+    };
+
+    recognition.onend = function() {
+        // Mikrofon wieder in den Normalzustand versetzen
+        micBtn.style.backgroundColor = 'var(--secondary-color)';
+        micBtn.textContent = '🎙️';
+    };
+}

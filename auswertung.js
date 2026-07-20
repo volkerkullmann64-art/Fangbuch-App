@@ -22,7 +22,7 @@
         }
     }
 
-    async function ladeFaengeFuerAngler(email) {
+   async function ladeFaengeFuerAngler(email) {
         try {
             const { data, error } = await _supabase.from('fangbuch-asv-langschede').select('*').eq('angler_email', email).order('datum', { ascending: false });
             if (error) throw error;
@@ -31,16 +31,26 @@
                 tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 20px;">Keine Fänge unter dieser E-Mail gefunden.</td></tr>`; return;
             }
             tbody.innerHTML = ''; 
+            
             data.forEach(fang => {
+                // HIER WIRD DER FANGORT VORBEREITET:
+                let anzeigeOrt = fang.fangort || '-';
+                
+                // Wenn Fremdgewässer gewählt wurde UND eine Notiz existiert, kombinieren wir das:
+                if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
+                    anzeigeOrt = `Fremdgewässer (${fang.notiz})`;
+                }
+
+                // JETZT WIRD DIE ZEILE IN DIE TABELLE GESCHRIEBEN:
                 tbody.innerHTML += `
                     <tr>
                         <td class="edit-col" style="${editModeActive ? 'display: table-cell;' : ''}" onclick="location.href='fang-eintragen.html?editId=${fang.id}'">✏️</td>
                         <td>${fang.datum || '-'}</td>
-                        <td>${fang.uhrzeit ? fang.uhrzeit.substring(0,5) : '-'}</td>                       
+                        <td>${fang.uhrzeit ? fang.uhrzeit.substring(0,5) : '-'}</td>                      
                         <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
                         <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
                         <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
-                        <td>${fang.fangort || '-'}</td>
+                        <td>${anzeigeOrt}</td>
                         <td>${fang.verbleib || '-'}</td>
                         <td>${fang.wetter || '-'}</td>
                         <td>${fang.luftdruck ? fang.luftdruck + ' hPa' : '-'}</td>

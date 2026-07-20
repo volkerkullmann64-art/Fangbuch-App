@@ -47,6 +47,7 @@ function showDashboard() {
         <h2>${begruessung}</h2>
         <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
         <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
+        <button class="btn" onclick="location.href='gesamtuebersicht.html'">📊 Vereins-Gesamtübersicht</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
         <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
         <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>

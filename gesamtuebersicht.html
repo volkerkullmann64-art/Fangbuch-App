@@ -111,14 +111,14 @@
 </div>
 
 <script>
-    // Deine Supabase Zugangsdaten (exakt aus deiner Auswertung kopiert)
+    // Deine Supabase Zugangsdaten
     const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function ladeAlleFaenge() {
         try {
-            // Wir holen ALLE Fänge aus der Tabelle und sortieren sie nach Länge abwärts ('descending: true')
+            // Wir holen ALLE Fänge aus der Tabelle und sortieren sie nach Länge abwärts
             const { data, error } = await _supabase
                 .from('fangbuch-asv-langschede')
                 .select('*')
@@ -135,10 +135,10 @@
             tbody.innerHTML = ''; 
 
             data.forEach(fang => {
-                // Anonymisierung oder Kürzung der E-Mail, damit nicht die volle Mailadresse da steht
+                // Kürzung der E-Mail, damit nicht die volle Mailadresse dasteht
                 let anglerName = fang.angler_email ? fang.angler_email.split('@')[0] : 'Unbekannt';
                 
-                // Unsere schlaue Logik für das Fremdgewässer greift hier natürlich auch!
+                // Unsere Logik für das Fremdgewässer greift hier natürlich auch
                 let ortsText = fang.fangort || '-';
                 if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
                     ortsText = `Fremdgewässer (${fang.notiz})`;

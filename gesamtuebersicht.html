@@ -1,1 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesamtübersicht Fänge</title>
+    <!-- Supabase Library laden -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #2e6f40;
+            --secondary-color: #f4f7f5;
+            --text-color: #333;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            text-align: center;
+        }
+        /* Navigation / Buttons */
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-back {
+            background-color: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        /* Tabelle Styling */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <div class="nav-buttons">
+        <a href="auswertung.html" class="btn-back">⬅️ Zurück zu meinen Fängen</a>
+    </div>
+
+    <h2>🐟 Vereins-Gesamtübersicht (Größte Fänge zuerst)</h2>
+    <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
+        Hier siehst du alle eingetragenen Fänge des Vereins, sortiert nach der Länge.
+    </p>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Angler</th>
+                    <th>Fischart</th>
+                    <th>Länge</th>
+                    <th>Gewicht</th>
+                    <th>Gewässer / Ort</th>
+                    <th>Datum</th>
+                </tr>
+            </thead>
+            <tbody id="gesamt-tabelle-body">
+                <tr>
+                    <td colspan="6" class="loading">Fänge werden geladen...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Deine Supabase Zugangsdaten (exakt aus deiner Auswertung kopiert)
+    const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function ladeAlleFaenge() {
+        try {
+            // Wir holen ALLE Fänge aus der Tabelle und sortieren sie nach Länge abwärts ('descending: true')
+            const { data, error } = await _supabase
+                .from('fangbuch-asv-langschede')
+                .select('*')
+                .order('laenge', { ascending: false });
+
+            if (error) throw error;
+
+            const tbody = document.getElementById('gesamt-tabelle-body');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Noch keine Fänge eingetragen.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = ''; 
+
+            data.forEach(fang => {
+                // Anonymisierung oder Kürzung der E-Mail, damit nicht die volle Mailadresse da steht
+                let anglerName = fang.angler_email ? fang.angler_email.split('@')[0] : 'Unbekannt';
+                
+                // Unsere schlaue Logik für das Fremdgewässer greift hier natürlich auch!
+                let ortsText = fang.fangort || '-';
+                if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
+                    ortsText = `Fremdgewässer (${fang.notiz})`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: bold; color: #555;">${anglerName}</td>
+                        <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
+                        <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
+                        <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
+                        <td>${ortsText}</td>
+                        <td>${fang.datum || '-'}</td>
+                    </tr>
+                `;
+            });
+
+        } catch (f) {
+            document.getElementById('gesamt-tabelle-body').innerHTML = 
+                `<tr><td colspan="6" style="color: red; padding: 20px;">Fehler beim Laden: ${f.message}</td></tr>`;
+        }
+    }
+
+    // Beim Laden der Seite sofort alle Fänge holen
+    window.onload = ladeAlleFaenge;
+</script>
+
+</body>
+</html>

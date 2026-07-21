@@ -119,12 +119,17 @@
 
     async function ladeAlleFaenge() {
         try {
-            // Wir holen ALLE Fänge aus der Tabelle und sortieren sie nach Länge abwärts
-           const { data, error } = await _supabase
-           .from('fangbuch-asv-langschede')
-           .select('*')
-           .order('fischart', { ascending: true })   // 1. Fischart von A bis Z
-           .order('laenge', { ascending: false });   // 2. Innerhalb der Art der größte Fisch zuerst
+            // 1. Mitglieder laden, um die E-Mails den echten Namen zuzuordnen
+            const { data: mitglieder } = await _supabase
+                .from('mitglieder')
+                .select('email, vorname, nachname');
+
+            // 2. Fänge holen: Sortiert nach Fischart (A-Z) und Länge (größte zuerst)
+            const { data, error } = await _supabase
+                .from('fangbuch-asv-langschede')
+                .select('*')
+                .order('fischart', { ascending: true })
+                .order('laenge', { ascending: false });
 
             if (error) throw error;
 
@@ -137,10 +142,19 @@
             tbody.innerHTML = ''; 
 
             data.forEach(fang => {
-                // Kürzung der E-Mail, damit nicht die volle Mailadresse dasteht
-                let anglerName = fang.angler_email ? fang.angler_email.split('@')[0] : 'Unbekannt';
+                // Echten Namen aus der Mitglieder-Tabelle suchen
+                let anglerName = 'Unbekannt';
+                if (fang.angler_email) {
+                    const mitglied = mitglieder?.find(m => m.email?.toLowerCase() === fang.angler_email.toLowerCase());
+                    if (mitglied && (mitglied.vorname || mitglied.nachname)) {
+                        anglerName = `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
+                    } else {
+                        // Fallback: Falls ein Angler nicht in der Liste steht, Teil vor dem @ nutzen
+                        anglerName = fang.angler_email.split('@')[0];
+                    }
+                }
                 
-                // Unsere Logik für das Fremdgewässer greift hier natürlich auch
+                // Fremdgewässer-Logik
                 let ortsText = fang.fangort || '-';
                 if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
                     ortsText = `Fremdgewässer (${fang.notiz})`;

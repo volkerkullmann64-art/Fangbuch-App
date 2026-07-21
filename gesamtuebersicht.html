@@ -120,10 +120,11 @@
     async function ladeAlleFaenge() {
         try {
             // Wir holen ALLE Fänge aus der Tabelle und sortieren sie nach Länge abwärts
-            const { data, error } = await _supabase
-                .from('fangbuch-asv-langschede')
-                .select('*')
-                .order('laenge', { ascending: false });
+           const { data, error } = await _supabase
+           .from('fangbuch-asv-langschede')
+           .select('*')
+           .order('fischart', { ascending: true })   // 1. Fischart von A bis Z
+           .order('laenge', { ascending: false });   // 2. Innerhalb der Art der größte Fisch zuerst
 
             if (error) throw error;
 

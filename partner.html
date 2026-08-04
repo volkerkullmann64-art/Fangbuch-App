@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASV Langschede - Partner</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="ASV Fangbuch">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #e8f5e9; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+        .container { 
+            background: white; 
+            padding: 30px 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            text-align: center; 
+            width: 320px; 
+            box-sizing: border-box; 
+        }
+        h2 { color: #2e7d32; margin-bottom: 10px; margin-top: 0; }
+        p.subtitle { color: #555; font-size: 14px; margin-bottom: 25px; }
+        
+        .btn { 
+            display: block; 
+            width: 100%; 
+            padding: 15px; 
+            margin: 12px 0; 
+            border: none; 
+            border-radius: 10px; 
+            background-color: #2e7d32; 
+            color: white; 
+            font-size: 16px; 
+            font-weight: bold;
+            cursor: pointer; 
+            text-decoration: none;
+            box-sizing: border-box;
+            transition: background-color 0.2s;
+        }
+        .btn:active {
+            background-color: #1b5e20;
+        }
+        .btn-back {
+            background-color: #757575;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Unsere Partner</h2>
+        <p class="subtitle">Unterstützer & befreundete Vereine des ASV Langschede</p>
+
+        <!-- BEISPIEL-PARTNER 1 -->
+        <!-- target="_blank" und rel="noopener" sorgen dafür, dass sich die Webseite sauber in einem neuen Tab öffnet -->
+        <a href="https://www.lfv-westfalen.de" target="_blank" rel="noopener" class="btn">
+            🤝 LFV Westfalen-Lippe
+        </a>
+
+        <!-- HIER KÖNNEN SPÄTER WEITERE PARTNER-BUTTONS EINGEFÜGT WERDEN -->
+        <!-- 
+        <a href="https://ihre-partner-seite.de" target="_blank" rel="noopener" class="btn">
+            🤝 Partner Name
+        </a> 
+        -->
+
+        <!-- ZURÜCK ZUM DASHBOARD -->
+        <button class="btn btn-back" onclick="location.href='index.html'">⬅️ Zurück zum Hauptmenü</button>
+    </div>
+
+    <script>
+        // Verhindert Pull-to-Refresh auf Mobilgeräten (analog zu index.js)
+        let touchStart_Y = 0;
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                touchStart_Y = e.touches[0].clientY;
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            const touchMove_Y = e.touches[0].clientY;
+            const touchDiff_Y = touchMove_Y - touchStart_Y;
+            if (window.scrollY === 0 && touchDiff_Y > 0) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

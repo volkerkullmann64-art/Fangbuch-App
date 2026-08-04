@@ -39,7 +39,7 @@
             display: block; 
             width: 100%; 
             padding: 15px; 
-            margin: 12px 0; 
+            margin: 10px 0; 
             border: none; 
             border-radius: 10px; 
             background-color: #2e7d32; 
@@ -64,27 +64,34 @@
 
     <div class="container">
         <h2>Unsere Partner</h2>
-        <p class="subtitle">Unterstützer & befreundete Vereine des ASV Langschede</p>
+        <p class="subtitle">Angelläden & Verbände in unserer Region</p>
 
-        <!-- BEISPIEL-PARTNER 1 -->
-        <!-- target="_blank" und rel="noopener" sorgen dafür, dass sich die Webseite sauber in einem neuen Tab öffnet -->
-        <a href="https://www.lfv-westfalen.de" target="_blank" rel="noopener" class="btn">
-            🤝 LFV Westfalen-Lippe
+        <!-- PARTNER 1: ANGELJOE DORTMUND -->
+        <a href="https://blog.angeljoe.de/filiale/angelladen-in-dortmund/" target="_blank" rel="noopener" class="btn">
+            🎣 Angeljoe Dortmund
         </a>
 
-        <!-- HIER KÖNNEN SPÄTER WEITERE PARTNER-BUTTONS EINGEFÜGT WERDEN -->
-        <!-- 
-        <a href="https://ihre-partner-seite.de" target="_blank" rel="noopener" class="btn">
-            🤝 Partner Name
-        </a> 
-        -->
+        <!-- PARTNER 2: ANGELSPORT GIERMANN UNNA -->
+        <a href="https://www.angelsport-giermann.de" target="_blank" rel="noopener" class="btn">
+            🐟 Angelsport Giermann (Unna)
+        </a>
+
+        <!-- PARTNER 3: LFV WESTFALEN-LIPPE -->
+        <a href="https://www.lfv-westfalen.de" target="_blank" rel="noopener" class="btn">
+            📜 LFV Westfalen-Lippe
+        </a>
+
+        <!-- PARTNER 4: RUHRVERBAND -->
+        <a href="https://www.ruhrverband.de" target="_blank" rel="noopener" class="btn">
+            💧 Ruhrverband
+        </a>
 
         <!-- ZURÜCK ZUM DASHBOARD -->
         <button class="btn btn-back" onclick="location.href='index.html'">⬅️ Zurück zum Hauptmenü</button>
     </div>
 
     <script>
-        // Verhindert Pull-to-Refresh auf Mobilgeräten (analog zu index.js)
+        // Verhindert Pull-to-Refresh auf Mobilgeräten
         let touchStart_Y = 0;
         document.addEventListener('touchstart', function(e) {
             if (e.touches.length === 1) {

@@ -157,13 +157,10 @@
     <div class="info-box-container">
         <!-- Pulldown-Menü für den Filter -->
         <div class="filter-group">
-            <label for="fischart-filter">🔍 Anzeige filtern:</label>
+            <label for="fischart-filter">🔍 Nach Fischart filtern:</label>
             <select id="fischart-filter" onchange="wendeFilterAn()">
-                <option value="ALLE">Alle Fänge anzeigen</option>
-                <option value="NUR_VEREIN">🏆 Nur Vereinsgewässer</option>
-                <optgroup label="NUR EINE FISCHART ANZEIGEN" id="optgroup-fischarten">
-                    <!-- Wird dynamisch mit allen vorhandenen Fischarten befüllt -->
-                </optgroup>
+                <option value="ALLE">Alle Fischarten anzeigen</option>
+                <!-- Dynamische Liste aller vorhandenen Fischarten -->
             </select>
         </div>
 
@@ -261,8 +258,8 @@
     }
 
     function fuelleFischartDropdown(faenge) {
-        const optgroup = document.getElementById('optgroup-fischarten');
-        optgroup.innerHTML = '';
+        const select = document.getElementById('fischart-filter');
+        select.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen</option>';
 
         // Eindeutige Fischarten ermitteln
         const artenSet = new Set();
@@ -276,31 +273,25 @@
 
         sortierteArten.forEach(art => {
             const opt = document.createElement('option');
-            opt.value = `ART_${art}`;
+            opt.value = art;
             opt.textContent = art;
-            optgroup.appendChild(opt);
+            select.appendChild(opt);
         });
     }
 
     function wendeFilterAn() {
         const auswahl = document.getElementById('fischart-filter').value;
 
-        let gefilterteFaenge = [];
-
-        if (auswahl === 'ALLE') {
-            gefilterteFaenge = alleFaengeCache;
-        } else if (auswahl === 'NUR_VEREIN') {
-            gefilterteFaenge = alleFaengeCache.filter(f => !istFremdgewaesser(f));
-        } else if (auswahl.startsWith('ART_')) {
-            const gewaehlteArt = auswahl.replace('ART_', '').toLowerCase();
-            gefilterteFaenge = alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === gewaehlteArt);
-        }
+        // Fänge nach gewählter Fischart filtern
+        const gefilterteFaenge = (auswahl === 'ALLE')
+            ? alleFaengeCache
+            : alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === auswahl.toLowerCase());
 
         // Infofenster-Werte aktualisieren
         berechneInfofenster(gefilterteFaenge);
 
         // Tabelle zeichnen
-        rendereTabelle(gefilterteFaenge, auswahl);
+        rendereTabelle(gefilterteFaenge);
     }
 
     function berechneInfofenster(faenge) {
@@ -320,7 +311,7 @@
         document.getElementById('stat-max-laenge').textContent = maxLaenge > 0 ? `${maxLaenge} cm` : '-';
     }
 
-    function rendereTabelle(faenge, auswahl) {
+    function rendereTabelle(faenge) {
         const tbody = document.getElementById('gesamt-tabelle-body');
 
         if (!faenge || faenge.length === 0) {
@@ -339,8 +330,8 @@
             tbody.appendChild(erstelleZeile(fang));
         });
 
-        // 2. Fremdfänge als eigenen Block unten anhängen (falls welche da sind und nicht NUR_VEREIN gewählt ist)
-        if (fremdFaenge.length > 0 && auswahl !== 'NUR_VEREIN') {
+        // 2. Fremdfänge als eigenen Block unten anhängen
+        if (fremdFaenge.length > 0) {
             const headerRow = document.createElement('tr');
             headerRow.className = 'section-header-row';
             headerRow.innerHTML = `<td colspan="6">✈️ Fänge an Fremdgewässern (${fremdFaenge.length})</td>`;

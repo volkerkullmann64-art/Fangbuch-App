@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asv-fangbuch-V72';
+const CACHE_NAME = 'asv-fangbuch-V73';
 
 // Alle statischen Dateien der PWA mit relativer Pfadangabe
 const ASSETS = [
@@ -13,7 +13,8 @@ const ASSETS = [
   './auswertung.js',
   './partner.html',
   './galerie.html',
-  './galerie.js'
+  './galerie.js',
+  './gesamtuebersicht.html'
 ];
 
 // 1. Installation: Dateien vorab in den Cache laden & sofort aktivieren

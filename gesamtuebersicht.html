@@ -127,6 +127,15 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        .section-header-row td {
+            background-color: #fff3e0 !important;
+            color: #e65100;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 10px;
+            border-top: 2px solid #ffe0b2;
+            border-bottom: 2px solid #ffe0b2;
+        }
         .loading {
             text-align: center;
             padding: 20px;
@@ -146,11 +155,16 @@
 
     <!-- INFOFENSTER & FILTER BEREICH -->
     <div class="info-box-container">
-        <!-- Pulldown-Menü für den Fisch-Filter -->
+        <!-- Pulldown-Menü für den Filter -->
         <div class="filter-group">
-            <label for="fischart-filter">🔍 Nach Fischart filtern:</label>
+            <label for="fischart-filter">🔍 Anzeige filtern:</label>
             <select id="fischart-filter" onchange="wendeFilterAn()">
-                <option value="ALLE">Alle Fischarten anzeigen</option>
+                <option value="ALLE">Alle Fänge anzeigen (Verein & Fremdgewässer)</option>
+                <option value="NUR_VEREIN">🏆 Nur Vereinsgewässer</option>
+                <option value="NUR_FREMD">✈️ Nur Fremdgewässer</option>
+                <optgroup label="NUR EINE FISCHART ANZEIGEN" id="optgroup-fischarten">
+                    <!-- Wird dynamisch mit allen vorhandenen Fischarten befüllt -->
+                </optgroup>
             </select>
         </div>
 
@@ -231,7 +245,7 @@
 
             alleFaengeCache = data || [];
 
-            // Pulldown-Menü befüllen & Ansicht berechnen
+            // Pulldown-Menü mit Fischarten befüllen & Ansicht rendern
             fuelleFischartDropdown(alleFaengeCache);
             wendeFilterAn();
 
@@ -241,39 +255,55 @@
         }
     }
 
-    function fuelleFischartDropdown(faenge) {
-        const select = document.getElementById('fischart-filter');
-        select.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen</option>';
+    function istFremdgewaesser(fang) {
+        const ort = (fang.fangort || '').trim().toLowerCase();
+        const gewaesser = (fang.gewaesser || '').trim().toLowerCase();
+        return ort === 'fremdgewässer' || gewaesser === 'fremdgewässer';
+    }
 
-        // Eindeutige Fischarten ermitteln & sortieren
+    function fuelleFischartDropdown(faenge) {
+        const optgroup = document.getElementById('optgroup-fischarten');
+        optgroup.innerHTML = '';
+
+        // Eindeutige Fischarten ermitteln
         const artenSet = new Set();
         faenge.forEach(f => {
-            if (f.fischart) artenSet.add(f.fischart.trim());
+            if (f.fischart && f.fischart.trim() !== '') {
+                artenSet.add(f.fischart.trim());
+            }
         });
 
-        const sortierteArten = Array.from(artenSet).sort((a, b) => a.localeCompare(b));
+        const sortierteArten = Array.from(artenSet).sort((a, b) => a.localeCompare(b, 'de'));
 
         sortierteArten.forEach(art => {
             const opt = document.createElement('option');
-            opt.value = art;
+            opt.value = `ART_${art}`;
             opt.textContent = art;
-            select.appendChild(opt);
+            optgroup.appendChild(opt);
         });
     }
 
     function wendeFilterAn() {
-        const ausgewaehlteArt = document.getElementById('fischart-filter').value;
+        const auswahl = document.getElementById('fischart-filter').value;
 
-        // Fänge nach Pulldown filtern
-        const gefilterteFaenge = (ausgewaehlteArt === 'ALLE')
-            ? alleFaengeCache
-            : alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === ausgewaehlteArt.toLowerCase());
+        let gefilterteFaenge = [];
+
+        if (auswahl === 'ALLE') {
+            gefilterteFaenge = alleFaengeCache;
+        } else if (auswahl === 'NUR_VEREIN') {
+            gefilterteFaenge = alleFaengeCache.filter(f => !istFremdgewaesser(f));
+        } else if (auswahl === 'NUR_FREMB') {
+            gefilterteFaenge = alleFaengeCache.filter(f => istFremdgewaesser(f));
+        } else if (auswahl.startsWith('ART_')) {
+            const gewaehlteArt = auswahl.replace('ART_', '').toLowerCase();
+            gefilterteFaenge = alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === gewaehlteArt);
+        }
 
         // Infofenster-Werte aktualisieren
         berechneInfofenster(gefilterteFaenge);
 
-        // Tabelle zeichnen
-        rendereTabelle(gefilterteFaenge);
+        // Tabelle zeichnen (mit Trennung von Vereins- und Fremdgewässern)
+        rendereTabelle(gefilterteFaenge, auswahl);
     }
 
     function berechneInfofenster(faenge) {
@@ -293,45 +323,74 @@
         document.getElementById('stat-max-laenge').textContent = maxLaenge > 0 ? `${maxLaenge} cm` : '-';
     }
 
-    function rendereTabelle(faenge) {
+    function rendereTabelle(faenge, auswahl) {
         const tbody = document.getElementById('gesamt-tabelle-body');
 
         if (!faenge || faenge.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Keine Fänge für diese Auswahl gefunden.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #777;">Keine Fänge für diese Auswahl gefunden.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = '';
 
-        faenge.forEach(fang => {
-            // Name ermitteln
-            let anglerName = 'Unbekannt';
-            if (fang.angler_email) {
-                const mitglied = mitgliederCache.find(m => m.email?.toLowerCase() === fang.angler_email.toLowerCase());
-                if (mitglied && (mitglied.vorname || mitglied.nachname)) {
-                    anglerName = `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
-                } else {
-                    anglerName = fang.angler_email.split('@')[0];
-                }
-            }
+        // Wenn "NUR_FREMD" ausgewählt ist, brauchen wir keine Trennung
+        if (auswahl === 'NUR_FREMB') {
+            faenge.forEach(fang => tbody.appendChild(erstelleZeile(fang)));
+            return;
+        }
 
-            // Ort
-            let ortsText = fang.fangort || '-';
-            if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
-                ortsText = `Fremdgewässer (${fang.notiz})`;
-            }
+        // Trennen in Vereinsfänge und Fremdfänge
+        const vereinsFaenge = faenge.filter(f => !istFremdgewaesser(f));
+        const fremdFaenge = faenge.filter(f => istFremdgewaesser(f));
 
-            tbody.innerHTML += `
-                <tr>
-                    <td style="font-weight: bold; color: #555;">${anglerName}</td>
-                    <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
-                    <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
-                    <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
-                    <td>${ortsText}</td>
-                    <td>${fang.datum || '-'}</td>
-                </tr>
-            `;
+        // 1. Vereinsfänge rendern
+        vereinsFaenge.forEach(fang => {
+            tbody.appendChild(erstelleZeile(fang));
         });
+
+        // 2. Fremdfänge als eigenen Block unten anhängen (falls welche da sind)
+        if (fremdFaenge.length > 0 && auswahl !== 'NUR_VEREIN') {
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'section-header-row';
+            headerRow.innerHTML = `<td colspan="6">✈️ Fänge an Fremdgewässern (${fremdFaenge.length})</td>`;
+            tbody.appendChild(headerRow);
+
+            fremdFaenge.forEach(fang => {
+                tbody.appendChild(erstelleZeile(fang));
+            });
+        }
+    }
+
+    function erstelleZeile(fang) {
+        const tr = document.createElement('tr');
+
+        // Anglernamen ermitteln
+        let anglerName = 'Unbekannt';
+        if (fang.angler_email) {
+            const mitglied = mitgliederCache.find(m => m.email?.toLowerCase() === fang.angler_email.toLowerCase());
+            if (mitglied && (mitglied.vorname || mitglied.nachname)) {
+                anglerName = `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
+            } else {
+                anglerName = fang.angler_email.split('@')[0];
+            }
+        }
+
+        // Ort
+        let ortsText = fang.gewaesser || fang.fangort || '-';
+        if (istFremdgewaesser(fang) && fang.notiz) {
+            ortsText = `Fremdgewässer (${fang.notiz})`;
+        }
+
+        tr.innerHTML = `
+            <td style="font-weight: bold; color: #555;">${anglerName}</td>
+            <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
+            <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
+            <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
+            <td>${ortsText}</td>
+            <td>${fang.datum || '-'}</td>
+        `;
+
+        return tr;
     }
 
     window.onload = ladeAlleFaenge;

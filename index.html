@@ -82,21 +82,22 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
+                // Zeitstempel verhindert den HTTP-Browser-Cache für sw.js
+                navigator.serviceWorker.register('./sw.js?t=' + new Date().getTime())
                     .then(reg => {
                         console.log('Service Worker registriert!', reg);
 
-                        // Bei jedem App-Start aktiv auf GitHub nach neuer sw.js suchen
+                        // Erzwingt bei jedem Start die Prüfung auf GitHub
                         reg.update();
 
-                        // Wenn eine neue Version heruntergeladen wurde, Seite automatisch neu laden
+                        // Wenn eine neue Version gefunden & installiert wurde -> automatische Aktualisierung
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
                             if (installingWorker) {
                                 installingWorker.onstatechange = () => {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('Neue Version gefunden – Aktualisiere...');
-                                        window.location.reload();
+                                        console.log('Neue Version gefunden! Lade Seite neu...');
+                                        window.location.reload(true);
                                     }
                                 };
                             }

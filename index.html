@@ -83,7 +83,25 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registriert!', reg))
+                    .then(reg => {
+                        console.log('Service Worker registriert!', reg);
+
+                        // Bei jedem App-Start aktiv auf GitHub nach neuer sw.js suchen
+                        reg.update();
+
+                        // Wenn eine neue Version heruntergeladen wurde, Seite automatisch neu laden
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            if (installingWorker) {
+                                installingWorker.onstatechange = () => {
+                                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('Neue Version gefunden – Aktualisiere...');
+                                        window.location.reload();
+                                    }
+                                };
+                            }
+                        };
+                    })
                     .catch(err => console.error('Service Worker Fehler:', err));
             });
         }

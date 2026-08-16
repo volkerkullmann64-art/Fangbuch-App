@@ -159,9 +159,8 @@
         <div class="filter-group">
             <label for="fischart-filter">🔍 Anzeige filtern:</label>
             <select id="fischart-filter" onchange="wendeFilterAn()">
-                <option value="ALLE">Alle Fänge anzeigen (Verein & Fremdgewässer)</option>
+                <option value="ALLE">Alle Fänge anzeigen</option>
                 <option value="NUR_VEREIN">🏆 Nur Vereinsgewässer</option>
-                <option value="NUR_FREMD">✈️ Nur Fremdgewässer</option>
                 <optgroup label="NUR EINE FISCHART ANZEIGEN" id="optgroup-fischarten">
                     <!-- Wird dynamisch mit allen vorhandenen Fischarten befüllt -->
                 </optgroup>
@@ -292,8 +291,6 @@
             gefilterteFaenge = alleFaengeCache;
         } else if (auswahl === 'NUR_VEREIN') {
             gefilterteFaenge = alleFaengeCache.filter(f => !istFremdgewaesser(f));
-        } else if (auswahl === 'NUR_FREMB') {
-            gefilterteFaenge = alleFaengeCache.filter(f => istFremdgewaesser(f));
         } else if (auswahl.startsWith('ART_')) {
             const gewaehlteArt = auswahl.replace('ART_', '').toLowerCase();
             gefilterteFaenge = alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === gewaehlteArt);
@@ -302,7 +299,7 @@
         // Infofenster-Werte aktualisieren
         berechneInfofenster(gefilterteFaenge);
 
-        // Tabelle zeichnen (mit Trennung von Vereins- und Fremdgewässern)
+        // Tabelle zeichnen
         rendereTabelle(gefilterteFaenge, auswahl);
     }
 
@@ -333,12 +330,6 @@
 
         tbody.innerHTML = '';
 
-        // Wenn "NUR_FREMD" ausgewählt ist, brauchen wir keine Trennung
-        if (auswahl === 'NUR_FREMB') {
-            faenge.forEach(fang => tbody.appendChild(erstelleZeile(fang)));
-            return;
-        }
-
         // Trennen in Vereinsfänge und Fremdfänge
         const vereinsFaenge = faenge.filter(f => !istFremdgewaesser(f));
         const fremdFaenge = faenge.filter(f => istFremdgewaesser(f));
@@ -348,7 +339,7 @@
             tbody.appendChild(erstelleZeile(fang));
         });
 
-        // 2. Fremdfänge als eigenen Block unten anhängen (falls welche da sind)
+        // 2. Fremdfänge als eigenen Block unten anhängen (falls welche da sind und nicht NUR_VEREIN gewählt ist)
         if (fremdFaenge.length > 0 && auswahl !== 'NUR_VEREIN') {
             const headerRow = document.createElement('tr');
             headerRow.className = 'section-header-row';

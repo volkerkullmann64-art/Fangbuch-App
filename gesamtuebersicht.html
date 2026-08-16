@@ -304,10 +304,14 @@
             if (f.laenge && Number(f.laenge) > maxLaenge) maxLaenge = Number(f.laenge);
         });
 
-        const gewichtKg = (summeGewichtGramm / 1000).toFixed(1).replace('.', ',');
+        // Exakte Umrechnung in kg mit bis zu 2 Nachkommastellen (ohne ungenaue Rundungsfehler)
+        const gewichtKgNum = summeGewichtGramm / 1000;
+        const gewichtKgText = (Math.round(gewichtKgNum * 100) / 100)
+            .toString()
+            .replace('.', ',');
 
         document.getElementById('stat-anzahl').textContent = anzahl;
-        document.getElementById('stat-gewicht').textContent = `${gewichtKg} kg`;
+        document.getElementById('stat-gewicht').textContent = `${gewichtKgText} kg`;
         document.getElementById('stat-max-laenge').textContent = maxLaenge > 0 ? `${maxLaenge} cm` : '-';
     }
 

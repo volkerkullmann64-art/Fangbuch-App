@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gesamtübersicht Fänge</title>
     <!-- Supabase Library laden -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -48,6 +48,64 @@
             text-decoration: none;
             font-size: 14px;
         }
+        
+        /* Infofenster & Filter-Bereich */
+        .info-box-container {
+            margin-bottom: 20px;
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #c8e6c9;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .filter-group label {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 14px;
+        }
+        .filter-group select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #a5d6a7;
+            font-size: 16px;
+            background-color: white;
+            color: #2e6f40;
+            font-weight: bold;
+            outline: none;
+        }
+
+        /* Stats Cards inside Infofenster */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .stat-card {
+            background: white;
+            padding: 10px 5px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+        .stat-title {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
         /* Tabelle Styling */
         .table-responsive {
             overflow-x: auto;
@@ -81,14 +139,37 @@
 
 <div class="container">
     <div class="nav-buttons">
-            <a href="index.html" class="btn-back">⬅️ Zurück zum Hauptmenü</a>
-
+        <a href="index.html" class="btn-back">⬅️ Zurück zum Hauptmenü</a>
     </div>
 
-    <h2>🐟 Vereins-Gesamtübersicht (Größte Fänge zuerst)</h2>
-    <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
-        Hier siehst du alle eingetragenen Fänge des Vereins, sortiert nach der Länge.
-    </p>
+    <h2>🐟 Vereins-Gesamtübersicht</h2>
+
+    <!-- INFOFENSTER & FILTER BEREICH -->
+    <div class="info-box-container">
+        <!-- Pulldown-Menü für den Fisch-Filter -->
+        <div class="filter-group">
+            <label for="fischart-filter">🔍 Nach Fischart filtern:</label>
+            <select id="fischart-filter" onchange="wendeFilterAn()">
+                <option value="ALLE">Alle Fischarten anzeigen</option>
+            </select>
+        </div>
+
+        <!-- Übersichtswerte im Infofenster -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">Anzahl</div>
+                <div class="stat-value" id="stat-anzahl">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Gesamtgewicht</div>
+                <div class="stat-value" id="stat-gewicht">0 kg</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Größter Fisch</div>
+                <div class="stat-value" id="stat-max-laenge">-</div>
+            </div>
+        </div>
+    </div>
 
     <div class="table-responsive">
         <table>
@@ -112,65 +193,47 @@
 </div>
 
 <script>
-    // Deine Supabase Zugangsdaten
+    // Supabase Zugangsdaten
     const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let alleFaengeCache = [];
+    let mitgliederCache = [];
+
+    // Pull-to-Refresh Schutz auf Handys
+    let touchStart_Y = 0;
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) touchStart_Y = e.touches[0].clientY;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(e) {
+        const touchMove_Y = e.touches[0].clientY;
+        if (window.scrollY === 0 && (touchMove_Y - touchStart_Y) > 0) e.preventDefault();
+    }, { passive: false });
+
     async function ladeAlleFaenge() {
         try {
-            // 1. Mitglieder laden, um die E-Mails den echten Namen zuzuordnen
+            // 1. Mitglieder laden für Namen-Zuordnung
             const { data: mitglieder } = await _supabase
                 .from('mitglieder')
                 .select('email, vorname, nachname');
 
-            // 2. Fänge holen: Sortiert nach Fischart (A-Z) und Länge (größte zuerst)
+            mitgliederCache = mitglieder || [];
+
+            // 2. Fänge aus Supabase laden (größte Fische zuerst)
             const { data, error } = await _supabase
                 .from('fangbuch-asv-langschede')
                 .select('*')
-                .order('fischart', { ascending: true })
                 .order('laenge', { ascending: false });
 
             if (error) throw error;
 
-            const tbody = document.getElementById('gesamt-tabelle-body');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Noch keine Fänge eingetragen.</td></tr>`;
-                return;
-            }
+            alleFaengeCache = data || [];
 
-            tbody.innerHTML = ''; 
-
-            data.forEach(fang => {
-                // Echten Namen aus der Mitglieder-Tabelle suchen
-                let anglerName = 'Unbekannt';
-                if (fang.angler_email) {
-                    const mitglied = mitglieder?.find(m => m.email?.toLowerCase() === fang.angler_email.toLowerCase());
-                    if (mitglied && (mitglied.vorname || mitglied.nachname)) {
-                        anglerName = `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
-                    } else {
-                        // Fallback: Falls ein Angler nicht in der Liste steht, Teil vor dem @ nutzen
-                        anglerName = fang.angler_email.split('@')[0];
-                    }
-                }
-                
-                // Fremdgewässer-Logik
-                let ortsText = fang.fangort || '-';
-                if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
-                    ortsText = `Fremdgewässer (${fang.notiz})`;
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight: bold; color: #555;">${anglerName}</td>
-                        <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
-                        <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
-                        <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
-                        <td>${ortsText}</td>
-                        <td>${fang.datum || '-'}</td>
-                    </tr>
-                `;
-            });
+            // Pulldown-Menü befüllen & Ansicht berechnen
+            fuelleFischartDropdown(alleFaengeCache);
+            wendeFilterAn();
 
         } catch (f) {
             document.getElementById('gesamt-tabelle-body').innerHTML = 
@@ -178,7 +241,99 @@
         }
     }
 
-    // Beim Laden der Seite sofort alle Fänge holen
+    function fuelleFischartDropdown(faenge) {
+        const select = document.getElementById('fischart-filter');
+        select.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen</option>';
+
+        // Eindeutige Fischarten ermitteln & sortieren
+        const artenSet = new Set();
+        faenge.forEach(f => {
+            if (f.fischart) artenSet.add(f.fischart.trim());
+        });
+
+        const sortierteArten = Array.from(artenSet).sort((a, b) => a.localeCompare(b));
+
+        sortierteArten.forEach(art => {
+            const opt = document.createElement('option');
+            opt.value = art;
+            opt.textContent = art;
+            select.appendChild(opt);
+        });
+    }
+
+    function wendeFilterAn() {
+        const ausgewaehlteArt = document.getElementById('fischart-filter').value;
+
+        // Fänge nach Pulldown filtern
+        const gefilterteFaenge = (ausgewaehlteArt === 'ALLE')
+            ? alleFaengeCache
+            : alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === ausgewaehlteArt.toLowerCase());
+
+        // Infofenster-Werte aktualisieren
+        berechneInfofenster(gefilterteFaenge);
+
+        // Tabelle zeichnen
+        rendereTabelle(gefilterteFaenge);
+    }
+
+    function berechneInfofenster(faenge) {
+        const anzahl = faenge.length;
+        let summeGewichtGramm = 0;
+        let maxLaenge = 0;
+
+        faenge.forEach(f => {
+            if (f.gewicht) summeGewichtGramm += Number(f.gewicht);
+            if (f.laenge && Number(f.laenge) > maxLaenge) maxLaenge = Number(f.laenge);
+        });
+
+        const gewichtKg = (summeGewichtGramm / 1000).toFixed(1).replace('.', ',');
+
+        document.getElementById('stat-anzahl').textContent = anzahl;
+        document.getElementById('stat-gewicht').textContent = `${gewichtKg} kg`;
+        document.getElementById('stat-max-laenge').textContent = maxLaenge > 0 ? `${maxLaenge} cm` : '-';
+    }
+
+    function rendereTabelle(faenge) {
+        const tbody = document.getElementById('gesamt-tabelle-body');
+
+        if (!faenge || faenge.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Keine Fänge für diese Auswahl gefunden.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        faenge.forEach(fang => {
+            // Name ermitteln
+            let anglerName = 'Unbekannt';
+            if (fang.angler_email) {
+                const mitglied = mitgliederCache.find(m => m.email?.toLowerCase() === fang.angler_email.toLowerCase());
+                if (mitglied && (mitglied.vorname || mitglied.nachname)) {
+                    anglerName = `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim();
+                } else {
+                    anglerName = fang.angler_email.split('@')[0];
+                }
+            }
+
+            // Ort
+            let ortsText = fang.fangort || '-';
+            if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
+                ortsText = `Fremdgewässer (${fang.notiz})`;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight: bold; color: #555;">${anglerName}</td>
+                    <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
+                    <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
+                    <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
+                    <td>${ortsText}</td>
+                    <td>${fang.datum || '-'}</td>
+                </tr>
+            `;
+        });
+    }
+
     window.onload = ladeAlleFaenge;
 </script>
 

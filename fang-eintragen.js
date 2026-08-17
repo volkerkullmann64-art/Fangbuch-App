@@ -101,7 +101,7 @@ async function ladeFangDatenFuerEdit(id) {
             .from('fangbuch-asv-langschede')
             .select('*')
             .eq('id', id)
-            .maybeSingle(); // Abgefangen: Wirft keinen Fehler mehr, wenn ID nicht existiert
+            .maybeSingle();
             
         if (data && !error) {
             document.getElementById('datum').value = data.datum || '';
@@ -357,8 +357,9 @@ async function saveFang() {
         if (geknipstesFotoBlob && navigator.onLine) {
             const dateiname = `fang_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
             
+            // Bucket-Name jetzt exakt kleingeschrieben: hitparade-fotos
             const { data: storageData, error: storageError } = await _supabase.storage
-                .from('Hitparade-Fotos')
+                .from('hitparade-fotos')
                 .upload(dateiname, geknipstesFotoBlob, {
                     contentType: 'image/jpeg'
                 });
@@ -367,7 +368,7 @@ async function saveFang() {
 
             // Öffentliche URL des Fotos abrufen
             const { data: urlData } = _supabase.storage
-                .from('Hitparade-Fotos')
+                .from('hitparade-fotos')
                 .getPublicUrl(dateiname);
 
             if (urlData) uploadedFotoUrl = urlData.publicUrl;

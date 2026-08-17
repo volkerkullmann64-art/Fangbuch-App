@@ -279,7 +279,7 @@ function ZeigeHitparadeMeldung(hitparadeBox) {
     `;
 }
 
-// Verarbeitet das geknipste Foto und komprimiert es direkt auf dem Handy
+// Verarbeitet das geknipste Foto, komprimiert es und blendet sofort die Vorschau ein
 function verarbeiteFotoAktion(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -316,9 +316,20 @@ function verarbeiteFotoAktion(event) {
             canvas.toBlob((blob) => {
                 geknipstesFotoBlob = blob;
                 
-                // Vorschau aktualisieren
-                const hitparadeBox = document.getElementById("hitparade-meldung");
-                ZeigeHitparadeMeldung(hitparadeBox);
+                // Vorschau direkt im grünen Kasten anzeigen
+                const vorschauBereich = document.getElementById("foto-vorschau-bereich");
+                const vorschauImg = document.getElementById("foto-vorschau-img");
+                
+                if (vorschauBereich && vorschauImg) {
+                    vorschauImg.src = URL.createObjectURL(blob);
+                    vorschauBereich.style.display = "block";
+                }
+                
+                // Button-Text auf "Foto ändern" anpassen
+                const cameraLabel = document.querySelector('label[for="foto-input"]');
+                if (cameraLabel) {
+                    cameraLabel.textContent = "🔄 Foto ändern";
+                }
             }, 'image/jpeg', 0.75);
         };
         img.src = e.target.result;

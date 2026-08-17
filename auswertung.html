@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Fangauswertung - ASV Langschede</title>
+<title>Meine Fangübersicht - ASV Langschede</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -14,27 +14,35 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; display: flex; flex-direction: column; align-items: center; }
-.container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+.container { width: 100%; max-width: 500px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
 .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-.btn-back { background-color: var(--primary-color); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; text-decoration: none; }
-.btn-back:hover { background-color: var(--secondary-color); }
-h2 { color: var(--primary-color); text-align: center; margin-bottom: 15px; }
+.btn-back { background-color: #757575; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; text-decoration: none; }
+.btn-edit { background-color: var(--primary-color); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+
+h2 { color: var(--primary-color); text-align: center; margin-bottom: 15px; font-size: 20px; }
+
+.fang-tabelle { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 14px; }
+.fang-tabelle th { background-color: var(--primary-color); color: white; text-align: left; padding: 10px 6px; font-size: 13px; }
+.fang-tabelle td { padding: 10px 6px; border-bottom: 1px solid #eee; color: #333; }
+.fang-tabelle tr:nth-child(even) { background-color: #fdfdfd; }
 </style>
 </head>
 <body>
 
 <div class="container">
     <div class="top-bar">
-        <button class="btn-back" onclick="location.href='index.html'">↩ Zurück zum Hauptmenü</button>
+        <button class="btn-back" onclick="location.href='index.html'">↩ Zurück</button>
+        <button id="edit-toggle-btn" class="btn-edit" onclick="toggleEditMode()">Bearbeiten</button>
     </div>
 
-    <h2>📊 Fangübersicht / Auswertung</h2>
+    <h2>📊 Meine Fangübersicht</h2>
 
-    <div id="faenge-liste">
-        <div style="text-align: center; padding: 30px; color: #666;">⏳ Lade Fänge...</div>
+    <div id="faenge-tabelle-container">
+        <div style="text-align: center; padding: 20px; color: #666;">⏳ Lade Fänge...</div>
     </div>
 </div>
 
 <script src="auswertung.js"></script>
 </body>
-</html> 
+</html>

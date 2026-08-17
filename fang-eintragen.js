@@ -266,21 +266,17 @@ function ZeigeHitparadeMeldung(hitparadeBox) {
             Möchtest du diesen Prachtburschen mit einem Foto in der öffentlichen Galerie verewigen?<br>
             
             <div id="foto-vorschau-bereich" style="margin-top: 10px; display: ${hatFoto ? 'block' : 'none'};">
-                <img id="foto-vorschau-img" src="${hatFoto ? URL.createObjectURL(geknipstesFotoBlob) : ''}" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 2px solid #2e5a44; margin-bottom: 8px;">
+                <img id="foto-vorschau-img" src="${hatFoto ? URL.createObjectURL(geknipstesFotoBlob) : ''}" style="max-width: 100%; max-height: 220px; border-radius: 8px; border: 2px solid #2e5a44; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
             </div>
 
-            <div style="margin-top: 10px;">
-                <button type="button" class="btn-edit-toggle" style="background-color: #2e5a44; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="oeffneKamera()">
+            <!-- Großer, zuverlässiger Kamera-Button -->
+            <div style="margin-top: 12px;">
+                <label for="foto-input" style="display: block; width: 100%; background-color: #2e5a44; color: white; padding: 14px 16px; border-radius: 8px; font-size: 17px; font-weight: bold; text-align: center; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.15); box-sizing: border-box;">
                     ${btnText}
-                </button>
+                </label>
             </div>
         </div>
     `;
-}
-
-// Öffnet die Kamera des Smartphones
-function oeffneKamera() {
-    document.getElementById('foto-input').click();
 }
 
 // Verarbeitet das geknipste Foto und komprimiert es direkt auf dem Handy

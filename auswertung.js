@@ -9,7 +9,7 @@ window.addEventListener('load', async function() {
     await ladeFange();
 });
 
-// Lädt die Mitgliedernamen aus der Datenbank für die saubere Namensanzeige
+// Lädt die Mitgliedernamen aus der Datenbank für   die saubere Namensanzeige
 async function ladeMitgliederNamen() {
     try {
         const { data, error } = await _supabase

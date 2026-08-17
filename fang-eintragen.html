@@ -59,8 +59,8 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 
 <form id="fang-form" onsubmit="event.preventDefault();">
 
-<!-- Foto-Input optimiert für direkte Kameraübernahme -->
-<input type="file" id="foto-input" accept="image/jpeg,image/png" capture="environment" style="display:none;" onchange="verarbeiteFotoAktion(event)">
+<!-- Direktes Kamera-Eingabefeld -->
+<input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none;" onchange="verarbeiteFotoAktion(event)">
 
 <div class="row">
     <div class="form-group">

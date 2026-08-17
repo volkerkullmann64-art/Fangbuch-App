@@ -3,6 +3,7 @@ const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let editFangId = null;
+let geknipstesFotoBlob = null; // Speichert das komprimierte Foto im Speicher
 
 window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -19,19 +20,9 @@ window.addEventListener('load', function() {
         triggerAutomaticWeatherFetch();
     }
 
-    try {
-        if(typeof trySyncOfflineFange === 'function') trySyncOfflineFange();
-    } catch(e) { console.error("Init-Fehler abgefangen:", e); }
-
-    try {
-        if(typeof trySyncOfflineFange === 'function') trySyncOfflineFange();
-    } catch(e) { console.error("Init-Fehler abgefangen:", e); }
-
-    // Rufe die Prüfung auf, die jetzt sicher weiter unten liegt
     pruefePflichtfelder(); 
 });
 
-// Die Funktion steht jetzt sauber außerhalb und ist für das ganze Programm sichtbar!
 function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
     const uhrzeit = document.getElementById('uhrzeit').value;
@@ -54,7 +45,6 @@ function pruefePflichtfelder() {
 async function loescheAktuellenFang() {
     const { error } = await _supabase.from('fangbuch-asv-langschede').delete().eq('id', editFangId);
     if (!error) {
-        // Zack, das alert ist weg! Es leitet dich jetzt sofort und blitzschnell weiter.
         location.href = 'auswertung.html';
     } else {
         alert("Fehler beim Löschen: " + error.message);
@@ -70,7 +60,6 @@ async function triggerAutomaticWeatherFetch() {
         const data = await response.json();
         
         if (data && data.current_weather) {
-            // 1. Wetterzustand setzen
             const code = data.current_weather.weathercode;
             let wetterSelect = document.getElementById('wetter');
             if (wetterSelect) {
@@ -80,11 +69,9 @@ async function triggerAutomaticWeatherFetch() {
                 else if (code >= 51 && code <= 67) wetterSelect.value = "Regen";
             }
             
-            // 2. Luftdruck setzen (Fehlersicher!)
             const currentHourIso = data.current_weather.time;
             let timeIndex = data.hourly.time.indexOf(currentHourIso);
             
-            // Falls die exakte Stunde nicht gefunden wird, nimm den ersten verfügbaren Wert
             if (timeIndex === -1 && data.hourly.surface_pressure.length > 0) {
                 timeIndex = 0; 
             }
@@ -92,18 +79,15 @@ async function triggerAutomaticWeatherFetch() {
             if (timeIndex !== -1 && data.hourly.surface_pressure[timeIndex]) {
                 document.getElementById('luftdruck').value = Math.round(data.hourly.surface_pressure[timeIndex]);
             } else {
-                // Falls kein Wert da ist, Ladehinweis löschen
                 document.getElementById('luftdruck').value = "";
                 document.getElementById('luftdruck').placeholder = "z.B. 1013";
             }
         } else {
-            // Falls API-Antwort fehlerhaft, Feld freigeben
             document.getElementById('luftdruck').value = "";
             document.getElementById('luftdruck').placeholder = "z.B. 1013";
         }
     } catch (e) {
         console.error("Wetter konnte nicht automatisch geladen werden:", e);
-        // Im Fehlerfall (Keller/Funkloch) sofort das Laden beenden!
         document.getElementById('luftdruck').value = "";
         document.getElementById('luftdruck').placeholder = "Manuell eintragen";
     }
@@ -139,34 +123,31 @@ async function ladeFangDatenFuerEdit(id) {
 }
 
 const fischDatenbank = {
-"Bachforelle": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 }, bildData: "" },
-"Äsche": { mass: 30, k: 1.0, schonzeit: { vonM: 2, vonD: 1, bisM: 3, bisD: 30 }, bildData: "" },
-"Hecht": { mass: 45, k: 0.9, schonzeit: { vonM: 1, vonD: 15, bisM: 3, bisD: 30 }, bildData: "" },
-"Zander": { mass: 50, k: 1.0, schonzeit: { vonM: 1, vonD: 1, bisM: 4, bisD: 31 }, bildData: "" },
-"Flussbarsch": { mass: 0, k: 1.2, bildData: "" },
-"Aal": { mass: 50, k: 0.2, bildData: "" },
-"Wels": { mass: 0, k: 0.8, bildData: "" },
-"Barbe": { mass: 35, k: 1.2, schonzeit: { vonM: 4, vonD: 15, bisM: 5, bisD: 15 }, bildData: "" },
-"Karpfen": { mass: 35, k: 2.1, bildData: "" },
-"Schleie": { mass: 25, k: 2.0, bildData: "" },
-"Döbel": { mass: 0, k: 1.1, bildData: "" },
-"Brassen": { mass: 0, k: 1.3, bildData: "" },
-"Aland": { mass: 0, k: 1.1, bildData: "" },
-"Rotauge": { mass: 0, k: 1.1, bildData: "" },
-"Rotfeder": { mass: 0, k: 1.2, bildData: "" },
-"Kaulbarsch": { mass: 0, k: 1.0, bildData: "" },
-"Bachschmerle": { mass: 0, k: 0.9, bildData: "" },
-"Gründling": { mass: 0, k: 1.0, bildData: "" },
-"Elritze": { mass: 0, k: 0.9, bildData: "" },
-"Schwarzmund-Grundel": { mass: 0, k: 1.1, invasiv: true, bildData: "" },
-"Groppe": { mass: 0, k: 1.0, geschuetzt: true, bildData: "" },
-"Bitterling": { mass: 0, k: 1.0, geschuetzt: true, bildData: "" },
-"Moderlieschen": { mass: 0, k: 0.9, geschuetzt: true, bildData: "" },
-"Nase": { mass: 35, k: 1.0, geschuetzt: true, bildData: "" }
+"Bachforelle": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
+"Äsche": { mass: 30, k: 1.0, schonzeit: { vonM: 2, vonD: 1, bisM: 3, bisD: 30 } },
+"Hecht": { mass: 45, k: 0.9, schonzeit: { vonM: 1, vonD: 15, bisM: 3, bisD: 30 } },
+"Zander": { mass: 50, k: 1.0, schonzeit: { vonM: 1, vonD: 1, bisM: 4, bisD: 31 } },
+"Flussbarsch": { mass: 0, k: 1.2 },
+"Aal": { mass: 50, k: 0.2 },
+"Wels": { mass: 0, k: 0.8 },
+"Barbe": { mass: 35, k: 1.2, schonzeit: { vonM: 4, vonD: 15, bisM: 5, bisD: 15 } },
+"Karpfen": { mass: 35, k: 2.1 },
+"Schleie": { mass: 25, k: 2.0 },
+"Döbel": { mass: 0, k: 1.1 },
+"Brassen": { mass: 0, k: 1.3 },
+"Aland": { mass: 0, k: 1.1 },
+"Rotauge": { mass: 0, k: 1.1 },
+"Rotfeder": { mass: 0, k: 1.2 },
+"Kaulbarsch": { mass: 0, k: 1.0 },
+"Bachschmerle": { mass: 0, k: 0.9 },
+"Gründling": { mass: 0, k: 1.0 },
+"Elritze": { mass: 0, k: 0.9 },
+"Schwarzmund-Grundel": { mass: 0, k: 1.1, invasiv: true },
+"Groppe": { mass: 0, k: 1.0, geschuetzt: true },
+"Bitterling": { mass: 0, k: 1.0, geschuetzt: true },
+"Moderlieschen": { mass: 0, k: 0.9, geschuetzt: true },
+"Nase": { mass: 35, k: 1.0, geschuetzt: true }
 };
-
-
-
 
 function initFormDefaults() {
     const today = new Date().toISOString().split('T')[0];
@@ -189,45 +170,31 @@ function initFormDefaults() {
             select.appendChild(option);
         }
     }
-    // Wenn der Angler die Uhrzeit manuell ändert, wird geprüft
     select.onchange = pruefePflichtfelder;
-
     updateVerbleibOptions("masig");
-
-    // Direkt beim Laden einmal prüfen, damit die Uhrzeit als "ausgefüllt" gilt
     pruefePflichtfelder();
 }
 
-
-
-
-
 function updateVerbleibOptions(modus) {
-const verbleibSelect = document.getElementById('verbleib');
-verbleibSelect.innerHTML = "";
-const placeholder = new Option("Bitte wählen...", ""); placeholder.disabled = true; placeholder.selected = true; verbleibSelect.options.add(placeholder);
-if (modus === "untermasig" || modus === "schonzeit") { verbleibSelect.options.add(new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt")); verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); }
-else if (modus === "invasiv") { verbleibSelect.options.add(new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)")); }
-else { verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); }
+    const verbleibSelect = document.getElementById('verbleib');
+    verbleibSelect.innerHTML = "";
+    const placeholder = new Option("Bitte wählen...", ""); placeholder.disabled = true; placeholder.selected = true; verbleibSelect.options.add(placeholder);
+    if (modus === "untermasig" || modus === "schonzeit") { verbleibSelect.options.add(new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt")); verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); }
+    else if (modus === "invasiv") { verbleibSelect.options.add(new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)")); }
+    else { verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); }
 }
-
-
-
 
 function validateFisch() {
     const fischart = document.getElementById('fischart').value;
     const laenge = parseFloat(document.getElementById('laenge').value);
-    const datumVal = document.getElementById('datum').value;
     const statusHint = document.getElementById('status-hint');
     const gewichtInput = document.getElementById('gewicht');
     const erkennungsBox = document.getElementById('fisch-erkennung');
     const hitparadeBox = document.getElementById("hitparade-meldung");
     
-    // Holt den Text aus der Zusatznotiz und macht ihn komplett klein, damit "Test" und "test" funktionieren
     const notizFeld = document.getElementById('notiz');
     const notizText = notizFeld ? notizFeld.value.toLowerCase().trim() : ""; 
 
-    // Sicherheits-Check: Wenn keine Fischart gewählt ist, alles unsichtbar machen und raus
     if (!fischart) { 
         if (erkennungsBox) erkennungsBox.style.display = 'none'; 
         if (hitparadeBox) hitparadeBox.style.display = 'none';
@@ -250,29 +217,22 @@ function validateFisch() {
             if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
         }
 
-        // --- HITPARADEN-PRÜFUNG MIT SOFA-TESTMODUS ---
         holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
             if (!hitparadeBox) return;
 
-            // Wenn die Länge reicht und der Fisch erlaubt ist
             if (laenge > mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
-                
-                // PRÜFUNG: Wenn im Kommentar "test" oder "sofa" steht, überspringen wir das GPS!
                 if (notizText.includes("test") || notizText.includes("sofa")) {
                     console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
                     ZeigeHitparadeMeldung(hitparadeBox);
                 } else {
-                    // Das ist der scharfe Modus fürs Wasser
                     pruefeRuhrStandort().then((amWasser) => {
                         if (amWasser) {
                             ZeigeHitparadeMeldung(hitparadeBox);
                         } else {
                             hitparadeBox.style.display = "none";
-                            console.log("❌ Fisch wäre Hitparade, aber du bist nicht an der Ruhr!");
                         }
                     });
                 }
-
             } else {
                 hitparadeBox.style.display = "none";
             }
@@ -291,29 +251,87 @@ function validateFisch() {
     }
     pruefePflichtfelder();
 }
-// Hilfsfunktion für die grüne Box (muss auch in der Datei sein)
+
 function ZeigeHitparadeMeldung(hitparadeBox) {
     if (!hitparadeBox) return;
     hitparadeBox.style.display = "block";
+    
+    const hatFoto = geknipstesFotoBlob !== null;
+    const btnText = hatFoto ? "🔄 Foto ändern" : "📸 Foto aufnehmen";
+
     hitparadeBox.innerHTML = `
-        <div style="background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 15px;">
+        <div style="background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
             🎉 <b>Petri Heil, Kollege!</b><br>
             Das ist ein absoluter Spitzenfang! Dieser Fisch knackt die Top 3 der Vereins-Hitparade!<br><br>
             Möchtest du diesen Prachtburschen mit einem Foto in der öffentlichen Galerie verewigen?<br>
-            <small>(Das Foto wird direkt am Wasser geschossen und hochgeladen)</small>
+            
+            <div id="foto-vorschau-bereich" style="margin-top: 10px; display: ${hatFoto ? 'block' : 'none'};">
+                <img id="foto-vorschau-img" src="${hatFoto ? URL.createObjectURL(geknipstesFotoBlob) : ''}" style="max-width: 100%; max-height: 200px; border-radius: 6px; border: 2px solid #2e5a44; margin-bottom: 8px;">
+            </div>
+
             <div style="margin-top: 10px;">
-                <button type="button" id="btn-hitparade-foto" class="btn btn-success btn-sm">📸 Foto schießen</button>
+                <button type="button" class="btn-edit-toggle" style="background-color: #2e5a44; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="oeffneKamera()">
+                    ${btnText}
+                </button>
             </div>
         </div>
     `;
 }
 
+// Öffnet die Kamera des Smartphones
+function oeffneKamera() {
+    document.getElementById('foto-input').click();
+}
 
+// Verarbeitet das geknipste Foto und komprimiert es direkt auf dem Handy
+function verarbeiteFotoAktion(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            // Komprimierung: Max. 1024px Breite/Höhe
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDimension = 1024;
+
+            if (width > height) {
+                if (width > maxDimension) {
+                    height = Math.round((height * maxDimension) / width);
+                    width = maxDimension;
+                }
+            } else {
+                if (height > maxDimension) {
+                    width = Math.round((width * maxDimension) / height);
+                    height = maxDimension;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Als JPEG mit 75% Qualität wandeln (kleine Dateigröße)
+            canvas.toBlob((blob) => {
+                geknipstesFotoBlob = blob;
+                
+                // Vorschau aktualisieren
+                const hitparadeBox = document.getElementById("hitparade-meldung");
+                ZeigeHitparadeMeldung(hitparadeBox);
+            }, 'image/jpeg', 0.75);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
 
 async function saveFang() {
     const speicherBtn = document.getElementById('speichern-btn');
-    
-    // UNSICHTBARER RIEGEL: Schützt vor Mehrfachklicks, verändert aber weder Text noch Farbe!
     speicherBtn.disabled = true;
     speicherBtn.style.cursor = 'not-allowed';
 
@@ -321,32 +339,55 @@ async function saveFang() {
     const ldruckRaw = document.getElementById('luftdruck').value;
     const ldruckVal = ldruckRaw ? parseFloat(ldruckRaw) : null;
     
-    const fangDaten = {
-        fischart: document.getElementById('fischart').value,
-        laenge: parseFloat(document.getElementById('laenge').value),
-        gewicht: (function() {
-            const gewichtInput = document.getElementById('gewicht');
-            if (gewichtInput.value.trim() !== "") {
-                return parseFloat(gewichtInput.value);
-            }
-            if (gewichtInput.placeholder && gewichtInput.placeholder.includes("ca.")) {
-                const geschaetzterWert = gewichtInput.placeholder.replace(/[^\d]/g, ''); 
-                return geschaetzterWert ? parseFloat(geschaetzterWert) : null;
-            }
-            return null;
-        })(),
-        datum: document.getElementById('datum').value,
-        uhrzeit: document.getElementById('uhrzeit').value,
-        verbleib: document.getElementById('verbleib').value,
-        wetter: document.getElementById('wetter').value || null,
-        luftdruck: ldruckVal,
-        truebung: document.getElementById('truebung').value || null,
-        fangort: document.getElementById('fangort').value || null,
-        notiz: document.getElementById('notiz').value,
-        angler_email: schnelleEmail
-    };
+    let uploadedFotoUrl = null;
 
     try {
+        // Falls ein Foto aufgenommen wurde, laden wir es zuerst in den Supabase Storage hoch
+        if (geknipstesFotoBlob && navigator.onLine) {
+            const dateiname = `fang_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            
+            const { data: storageData, error: storageError } = await _supabase.storage
+                .from('Hitparade-Fotos')
+                .upload(dateiname, geknipstesFotoBlob, {
+                    contentType: 'image/jpeg'
+                });
+
+            if (storageError) throw new Error("Foto-Upload fehlgeschlagen: " + storageError.message);
+
+            // Öffentliche URL des Fotos abrufen
+            const { data: urlData } = _supabase.storage
+                .from('Hitparade-Fotos')
+                .getPublicUrl(dateiname);
+
+            if (urlData) uploadedFotoUrl = urlData.publicUrl;
+        }
+
+        const fangDaten = {
+            fischart: document.getElementById('fischart').value,
+            laenge: parseFloat(document.getElementById('laenge').value),
+            gewicht: (function() {
+                const gewichtInput = document.getElementById('gewicht');
+                if (gewichtInput.value.trim() !== "") {
+                    return parseFloat(gewichtInput.value);
+                }
+                if (gewichtInput.placeholder && gewichtInput.placeholder.includes("ca.")) {
+                    const geschaetzterWert = gewichtInput.placeholder.replace(/[^\d]/g, ''); 
+                    return geschaetzterWert ? parseFloat(geschaetzterWert) : null;
+                }
+                return null;
+            })(),
+            datum: document.getElementById('datum').value,
+            uhrzeit: document.getElementById('uhrzeit').value,
+            verbleib: document.getElementById('verbleib').value,
+            wetter: document.getElementById('wetter').value || null,
+            luftdruck: ldruckVal,
+            truebung: document.getElementById('truebung').value || null,
+            fangort: document.getElementById('fangort').value || null,
+            notiz: document.getElementById('notiz').value,
+            angler_email: schnelleEmail,
+            foto_url: uploadedFotoUrl
+        };
+
         if (navigator.onLine) {
             if (editFangId) {
                 const { error } = await _supabase.from('fangbuch-asv-langschede').update(fangDaten).eq('id', editFangId);
@@ -374,27 +415,23 @@ async function saveFang() {
         }
     } catch (error) {
         alert("⚠️ Achtung: Konnte nicht gespeichert werden! " + error.message);
-        // Falls ein Fehler auftritt, machen wir den Button einfach wieder klickbar
         speicherBtn.disabled = false;
         speicherBtn.style.cursor = 'pointer';
     }
 }
+
 function pruefeRuhrStandort() {
     return new Promise((resolve) => {
-        // 1. Prüfen, ob das Gerät überhaupt GPS-Ortung unterstützt
         if (!navigator.geolocation) {
-            console.log("GPS wird von diesem Gerät nicht unterstützt.");
             resolve(false); 
             return;
         }
 
-        // 2. Die echten GPS-Koordinaten vom Smartphone abfragen
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
-                // Eure 11 Stecknadeln: Lückenlose Kette vom Ostholzbach bis 200m vor der Schoofsbrücke
                 const ruhrPunkte = [
                     { name: "1: Anfang Ostholzbach (Mündung)", lat: 51.4782, lon: 7.7785 },
                     { name: "2: Ruhrwiesen oberhalb Kanu-Club", lat: 51.4768, lon: 7.7740 },
@@ -409,79 +446,64 @@ function pruefeRuhrStandort() {
                     { name: "11: Streckenende vor Schoofsbrücke", lat: 51.4682, lon: 7.7375 }
                 ];
 
-                const R = 6371e3; // Erdradius in Metern für die Berechnung
+                const R = 6371e3;
                 let anDerRuhr = false;
 
-                // 3. Die App läuft jetzt alle 11 Punkte nacheinander durch
                 for (let punkt of ruhrPunkte) {
                     const phi1 = spielerLat * Math.PI / 180;
                     const phi2 = punkt.lat * Math.PI / 180;
                     const deltaPhi = (punkt.lat - spielerLat) * Math.PI / 180;
                     const deltaLambda = (punkt.lon - spielerLon) * Math.PI / 180;
 
-                    // Haversine-Formel zur Berechnung der exakten Luftlinie auf der Erdkugel
                     const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
                               Math.cos(phi1) * Math.cos(phi2) *
                               Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                    const entfernung = R * c; // Ergebnis in Metern
+                    const entfernung = R * c;
 
-                    console.log(`Entfernung zu ${punkt.name}: ${Math.round(entfernung)} Meter.`);
-
-                    // 4. Wenn du zu IRGENDEINEM der 11 Punkte weniger als 100 Meter Abstand hast
                     if (entfernung <= 100) {
                         anDerRuhr = true;
-                        console.log(`✅ Standort erfolgreich bestätigt bei: ${punkt.name}`);
-                        break; // Treffer! Wir können die Schleife sofort abbrechen
+                        break;
                     }
                 }
 
-                // Gibt true (Ja) oder false (Nein) zurück
                 resolve(anDerRuhr);
             },
             (error) => {
-                console.error("GPS-Fehler beim Abrufen der Position:", error);
-                resolve(false); // Falls der Angler die Ortung ablehnt, wird "false" zurückgegeben
+                resolve(false);
             },
-            { 
-                enableHighAccuracy: true, // Erzwingt die Nutzung von echtem GPS (nicht nur ungenaues WLAN)
-                timeout: 7000             // Wartet maximal 7 Sekunden auf das Signal
-            }
+            { enableHighAccuracy: true, timeout: 7000 }
         );
     });
 }
+
 async function holeMindestLaengeFuerHitparade(fischart) {
     try {
         const { data, error } = await _supabase
             .from('fangbuch-asv-langschede')
             .select('laenge')
             .eq('fischart', fischart)
-            .order('laenge', { ascending: false }) // Die größten zuerst
-            .range(0, 2); // Hole maximal die Plätze 1, 2 und 3
+            .order('laenge', { ascending: false })
+            .range(0, 2);
 
         if (error) throw error;
 
-        // Wenn es im Verein noch weniger als 3 Fische dieser Art gibt,
-        // kommt JEDER Fisch automatisch in die Hitparade! (Mindestlänge = 0)
         if (!data || data.length < 3) {
             return 0; 
         }
 
-        // Der dritte Fisch in der Liste bestimmt die magische Grenze
         const platz3 = data[data.length - 1];
         return platz3.laenge ? parseFloat(platz3.laenge) : 0;
 
     } catch (e) {
-        console.error("Fehler beim Laden der Hitparaden-Grenze:", e);
-        return 0; // Im Zweifel erlauben wir den Hinweis
+        return 0;
     }
 }
-// --- REPARATUR: SPRACHEINGABE FÜR NOTIZEN ---
+
 function startSpeechRecognition() {
     const micBtn = document.getElementById('mic-btn');
     const notizFeld = document.getElementById('notiz');
 
-    // Prüfen, ob das Browser-System Spracheingabe unterstützt
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -490,38 +512,32 @@ function startSpeechRecognition() {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'de-DE'; // Auf deutsche Sprache einstellen
+    recognition.lang = 'de-DE';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    // Visuelles Feedback: Mikrofon wird rot, während es zuhört
     micBtn.style.backgroundColor = '#c0392b';
     micBtn.textContent = '🛑';
 
     recognition.start();
 
-    // Wenn der Angler fertig gesprochen hat
     recognition.onresult = function(event) {
         const gesprochenerText = event.results[0][0].transcript;
         
-        // Den Text an bestehende Notizen anhängen (falls schon was drin steht)
         if (notizFeld.value.trim() !== "") {
             notizFeld.value += " " + gesprochenerText;
         } else {
             notizFeld.value = gesprochenerText;
         }
         
-        // Pflichtfelder neu prüfen, falls der "Sofa-Testmodus" (test/sofa) eingesprochen wurde
         if (typeof validateFisch === 'function') validateFisch();
     };
 
-    // Wenn ein Fehler passiert oder das Sprechen vorbei ist
     recognition.onerror = function(event) {
         console.error("Sprachfehler:", event.error);
     };
 
     recognition.onend = function() {
-        // Mikrofon wieder in den Normalzustand versetzen
         micBtn.style.backgroundColor = 'var(--secondary-color)';
         micBtn.textContent = '🎙️';
     };

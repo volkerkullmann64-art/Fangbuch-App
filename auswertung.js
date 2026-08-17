@@ -6,10 +6,10 @@ let mitgliederMap = {};
 
 window.addEventListener('load', async function() {
     await ladeMitgliederNamen();
-    await ladeFange();
+    await ladeMeineFange();
 });
 
-// Lädt die Mitgliedernamen aus der Datenbank für   die saubere Namensanzeige
+// Lädt die Mitgliedernamen aus der Datenbank für die saubere Namensanzeige
 async function ladeMitgliederNamen() {
     try {
         const { data, error } = await _supabase
@@ -29,32 +29,37 @@ async function ladeMitgliederNamen() {
     }
 }
 
-async function ladeFange() {
+async function ladeMeineFange() {
     const container = document.getElementById('faenge-liste');
     if (!container) return;
 
     const angemeldeteEmail = (sessionStorage.getItem('userEmail') || '').toLowerCase();
 
+    if (!angemeldeteEmail) {
+        container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">Bitte melde dich erst an, um deine Fänge zu sehen.</div>`;
+        return;
+    }
+
     try {
+        // NUR die eigenen Fänge des angemeldeten Anglers aus der Datenbank abrufen
         const { data, error } = await _supabase
             .from('fangbuch-asv-langschede')
             .select('*')
+            .ilike('angler_email', angemeldeteEmail)
             .order('datum', { ascending: false })
             .order('uhrzeit', { ascending: false });
 
         if (error) throw error;
 
         if (!data || data.length === 0) {
-            container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">Keine Fänge eingetragen.</div>`;
+            container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">Du hast noch keine eigenen Fänge eingetragen.</div>`;
             return;
         }
 
+        const anglerName = mitgliederMap[angemeldeteEmail] || angemeldeteEmail;
+
         let html = "";
         data.forEach(fang => {
-            const emailKey = (fang.angler_email || '').toLowerCase();
-            const anglerName = mitgliederMap[emailKey] || fang.angler_email || 'Vereinsmitglied';
-            const istEigenerFang = emailKey === angemeldeteEmail;
-
             // Formatiere Datum (YYYY-MM-DD -> DD.MM.YYYY)
             let datumFormatiert = fang.datum || '';
             if (fang.datum) {
@@ -82,11 +87,9 @@ async function ladeFange() {
                         ${fang.foto_url ? `<div style="margin-top: 10px;"><img src="${fang.foto_url}" alt="Fangfoto" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ccc;"></div>` : ''}
                     </div>
 
-                    ${istEigenerFang ? `
-                        <div style="margin-top: 12px; text-align: right;">
-                            <button onclick="location.href='fang-eintragen.html?editId=${fang.id}'" style="background-color: #2e5a44; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">✏️ Fang bearbeiten / löschen</button>
-                        </div>
-                    ` : ''}
+                    <div style="margin-top: 12px; text-align: right;">
+                        <button onclick="location.href='fang-eintragen.html?editId=${fang.id}'" style="background-color: #2e5a44; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">✏️ Fang bearbeiten / löschen</button>
+                    </div>
                 </div>
             `;
         });
@@ -94,7 +97,7 @@ async function ladeFange() {
         container.innerHTML = html;
 
     } catch (e) {
-        console.error("Fehler beim Laden der Fänge:", e);
+        console.error("Fehler beim Laden deiner Fänge:", e);
         container.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">Fehler beim Laden: ${e.message}</div>`;
     }
 }

@@ -1,60 +1,317 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ASV Fangbuch - Galerie</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root {
---primary-color: #2e5a44;
---secondary-color: #4a7c59;
---accent-color: #d68c45;
---bg-color: #f4f7f5;
---text-color: #333;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; display: flex; flex-direction: column; align-items: center; }
-.container { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-h2 { color: var(--primary-color); text-align: center; margin-bottom: 20px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vereins-Hitparade - ASV Langschede</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #2e5a44;
+            --secondary-color: #4a7c59;
+            --accent-color: #d68c45;
+            --bg-color: #f4f7f5;
+            --text-color: #333;
+        }
 
-/* Tab-Navigations-Leiste */
-.tab-container { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-.tab-btn { flex: 1; padding: 12px; text-align: center; font-weight: bold; font-size: 15px; background: none; border: none; cursor: pointer; color: #666; transition: all 0.3s; }
-.tab-btn.active { color: var(--primary-color); border-bottom: 4px solid var(--primary-color); }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
 
-/* Galerie Grid */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-.card { background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-.card img { width: 100%; height: 180px; object-fit: cover; background: #eee; }
-.card-content { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.card-title { font-size: 16px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; }
-.card-meta { font-size: 14px; color: #555; }
-.card-date { font-size: 12px; color: #999; margin-top: 8px; text-align: right; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-.no-data { text-align: center; color: #777; padding: 40px 0; font-style: italic; }
-.back-btn { display: block; width: 100%; max-width: 600px; text-align: center; padding: 12px; margin-top: 15px; background: #757575; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; text-decoration: none; font-weight: bold; }
-</style>
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Top Bar mit Zurück-Button oben links */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .btn-back {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-back:hover {
+            background-color: var(--secondary-color);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .sub-header {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Fischart-Sektion */
+        .fischart-sektion {
+            margin-bottom: 25px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .fischart-titel {
+            font-size: 17px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--secondary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 3 Kacheln nebeneinander */
+        .podest-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .podest-kachel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 6px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .podest-kachel:active {
+            transform: scale(0.97);
+        }
+
+        .podest-kachel.empty {
+            background: #f9f9f9;
+            border: 1px dashed #ccc;
+            cursor: default;
+            opacity: 0.6;
+        }
+
+        .rang-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        .kachel-bild {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #eee;
+            margin-bottom: 5px;
+        }
+
+        .kachel-titel {
+            font-size: 13px;
+            font-weight: bold;
+            color: #222;
+            line-height: 1.2;
+        }
+
+        .kachel-sub {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .kachel-faenger {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Modal / Großansicht */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            background: #111;
+            display: block;
+        }
+
+        .modal-body {
+            padding: 15px;
+        }
+
+        .modal-title {
+            color: var(--primary-color);
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 15px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .modal-info-item {
+            color: #444;
+        }
+
+        .modal-info-item strong {
+            color: #111;
+        }
+
+        .modal-notiz {
+            margin-top: 12px;
+            padding: 8px 10px;
+            background: #f4f7f5;
+            border-left: 3px solid var(--secondary-color);
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🏆 Fang-Galerie</h2>
-    
-    <!-- Tab Schalter -->
-    <div class="tab-container">
-        <button class="tab-btn active" onclick="switchTab('privat')">Meine Rekorde</button>
-        <button class="tab-btn" onclick="switchTab('verein')">Vereins-Hitparade</button>
+    <!-- Top-Bar mit Button oben links -->
+    <div class="top-bar">
+        <button class="btn-back" onclick="location.href='index.html'">↩ Zurück zum Hauptmenü</button>
     </div>
 
-    <!-- Galerie Grid -->
-    <div id="galerie-grid" class="grid"></div>
+    <h2>🏆 Vereins-Hitparade</h2>
+    <p class="sub-header">Die Top 3 Rekordfänge des ASV Langschede mit Foto</p>
+
+    <div id="galerie-content">
+        <div class="loading-spinner">⏳ Lade Vereins-Hitparade...</div>
+    </div>
 </div>
 
-<button class="back-btn" onclick="location.href='index.html'">↩ Zurück zum Dashboard</button>
+<!-- Modal für Foto-Großansicht -->
+<div id="foto-modal" class="modal" onclick="schliesseModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="modal-close" onclick="schliesseModal()">&times;</span>
+        <img id="modal-img" class="modal-img" src="" alt="Fangfoto Großansicht">
+        <div class="modal-body">
+            <div id="modal-title" class="modal-title">Fischart</div>
+            <div id="modal-faenger" style="font-weight: bold; color: var(--secondary-color); margin-bottom: 10px;">Fänger</div>
+            
+            <div class="modal-grid">
+                <div class="modal-info-item">📏 Länge: <strong id="modal-laenge">-</strong></div>
+                <div class="modal-info-item">⚖️ Gewicht: <strong id="modal-gewicht">-</strong></div>
+                <div class="modal-info-item">📅 Datum: <strong id="modal-datum">-</strong></div>
+                <div class="modal-info-item">⏰ Uhrzeit: <strong id="modal-uhrzeit">-</strong></div>
+                <div class="modal-info-item">📍 Gewässer: <strong id="modal-ort">-</strong></div>
+                <div class="modal-info-item">🌤️ Wetter: <strong id="modal-wetter">-</strong></div>
+            </div>
+
+            <div id="modal-notiz-box" class="modal-notiz" style="display: none;">
+                <strong>💬 Köder / Notiz:</strong> <span id="modal-notiz"></span>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="galerie.js"></script>
-
-
 </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asv-fangbuch-V88';
+const CACHE_NAME = 'asv-fangbuch-V89';
 
 // Alle statischen Dateien der PWA mit relativer Pfadangabe
 const ASSETS = [

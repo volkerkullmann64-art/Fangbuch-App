@@ -41,7 +41,7 @@ async function ladeMeineFange() {
     }
 
     try {
-        // NUR die eigenen Fänge des angemeldeten Anglers aus der Datenbank abrufen
+        // NUR  die eigenen Fänge des angemeldeten Anglers aus der Datenbank abrufen
         const { data, error } = await _supabase
             .from('fangbuch-asv-langschede')
             .select('*')

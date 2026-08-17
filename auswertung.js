@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let editMode = false;
 let mitgliederMap = {};
 
 window.addEventListener('load', async function() {
@@ -9,7 +10,7 @@ window.addEventListener('load', async function() {
     await ladeMeineFange();
 });
 
-// Lädt die Mitgliedernamen aus der Datenbank für die saubere Namensanzeige
+// Lädt die Mitgliedernamen aus der Datenbank
 async function ladeMitgliederNamen() {
     try {
         const { data, error } = await _supabase
@@ -29,19 +30,29 @@ async function ladeMitgliederNamen() {
     }
 }
 
+function toggleEditMode() {
+    editMode = !editMode;
+    const btn = document.getElementById('edit-toggle-btn');
+    if (btn) {
+        btn.textContent = editMode ? 'Fertig' : 'Bearbeiten';
+        btn.style.backgroundColor = editMode ? '#c0392b' : '#2e5a44';
+    }
+    ladeMeineFange();
+}
+
 async function ladeMeineFange() {
-    const container = document.getElementById('faenge-liste');
+    const container = document.getElementById('faenge-tabelle-container');
     if (!container) return;
 
     const angemeldeteEmail = (sessionStorage.getItem('userEmail') || '').toLowerCase();
 
     if (!angemeldeteEmail) {
-        container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">Bitte melde dich erst an, um deine Fänge zu sehen.</div>`;
+        container.innerHTML = `<div style="text-align: center; padding: 20px; color: #666;">Bitte melde dich an, um deine Fänge zu sehen.</div>`;
         return;
     }
 
     try {
-        // NUR  die eigenen Fänge des angemeldeten Anglers aus der Datenbank abrufen
+        // Zwingend NUR die eigenen Fänge des angemeldeten Anglers abrufen
         const { data, error } = await _supabase
             .from('fangbuch-asv-langschede')
             .select('*')
@@ -52,52 +63,63 @@ async function ladeMeineFange() {
         if (error) throw error;
 
         if (!data || data.length === 0) {
-            container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">Du hast noch keine eigenen Fänge eingetragen.</div>`;
+            container.innerHTML = `<div style="text-align: center; padding: 20px; color: #666;">Keine Fänge eingetragen.</div>`;
             return;
         }
 
-        const anglerName = mitgliederMap[angemeldeteEmail] || angemeldeteEmail;
+        const anglerName = mitgliederMap[angemeldeteEmail] || 'Volker Kullmann';
 
-        let html = "";
+        let html = `
+            <table class="fang-tabelle">
+                <thead>
+                    <tr>
+                        ${editMode ? '<th style="width: 35px;"></th>' : ''}
+                        <th>Datum</th>
+                        <th>Fischart</th>
+                        <th>cm</th>
+                        <th>g</th>
+                        <th>Ort</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
         data.forEach(fang => {
-            // Formatiere Datum (YYYY-MM-DD -> DD.MM.YYYY)
             let datumFormatiert = fang.datum || '';
             if (fang.datum) {
                 const teile = fang.datum.split('-');
                 if (teile.length === 3) {
-                    datumFormatiert = `${teile[2]}.${teile[1]}.${teile[0]}`;
+                    datumFormatiert = `${teile[2]}.${teile[1]}.`;
                 }
             }
 
+            const clickAction = editMode ? `onclick="location.href='fang-eintragen.html?editId=${fang.id}'"` : '';
+            const rowStyle = editMode ? 'cursor: pointer; background-color: #fff9e6;' : '';
+
             html += `
-                <div class="fang-karte" style="background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h3 style="color: #2e5a44; margin: 0; font-size: 18px;">🐟 ${fang.fischart} (${fang.laenge} cm)</h3>
-                        <span style="font-size: 13px; color: #777; font-weight: bold;">${datumFormatiert}</span>
-                    </div>
-
-                    <div style="font-size: 14px; color: #444; line-height: 1.5;">
-                        <p><strong>👤 Angler:</strong> ${anglerName}</p>
-                        ${fang.gewicht ? `<p><strong>⚖️ Gewicht:</strong> ${fang.gewicht} g</p>` : ''}
-                        ${fang.uhrzeit ? `<p><strong>⏰ Uhrzeit:</strong> ${fang.uhrzeit.substring(0,5)} Uhr</p>` : ''}
-                        ${fang.fangort ? `<p><strong>📍 Fangort:</strong> ${fang.fangort}</p>` : ''}
-                        ${fang.verbleib ? `<p><strong>🎣 Verbleib:</strong> ${fang.verbleib}</p>` : ''}
-                        ${fang.wetter ? `<p><strong>🌤️ Wetter:</strong> ${fang.wetter} ${fang.luftdruck ? '(' + fang.luftdruck + ' hPa)' : ''}</p>` : ''}
-                        ${fang.notiz ? `<p style="margin-top: 6px; padding: 6px; background: #f4f7f5; border-left: 3px solid #4a7c59; border-radius: 4px;"><strong>💬 Notiz:</strong> ${fang.notiz}</p>` : ''}
-                        ${fang.foto_url ? `<div style="margin-top: 10px;"><img src="${fang.foto_url}" alt="Fangfoto" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ccc;"></div>` : ''}
-                    </div>
-
-                    <div style="margin-top: 12px; text-align: right;">
-                        <button onclick="location.href='fang-eintragen.html?editId=${fang.id}'" style="background-color: #2e5a44; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">✏️ Fang bearbeiten / löschen</button>
-                    </div>
-                </div>
+                <tr style="${rowStyle}" ${clickAction}>
+                    ${editMode ? `<td style="text-align: center; font-size: 16px;">✏️</td>` : ''}
+                    <td>${datumFormatiert}</td>
+                    <td><strong>${fang.fischart}</strong></td>
+                    <td>${fang.laenge || '-'}</td>
+                    <td>${fang.gewicht || '-'}</td>
+                    <td>${fang.fangort || '-'}</td>
+                </tr>
             `;
         });
+
+        html += `
+                </tbody>
+            </table>
+            <div style="margin-top: 15px; font-size: 13px; color: #666; text-align: center;">
+                Angler: <strong>${anglerName}</strong> (${data.length} ${data.length === 1 ? 'Fang' : 'Fänge'})
+            </div>
+        `;
 
         container.innerHTML = html;
 
     } catch (e) {
         console.error("Fehler beim Laden deiner Fänge:", e);
-        container.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">Fehler beim Laden: ${e.message}</div>`;
+        container.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">Fehler: ${e.message}</div>`;
     }
 }

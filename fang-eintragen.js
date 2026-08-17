@@ -94,31 +94,35 @@ async function triggerAutomaticWeatherFetch() {
 }
 
 async function ladeFangDatenFuerEdit(id) {
-    const { data, error } = await _supabase
-        .from('fangbuch-asv-langschede')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-    if (data && !error) {
-        document.getElementById('datum').value = data.datum || '';
-        if (data.uhrzeit) document.getElementById('uhrzeit').value = data.uhrzeit.substring(0,5);
-        document.getElementById('fischart').value = data.fischart || '';
-        document.getElementById('laenge').value = data.laenge || '';
-        document.getElementById('gewicht').value = data.gewicht || '';
-        
-        setTimeout(() => { 
-            validateFisch(); 
-            if(data.verbleib) document.getElementById('verbleib').value = data.verbleib; 
-        }, 100);
+    if (!id) return;
+    
+    try {
+        const { data, error } = await _supabase
+            .from('fangbuch-asv-langschede')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle(); // Abgefangen: Wirft keinen Fehler mehr, wenn ID nicht existiert
+            
+        if (data && !error) {
+            document.getElementById('datum').value = data.datum || '';
+            if (data.uhrzeit) document.getElementById('uhrzeit').value = data.uhrzeit.substring(0,5);
+            document.getElementById('fischart').value = data.fischart || '';
+            document.getElementById('laenge').value = data.laenge || '';
+            document.getElementById('gewicht').value = data.gewicht || '';
+            
+            setTimeout(() => { 
+                validateFisch(); 
+                if(data.verbleib) document.getElementById('verbleib').value = data.verbleib; 
+            }, 100);
 
-        document.getElementById('wetter').value = data.wetter || 'Bewölkt';
-        document.getElementById('luftdruck').value = data.luftdruck || '';
-        document.getElementById('truebung').value = data.truebung || '';
-        document.getElementById('fangort').value = data.fangort || '';
-        document.getElementById('notiz').value = data.notiz || '';
-    } else {
-        alert("Fehler beim Laden des Fangs: " + (error ? error.message : 'Nicht gefunden'));
+            document.getElementById('wetter').value = data.wetter || 'Bewölkt';
+            document.getElementById('luftdruck').value = data.luftdruck || '';
+            document.getElementById('truebung').value = data.truebung || '';
+            document.getElementById('fangort').value = data.fangort || '';
+            document.getElementById('notiz').value = data.notiz || '';
+        }
+    } catch(e) {
+        console.log("Edit-Laden abgefangen:", e);
     }
 }
 

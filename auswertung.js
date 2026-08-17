@@ -1,62 +1,100 @@
-  const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let editModeActive = false;
+let mitgliederMap = {};
 
-    window.onload = function() {
-        let anglerEmail = sessionStorage.getItem('userEmail') || 'test@angler.de';
-        document.getElementById('angler-name').innerText = anglerEmail;
-        ladeFaengeFuerAngler(anglerEmail);
-    };
+window.addEventListener('load', async function() {
+    await ladeMitgliederNamen();
+    await ladeFange();
+});
 
-    // Blendet die Stifte einfach nur ein oder aus
-    function toggleEditMode() {
-        editModeActive = !editModeActive;
-        const editElements = document.querySelectorAll('.edit-col');
-        
-        if (editModeActive) {
-            editElements.forEach(el => el.style.display = 'table-cell');
-        } else {
-            editElements.forEach(el => el.style.display = 'none');
-        }
-    }
+// Lädt die Mitgliedernamen aus der Datenbank für die saubere Namensanzeige
+async function ladeMitgliederNamen() {
+    try {
+        const { data, error } = await _supabase
+            .from('mitglieder')
+            .select('email, vorname, nachname');
 
-   async function ladeFaengeFuerAngler(email) {
-        try {
-            const { data, error } = await _supabase.from('fangbuch-asv-langschede').select('*').eq('angler_email', email).order('datum', { ascending: false });
-            if (error) throw error;
-            const tbody = document.getElementById('fang-tabelle-body');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 20px;">Keine Fänge unter dieser E-Mail gefunden.</td></tr>`; return;
-            }
-            tbody.innerHTML = ''; 
-            
-            data.forEach(fang => {
-                // HIER WIRD DER FANGORT VORBEREITET:
-                let anzeigeOrt = fang.fangort || '-';
-                
-                // Wenn Fremdgewässer gewählt wurde UND eine Notiz existiert, kombinieren wir das:
-                if (fang.fangort === 'Fremdgewässer' && fang.notiz) {
-                    anzeigeOrt = `Fremdgewässer (${fang.notiz})`;
+        if (data && !error) {
+            data.forEach(m => {
+                if (m.email) {
+                    const vollerName = `${m.vorname || ''} ${m.nachname || ''}`.trim();
+                    mitgliederMap[m.email.toLowerCase()] = vollerName || m.email;
                 }
-
-                // JETZT WIRD DIE ZEILE IN DIE TABELLE GESCHRIEBEN:
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="edit-col" style="${editModeActive ? 'display: table-cell;' : ''}" onclick="location.href='fang-eintragen.html?editId=${fang.id}'">✏️</td>
-                        <td>${fang.datum || '-'}</td>
-                        <td>${fang.uhrzeit ? fang.uhrzeit.substring(0,5) : '-'}</td>                      
-                        <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
-                        <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
-                        <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
-                        <td>${anzeigeOrt}</td>
-                        <td>${fang.verbleib || '-'}</td>
-                        <td>${fang.wetter || '-'}</td>
-                        <td>${fang.luftdruck ? fang.luftdruck + ' hPa' : '-'}</td>
-                        <td>${fang.truebung || '-'}</td>
-                        <td>${fang.notiz || '-'}</td>
-                    </tr>`;
             });
-        } catch (f) { document.getElementById('fang-tabelle-body').innerHTML = `<tr><td colspan="13" style="color: red; padding: 20px;">Fehler: ${f.message}</td></tr>`; }
+        }
+    } catch (e) {
+        console.error("Fehler beim Laden der Mitgliedernamen:", e);
     }
+}
+
+async function ladeFange() {
+    const container = document.getElementById('faenge-liste');
+    if (!container) return;
+
+    const angemeldeteEmail = (sessionStorage.getItem('userEmail') || '').toLowerCase();
+
+    try {
+        const { data, error } = await _supabase
+            .from('fangbuch-asv-langschede')
+            .select('*')
+            .order('datum', { ascending: false })
+            .order('uhrzeit', { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div style="text-align: center; padding: 30px; color: #666;">Keine Fänge eingetragen.</div>`;
+            return;
+        }
+
+        let html = "";
+        data.forEach(fang => {
+            const emailKey = (fang.angler_email || '').toLowerCase();
+            const anglerName = mitgliederMap[emailKey] || fang.angler_email || 'Vereinsmitglied';
+            const istEigenerFang = emailKey === angemeldeteEmail;
+
+            // Formatiere Datum (YYYY-MM-DD -> DD.MM.YYYY)
+            let datumFormatiert = fang.datum || '';
+            if (fang.datum) {
+                const teile = fang.datum.split('-');
+                if (teile.length === 3) {
+                    datumFormatiert = `${teile[2]}.${teile[1]}.${teile[0]}`;
+                }
+            }
+
+            html += `
+                <div class="fang-karte" style="background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="color: #2e5a44; margin: 0; font-size: 18px;">🐟 ${fang.fischart} (${fang.laenge} cm)</h3>
+                        <span style="font-size: 13px; color: #777; font-weight: bold;">${datumFormatiert}</span>
+                    </div>
+
+                    <div style="font-size: 14px; color: #444; line-height: 1.5;">
+                        <p><strong>👤 Angler:</strong> ${anglerName}</p>
+                        ${fang.gewicht ? `<p><strong>⚖️ Gewicht:</strong> ${fang.gewicht} g</p>` : ''}
+                        ${fang.uhrzeit ? `<p><strong>⏰ Uhrzeit:</strong> ${fang.uhrzeit.substring(0,5)} Uhr</p>` : ''}
+                        ${fang.fangort ? `<p><strong>📍 Fangort:</strong> ${fang.fangort}</p>` : ''}
+                        ${fang.verbleib ? `<p><strong>🎣 Verbleib:</strong> ${fang.verbleib}</p>` : ''}
+                        ${fang.wetter ? `<p><strong>🌤️ Wetter:</strong> ${fang.wetter} ${fang.luftdruck ? '(' + fang.luftdruck + ' hPa)' : ''}</p>` : ''}
+                        ${fang.notiz ? `<p style="margin-top: 6px; padding: 6px; background: #f4f7f5; border-left: 3px solid #4a7c59; border-radius: 4px;"><strong>💬 Notiz:</strong> ${fang.notiz}</p>` : ''}
+                        ${fang.foto_url ? `<div style="margin-top: 10px;"><img src="${fang.foto_url}" alt="Fangfoto" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ccc;"></div>` : ''}
+                    </div>
+
+                    ${istEigenerFang ? `
+                        <div style="margin-top: 12px; text-align: right;">
+                            <button onclick="location.href='fang-eintragen.html?editId=${fang.id}'" style="background-color: #2e5a44; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">✏️ Fang bearbeiten / löschen</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+    } catch (e) {
+        console.error("Fehler beim Laden der Fänge:", e);
+        container.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">Fehler beim Laden: ${e.message}</div>`;
+    }
+}

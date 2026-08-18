@@ -35,7 +35,7 @@ function toggleEditMode() {
     const btn = document.getElementById('edit-toggle-btn');
     if (btn) {
         btn.textContent = editMode ? 'Fertig' : '✏️ Bearbeiten';
-        btn.style.backgroundColor = editMode ? '#c0392b' : '#2e5a44';
+        btn.style.backgroundColor = editMode ? '#c0392b' : '#2e7d32';
     }
     ladeMeineFange();
 }
@@ -79,7 +79,7 @@ async function ladeMeineFange() {
         const anglerName = mitgliederMap[angemeldeteEmail] || 'Volker Kullmann';
 
         let html = `
-            <div style="margin-bottom: 6px; font-size: 14px; color: #2e5a44; text-align: center; font-weight: bold; background: #eaf2ed; padding: 8px; border-radius: 6px; border: 1px solid #c2dbc9;">
+            <div style="margin-bottom: 6px; font-size: 14px; color: #2e7d32; text-align: center; font-weight: bold; background: #e8f5e9; padding: 8px; border-radius: 6px; border: 1px solid #c8e6c9;">
                 Angler: ${anglerName} (${data.length} ${data.length === 1 ? 'Fang' : 'Fänge'})
             </div>
             <div style="margin-bottom: 12px; font-size: 12px; color: #666; text-align: center; font-style: italic;">
@@ -109,6 +109,19 @@ async function ladeMeineFange() {
                 }
             }
 
+            // Luftdruck-Tendenzpfeil aufbereiten
+            let luftdruckText = '';
+            if (fang.luftdruck) {
+                luftdruckText = `(${fang.luftdruck} hPa`;
+                if (fang.luftdruck_trend || fang.luftdrucktrend) {
+                    const trend = (fang.luftdruck_trend || fang.luftdrucktrend).toLowerCase();
+                    if (trend.includes('fall')) luftdruckText += ' ⬇️';
+                    else if (trend.includes('steig')) luftdruckText += ' ⬆️';
+                    else if (trend.includes('gleich')) luftdruckText += ' ➡️';
+                }
+                luftdruckText += ')';
+            }
+
             const clickAction = editMode 
                 ? `onclick="location.href='fang-eintragen.html?editId=${fang.id}'"` 
                 : `onclick="toggleDetails('${fang.id}')"`;
@@ -126,12 +139,12 @@ async function ladeMeineFange() {
                     <td>${fang.fangort || '-'}</td>
                 </tr>
                 <tr id="details-${fang.id}" class="details-row" style="display: none; background-color: #f9fbf9;">
-                    <td colspan="${colSpan}" style="padding: 12px; border-bottom: 2px solid #2e5a44;">
+                    <td colspan="${colSpan}" style="padding: 12px; border-bottom: 2px solid #2e7d32;">
                         <div style="font-size: 13px; color: #444; line-height: 1.6;">
                             <p><strong>🕒 Uhrzeit:</strong> ${fang.uhrzeit ? fang.uhrzeit.substring(0,5) + ' Uhr' : 'keine Angabe'}</p>
-                            <p><strong>🎣 Verbleib / Köder:</strong> ${fang.verbleib || 'keine Angabe'}</p>
-                            <p><strong>🌤️ Wetter:</strong> ${fang.wetter || 'keine Angabe'} ${fang.luftdruck ? '(' + fang.luftdruck + ' hPa)' : ''}</p>
-                            ${fang.notiz ? `<p style="margin-top: 6px; padding: 6px; background: #edf4ee; border-left: 3px solid #2e5a44; border-radius: 4px;"><strong>💬 Notiz:</strong> ${fang.notiz}</p>` : ''}
+                            <p><strong>🎣 Verbleib:</strong> ${fang.verbleib || 'keine Angabe'}</p>
+                            <p><strong>🌤️ Wetter:</strong> ${fang.wetter || 'keine Angabe'} ${luftdruckText}</p>
+                            ${fang.notiz ? `<p style="margin-top: 6px; padding: 6px; background: #e8f5e9; border-left: 3px solid #2e7d32; border-radius: 4px;"><strong>💬 Notiz:</strong> ${fang.notiz}</p>` : ''}
                             ${fang.foto_url ? `<div style="margin-top: 8px;"><img src="${fang.foto_url}" alt="Fangfoto" style="max-width: 100%; max-height: 180px; border-radius: 6px; border: 1px solid #ccc;"></div>` : ''}
                         </div>
                     </td>

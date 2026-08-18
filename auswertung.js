@@ -109,19 +109,16 @@ async function ladeMeineFange() {
                 }
             }
 
-            // Luftdruck & Tendenz in klarem Text aufbereiten
+            // Luftdruck formatierten Text aufbauen
             let luftdruckText = '';
-            const rawTrend = String(fang.luftdruck_trend || fang.luftdrucktrend || fang.trend || '').toLowerCase();
-            
-            let tendenzWort = '';
-            if (rawTrend.includes('fall') || rawTrend.includes('⬇') || rawTrend.includes('runter')) tendenzWort = 'fallend';
-            else if (rawTrend.includes('steig') || rawTrend.includes('⬆') || rawTrend.includes('hoch')) tendenzWort = 'steigend';
-            else if (rawTrend.includes('gleich') || rawTrend.includes('➡️') || rawTrend.includes('stabil')) tendenzWort = 'gleichbleibend';
-
             if (fang.luftdruck) {
-                luftdruckText = `(${fang.luftdruck} hPa${tendenzWort ? ' ' + tendenzWort : ''})`;
-            } else if (tendenzWort) {
-                luftdruckText = `(${tendenzWort})`;
+                const rawTrend = String(fang.luftdruck_trend || fang.luftdrucktrend || fang.trend || '').toLowerCase();
+                let tendenzWort = '';
+                if (rawTrend.includes('fall') || rawTrend.includes('runter')) tendenzWort = ' fallend';
+                else if (rawTrend.includes('steig') || rawTrend.includes('hoch')) tendenzWort = ' steigend';
+                else if (rawTrend.includes('gleich') || rawTrend.includes('stabil')) tendenzWort = ' gleichbleibend';
+
+                luftdruckText = `(${fang.luftdruck} hPa${tendenzWort})`;
             }
 
             const clickAction = editMode 

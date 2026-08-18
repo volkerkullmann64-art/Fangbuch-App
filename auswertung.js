@@ -40,6 +40,16 @@ function toggleEditMode() {
     ladeMeineFange();
 }
 
+// Schaltet die Detailansicht einer Zeile an/aus
+function toggleDetails(fangId) {
+    if (editMode) return; // Im Bearbeiten-Modus keine Details aufklappen
+    const detailsRow = document.getElementById(`details-${fangId}`);
+    if (detailsRow) {
+        const isVisible = detailsRow.style.display === 'table-row';
+        detailsRow.style.display = isVisible ? 'none' : 'table-row';
+    }
+}
+
 async function ladeMeineFange() {
     const container = document.getElementById('faenge-tabelle-container');
     if (!container) return;
@@ -52,7 +62,6 @@ async function ladeMeineFange() {
     }
 
     try {
-        // Zwingend NUR die eigenen Fänge des angemeldeten Anglers abrufen
         const { data, error } = await _supabase
             .from('fangbuch-asv-langschede')
             .select('*')
@@ -93,8 +102,12 @@ async function ladeMeineFange() {
                 }
             }
 
-            const clickAction = editMode ? `onclick="location.href='fang-eintragen.html?editId=${fang.id}'"` : '';
-            const rowStyle = editMode ? 'cursor: pointer; background-color: #fff9e6;' : '';
+            const clickAction = editMode 
+                ? `onclick="location.href='fang-eintragen.html?editId=${fang.id}'"` 
+                : `onclick="toggleDetails('${fang.id}')"`;
+
+            const rowStyle = editMode ? 'cursor: pointer; background-color: #fff9e6;' : 'cursor: pointer;';
+            const colSpan = editMode ? 6 : 5;
 
             html += `
                 <tr style="${rowStyle}" ${clickAction}>
@@ -104,6 +117,17 @@ async function ladeMeineFange() {
                     <td>${fang.laenge || '-'}</td>
                     <td>${fang.gewicht || '-'}</td>
                     <td>${fang.fangort || '-'}</td>
+                </tr>
+                <tr id="details-${fang.id}" class="details-row" style="display: none; background-color: #f9fbf9;">
+                    <td colspan="${colSpan}" style="padding: 12px; border-bottom: 2px solid #2e5a44;">
+                        <div style="font-size: 13px; color: #444; line-height: 1.6;">
+                            <p><strong>🕒 Uhrzeit:</strong> ${fang.uhrzeit ? fang.uhrzeit.substring(0,5) + ' Uhr' : 'keine Angabe'}</p>
+                            <p><strong>🎣 Verbleib / Köder:</strong> ${fang.verbleib || 'keine Angabe'}</p>
+                            <p><strong>🌤️ Wetter:</strong> ${fang.wetter || 'keine Angabe'} ${fang.luftdruck ? '(' + fang.luftdruck + ' hPa)' : ''}</p>
+                            ${fang.notiz ? `<p style="margin-top: 6px; padding: 6px; background: #edf4ee; border-left: 3px solid #2e5a44; border-radius: 4px;"><strong>💬 Notiz:</strong> ${fang.notiz}</p>` : ''}
+                            ${fang.foto_url ? `<div style="margin-top: 8px;"><img src="${fang.foto_url}" alt="Fangfoto" style="max-width: 100%; max-height: 180px; border-radius: 6px; border: 1px solid #ccc;"></div>` : ''}
+                        </div>
+                    </td>
                 </tr>
             `;
         });

@@ -109,19 +109,19 @@ async function ladeMeineFange() {
                 }
             }
 
-            // Luftdruck & Tendenzpfeil aufbereiten
+            // Luftdruck & Tendenz in klarem Text aufbereiten
             let luftdruckText = '';
-            const rawTrend = String(fang.luftdruck_trend || fang.luftdrucktrend || fang.trend || '');
+            const rawTrend = String(fang.luftdruck_trend || fang.luftdrucktrend || fang.trend || '').toLowerCase();
             
-            let pfeil = '';
-            if (rawTrend.includes('fall') || rawTrend.includes('⬇') || rawTrend.includes('runter')) pfeil = ' ⬇️';
-            else if (rawTrend.includes('steig') || rawTrend.includes('⬆') || rawTrend.includes('hoch')) pfeil = ' ⬆️';
-            else if (rawTrend.includes('gleich') || rawTrend.includes('➡️') || rawTrend.includes('stabil')) pfeil = ' ➡️';
+            let tendenzWort = '';
+            if (rawTrend.includes('fall') || rawTrend.includes('⬇') || rawTrend.includes('runter')) tendenzWort = 'fallend';
+            else if (rawTrend.includes('steig') || rawTrend.includes('⬆') || rawTrend.includes('hoch')) tendenzWort = 'steigend';
+            else if (rawTrend.includes('gleich') || rawTrend.includes('➡️') || rawTrend.includes('stabil')) tendenzWort = 'gleichbleibend';
 
             if (fang.luftdruck) {
-                luftdruckText = `(${fang.luftdruck} hPa${pfeil})`;
-            } else if (pfeil) {
-                luftdruckText = `(${pfeil.trim()})`;
+                luftdruckText = `(${fang.luftdruck} hPa${tendenzWort ? ' ' + tendenzWort : ''})`;
+            } else if (tendenzWort) {
+                luftdruckText = `(${tendenzWort})`;
             }
 
             const clickAction = editMode 

@@ -109,17 +109,19 @@ async function ladeMeineFange() {
                 }
             }
 
-            // Luftdruck-Tendenzpfeil aufbereiten
+            // Luftdruck & Tendenzpfeil aufbereiten
             let luftdruckText = '';
+            const rawTrend = String(fang.luftdruck_trend || fang.luftdrucktrend || fang.trend || '');
+            
+            let pfeil = '';
+            if (rawTrend.includes('fall') || rawTrend.includes('⬇') || rawTrend.includes('runter')) pfeil = ' ⬇️';
+            else if (rawTrend.includes('steig') || rawTrend.includes('⬆') || rawTrend.includes('hoch')) pfeil = ' ⬆️';
+            else if (rawTrend.includes('gleich') || rawTrend.includes('➡️') || rawTrend.includes('stabil')) pfeil = ' ➡️';
+
             if (fang.luftdruck) {
-                luftdruckText = `(${fang.luftdruck} hPa`;
-                if (fang.luftdruck_trend || fang.luftdrucktrend) {
-                    const trend = (fang.luftdruck_trend || fang.luftdrucktrend).toLowerCase();
-                    if (trend.includes('fall')) luftdruckText += ' ⬇️';
-                    else if (trend.includes('steig')) luftdruckText += ' ⬆️';
-                    else if (trend.includes('gleich')) luftdruckText += ' ➡️';
-                }
-                luftdruckText += ')';
+                luftdruckText = `(${fang.luftdruck} hPa${pfeil})`;
+            } else if (pfeil) {
+                luftdruckText = `(${pfeil.trim()})`;
             }
 
             const clickAction = editMode 

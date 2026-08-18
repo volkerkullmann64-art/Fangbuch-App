@@ -79,8 +79,11 @@ async function ladeMeineFange() {
         const anglerName = mitgliederMap[angemeldeteEmail] || 'Volker Kullmann';
 
         let html = `
-            <div style="margin-bottom: 12px; font-size: 14px; color: #2e5a44; text-align: center; font-weight: bold; background: #eaf2ed; padding: 8px; border-radius: 6px; border: 1px solid #c2dbc9;">
+            <div style="margin-bottom: 6px; font-size: 14px; color: #2e5a44; text-align: center; font-weight: bold; background: #eaf2ed; padding: 8px; border-radius: 6px; border: 1px solid #c2dbc9;">
                 Angler: ${anglerName} (${data.length} ${data.length === 1 ? 'Fang' : 'Fänge'})
+            </div>
+            <div style="margin-bottom: 12px; font-size: 12px; color: #666; text-align: center; font-style: italic;">
+                💡 Tipp: Auf einen Fang tippen, um Details aufzuklappen.
             </div>
 
             <table class="fang-tabelle">

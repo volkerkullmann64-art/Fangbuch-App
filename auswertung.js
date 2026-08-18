@@ -34,7 +34,7 @@ function toggleEditMode() {
     editMode = !editMode;
     const btn = document.getElementById('edit-toggle-btn');
     if (btn) {
-        btn.textContent = editMode ? 'Fertig' : 'Bearbeiten';
+        btn.textContent = editMode ? 'Fertig' : '✏️ Bearbeiten';
         btn.style.backgroundColor = editMode ? '#c0392b' : '#2e5a44';
     }
     ladeMeineFange();
@@ -79,6 +79,10 @@ async function ladeMeineFange() {
         const anglerName = mitgliederMap[angemeldeteEmail] || 'Volker Kullmann';
 
         let html = `
+            <div style="margin-bottom: 12px; font-size: 14px; color: #2e5a44; text-align: center; font-weight: bold; background: #eaf2ed; padding: 8px; border-radius: 6px; border: 1px solid #c2dbc9;">
+                Angler: ${anglerName} (${data.length} ${data.length === 1 ? 'Fang' : 'Fänge'})
+            </div>
+
             <table class="fang-tabelle">
                 <thead>
                     <tr>
@@ -86,7 +90,7 @@ async function ladeMeineFange() {
                         <th>Datum</th>
                         <th>Fischart</th>
                         <th>cm</th>
-                        <th>g</th>
+                        <th>gr</th>
                         <th>Ort</th>
                     </tr>
                 </thead>
@@ -135,9 +139,6 @@ async function ladeMeineFange() {
         html += `
                 </tbody>
             </table>
-            <div style="margin-top: 15px; font-size: 13px; color: #666; text-align: center;">
-                Angler: <strong>${anglerName}</strong> (${data.length} ${data.length === 1 ? 'Fang' : 'Fänge'})
-            </div>
         `;
 
         container.innerHTML = html;

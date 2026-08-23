@@ -5,6 +5,25 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let editFangId = null;
 let geknipstesFotoBlob = null; // Speichert das komprimierte Foto im Speicher
 
+// Initial-Fallbacks für den allerersten App-Start ohne bisherige Netzverbindung
+const offlineHitparadeMinimaFallback = {
+    "Bachforelle": 40,
+    "Äsche": 38,
+    "Hecht": 70,
+    "Zander": 65,
+    "Flussbarsch": 38,
+    "Aal": 70,
+    "Wels": 90,
+    "Barbe": 80,
+    "Karpfen": 65,
+    "Schleie": 40,
+    "Döbel": 50,
+    "Brassen": 50,
+    "Aland": 45,
+    "Rotauge": 30,
+    "Rotfeder": 30
+};
+
 window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
     editFangId = urlParams.get('editId');
@@ -18,6 +37,11 @@ window.addEventListener('load', function() {
         ladeFangDatenFuerEdit(editFangId);
     } else {
         triggerAutomaticWeatherFetch();
+    }
+
+    // Wenn Online verbindung besteht, synchronisiere die Rekordwerte für den Offline-Einsatz
+    if (navigator.onLine) {
+        aktualisiereLokaleHitparadeCache();
     }
 
     pruefePflichtfelder(); 
@@ -195,6 +219,8 @@ function validateFisch() {
     const gewichtInput = document.getElementById('gewicht');
     const erkennungsBox = document.getElementById('fisch-erkennung');
     const hitparadeBox = document.getElementById("hitparade-meldung");
+    const fangortSelect = document.getElementById('fangort');
+    const fangortVal = fangortSelect ? fangortSelect.value : "";
     
     const notizFeld = document.getElementById('notiz');
     const notizText = notizFeld ? notizFeld.value.toLowerCase().trim() : ""; 
@@ -221,26 +247,32 @@ function validateFisch() {
             if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
         }
 
-        holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
-            if (!hitparadeBox) return;
+        // Bei Fremdgewässer keine Hitparade
+        if (fangortVal.includes("Fremdgewässer")) {
+            if (hitparadeBox) hitparadeBox.style.display = "none";
+        } else {
+            holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
+                if (!hitparadeBox) return;
 
-            if (laenge > mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
-                if (notizText.includes("test") || notizText.includes("sofa")) {
-                    console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
-                    ZeigeHitparadeMeldung(hitparadeBox);
+                // Bei Gleichstand oder größer wird die Meldung getriggert
+                if (laenge >= mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
+                    if (notizText.includes("test") || notizText.includes("sofa")) {
+                        console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
+                        ZeigeHitparadeMeldung(hitparadeBox);
+                    } else {
+                        pruefeRuhrStandort().then((amWasser) => {
+                            if (amWasser) {
+                                ZeigeHitparadeMeldung(hitparadeBox);
+                            } else {
+                                hitparadeBox.style.display = "none";
+                            }
+                        });
+                    }
                 } else {
-                    pruefeRuhrStandort().then((amWasser) => {
-                        if (amWasser) {
-                            ZeigeHitparadeMeldung(hitparadeBox);
-                        } else {
-                            hitparadeBox.style.display = "none";
-                        }
-                    });
+                    hitparadeBox.style.display = "none";
                 }
-            } else {
-                hitparadeBox.style.display = "none";
-            }
-        });
+            });
+        }
     } else {
         if (hitparadeBox) hitparadeBox.style.display = "none";
     }
@@ -273,7 +305,6 @@ function ZeigeHitparadeMeldung(hitparadeBox) {
                 <img id="foto-vorschau-img" src="${hatFoto ? URL.createObjectURL(geknipstesFotoBlob) : ''}" style="max-width: 100%; max-height: 220px; border-radius: 8px; border: 2px solid #2e5a44; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
             </div>
 
-            <!-- Großer, zuverlässiger Kamera-Button -->
             <div style="margin-top: 12px;">
                 <label for="foto-input" style="display: block; width: 100%; background-color: #2e5a44; color: white; padding: 14px 16px; border-radius: 8px; font-size: 17px; font-weight: bold; text-align: center; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.15); box-sizing: border-box;">
                     ${btnText}
@@ -283,7 +314,6 @@ function ZeigeHitparadeMeldung(hitparadeBox) {
     `;
 }
 
-// Verarbeitet das geknipste Foto, komprimiert es und blendet sofort die Vorschau ein
 function verarbeiteFotoAktion(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -292,7 +322,6 @@ function verarbeiteFotoAktion(event) {
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            // Komprimierung: Max. 1024px Breite/Höhe
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
@@ -316,11 +345,9 @@ function verarbeiteFotoAktion(event) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Als JPEG mit 75% Qualität wandeln (kleine Dateigröße)
             canvas.toBlob((blob) => {
                 geknipstesFotoBlob = blob;
                 
-                // Vorschau direkt im grünen Kasten anzeigen
                 const vorschauBereich = document.getElementById("foto-vorschau-bereich");
                 const vorschauImg = document.getElementById("foto-vorschau-img");
                 
@@ -329,7 +356,6 @@ function verarbeiteFotoAktion(event) {
                     vorschauBereich.style.display = "block";
                 }
                 
-                // Button-Text auf "Foto ändern" anpassen
                 const cameraLabel = document.querySelector('label[for="foto-input"]');
                 if (cameraLabel) {
                     cameraLabel.textContent = "🔄 Foto ändern";
@@ -353,11 +379,9 @@ async function saveFang() {
     let uploadedFotoUrl = null;
 
     try {
-        // Falls ein Foto aufgenommen wurde, laden wir es zuerst in den Supabase Storage hoch
         if (geknipstesFotoBlob && navigator.onLine) {
             const dateiname = `fang_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
             
-            // Bucket-Name jetzt exakt kleingeschrieben: hitparade-fotos
             const { data: storageData, error: storageError } = await _supabase.storage
                 .from('hitparade-fotos')
                 .upload(dateiname, geknipstesFotoBlob, {
@@ -366,7 +390,6 @@ async function saveFang() {
 
             if (storageError) throw new Error("Foto-Upload fehlgeschlagen: " + storageError.message);
 
-            // Öffentliche URL des Fotos abrufen
             const { data: urlData } = _supabase.storage
                 .from('hitparade-fotos')
                 .getPublicUrl(dateiname);
@@ -421,9 +444,23 @@ async function saveFang() {
             }
         } else {
             let q = []; try { q = JSON.parse(localStorage.getItem('offlineFange')) || []; } catch(e){}
-            q.push(fangDaten); localStorage.setItem('offlineFange', JSON.stringify(q));
-            document.getElementById('fang-form').reset();
-            location.href = 'index.html';
+            
+            if (geknipstesFotoBlob) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    fangDaten.offlineFotoBase64 = reader.result;
+                    q.push(fangDaten);
+                    localStorage.setItem('offlineFange', JSON.stringify(q));
+                    document.getElementById('fang-form').reset();
+                    location.href = 'index.html';
+                };
+                reader.readAsDataURL(geknipstesFotoBlob);
+            } else {
+                q.push(fangDaten); 
+                localStorage.setItem('offlineFange', JSON.stringify(q));
+                document.getElementById('fang-form').reset();
+                location.href = 'index.html';
+            }
         }
     } catch (error) {
         alert("⚠️ Achtung: Konnte nicht gespeichert werden! " + error.message);
@@ -473,7 +510,8 @@ function pruefeRuhrStandort() {
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     const entfernung = R * c;
 
-                    if (entfernung <= 100) {
+                    // 300 Meter Radius für verlässlichen GPS-Empfang
+                    if (entfernung <= 300) {
                         anDerRuhr = true;
                         break;
                     }
@@ -482,34 +520,84 @@ function pruefeRuhrStandort() {
                 resolve(anDerRuhr);
             },
             (error) => {
+                console.warn("GPS-Fehler:", error);
                 resolve(false);
             },
-            { enableHighAccuracy: true, timeout: 7000 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
 }
 
-async function holeMindestLaengeFuerHitparade(fischart) {
+// Lädt bei Online-Verbindung die echten Mindestlängen herunter und speichert sie lokal ab
+async function aktualisiereLokaleHitparadeCache() {
     try {
         const { data, error } = await _supabase
             .from('fangbuch-asv-langschede')
-            .select('laenge')
-            .eq('fischart', fischart)
+            .select('fischart, laenge, datum, uhrzeit')
             .order('laenge', { ascending: false })
-            .range(0, 2);
+            .order('datum', { ascending: true })
+            .order('uhrzeit', { ascending: true });
 
-        if (error) throw error;
+        if (error || !data) return;
 
-        if (!data || data.length < 3) {
-            return 0; 
+        const minLängenMap = {};
+        const gruppiert = {};
+
+        data.forEach(item => {
+            if (!gruppiert[item.fischart]) gruppiert[item.fischart] = [];
+            if (gruppiert[item.fischart].length < 3 && item.laenge) {
+                gruppiert[item.fischart].push(parseFloat(item.laenge));
+            }
+        });
+
+        for (const [art, laengen] of Object.entries(gruppiert)) {
+            if (laengen.length >= 3) {
+                minLängenMap[art] = laengen[laengen.length - 1]; // Der 3. Platz
+            } else {
+                minLängenMap[art] = 0; // Noch Platz frei
+            }
         }
 
-        const platz3 = data[data.length - 1];
-        return platz3.laenge ? parseFloat(platz3.laenge) : 0;
-
+        localStorage.setItem('cachedHitparadeMinima', JSON.stringify(minLängenMap));
     } catch (e) {
-        return 0;
+        console.warn("Cache-Aktualisierung fehlgeschlagen:", e);
     }
+}
+
+// Holt die Mindestlänge für Platz 3 (erst Supabase, dann lokaler Cache, dann Fallback)
+async function holeMindestLaengeFuerHitparade(fischart) {
+    if (navigator.onLine) {
+        try {
+            // Sortierung: Größte Länge zuerst, bei Gleichstand der ÄLTESTE Fang zuerst (Wer zuerst kommt, mahlt zuerst)
+            const { data, error } = await _supabase
+                .from('fangbuch-asv-langschede')
+                .select('laenge')
+                .eq('fischart', fischart)
+                .order('laenge', { ascending: false })
+                .order('datum', { ascending: true })
+                .order('uhrzeit', { ascending: true })
+                .range(0, 2);
+
+            if (!error && data) {
+                if (data.length < 3) return 0; // Wenn weniger als 3 Fänge existieren, zählt jeder Fisch
+                const platz3 = data[data.length - 1];
+                return platz3.laenge ? parseFloat(platz3.laenge) : 0;
+            }
+        } catch (e) {
+            console.warn("Live-Abfrage fehlgeschlagen, nutze Offline-Cache.");
+        }
+    }
+
+    // Offline-Pfad: Versuche den lokal synchronisierten Cache zu nutzen
+    try {
+        const cached = JSON.parse(localStorage.getItem('cachedHitparadeMinima'));
+        if (cached && cached[fischart] !== undefined) {
+            return cached[fischart];
+        }
+    } catch(e) {}
+
+    // Notfall-Fallback
+    return offlineHitparadeMinimaFallback[fischart] || 0;
 }
 
 function startSpeechRecognition() {

@@ -481,7 +481,6 @@ function pruefeRuhrStandort() {
             return;
         }
 
-        // 30 Sekunden Zeitfenster und hybride Abfrage (Satellit + Mobilfunk)
         const gpsOptions = { enableHighAccuracy: false, timeout: 30000, maximumAge: 10000 };
 
         navigator.geolocation.getCurrentPosition(
@@ -489,7 +488,7 @@ function pruefeRuhrStandort() {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
-                // Engmaschiges Netz aus Ruhr-Punkten + Zuhause (Auf dem Spitt 42)
+                // Engmaschiges Netz aus Ruhr-Punkten + Zuhause (Auf dem Spitt 42, Fröndenberg)
                 const ruhrPunkte = [
                     // Oberlauf (Ostholzbach bis Kanu-Club)
                     { name: "1: Anfang Ostholzbach Mündung", lat: 51.4782, lon: 7.7785 },
@@ -517,8 +516,8 @@ function pruefeRuhrStandort() {
                     { name: "19: Streckenende Schoofsbrücke", lat: 51.4682, lon: 7.7375 },
                     { name: "20: Schoofsbrücke Auslauf", lat: 51.4678, lon: 7.7360 },
 
-                    // 🛠️ TEST-PUNKT ZUHAUSE (Auf dem Spitt 42, Fröndenberg)
-                    { name: "21: Zuhause", lat: 51.4717, lon: 7.7681 }
+                    // 🛠️ TEST-PUNKT ZUHAUSE (Präzise Koordinaten + 1000m Radius)
+                    { name: "21: Zuhause (Auf dem Spitt 42, Fröndenberg)", lat: 51.4745, lon: 7.7648, maxRadius: 1000 }
                 ];
 
                 const R = 6371e3;
@@ -536,8 +535,10 @@ function pruefeRuhrStandort() {
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     const entfernung = R * c;
 
-                    // 600 Meter Prüfradius für zuverlässige Ortung draußen
-                    if (entfernung <= 600) {
+                    // Nutzt 1000m für Zuhause oder 600m für die Ruhr
+                    const erlaubterRadius = punkt.maxRadius || 600;
+
+                    if (entfernung <= erlaubterRadius) {
                         anDerRuhr = true;
                         break;
                     }

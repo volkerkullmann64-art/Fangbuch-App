@@ -262,13 +262,14 @@ function validateFisch() {
                     } else {
                         // Zeige kurzen Status-Hinweis während das GPS prüft
                         hitparadeBox.style.display = "block";
-                        hitparadeBox.innerHTML = "<div style='color: #666; font-size: 13px; text-align: center; padding: 8px;'>📍 Standort wird geprüft...</div>";
+                        hitparadeBox.innerHTML = "<div style='color: #2e5a44; font-size: 13px; text-align: center; padding: 8px; font-weight: bold;'>📍 Standort wird geprüft... (GPS)</div>";
 
                         pruefeRuhrStandort().then((amWasser) => {
                             if (amWasser) {
                                 ZeigeHitparadeMeldung(hitparadeBox);
                             } else {
-                                hitparadeBox.style.display = "none";
+                                hitparadeBox.style.display = "block";
+                                hitparadeBox.innerHTML = "<div style='color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; font-size: 13px; text-align: center; padding: 10px; border-radius: 6px;'>📍 Kein Hitparaden-Foto: Du befindest dich aktuell nicht an den ASV Vereinsgewässern.</div>";
                             }
                         });
                     }
@@ -480,12 +481,15 @@ function pruefeRuhrStandort() {
             return;
         }
 
+        // 30 Sekunden Zeitfenster und hybride Abfrage (Satellit + Mobilfunk)
+        const gpsOptions = { enableHighAccuracy: false, timeout: 30000, maximumAge: 10000 };
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
-                // Engmaschiges Netz aus Ruhr-Punkten inkl. Testpunkt Zuhause
+                // Engmaschiges Netz aus Ruhr-Punkten + Zuhause (Auf dem Spitt 42)
                 const ruhrPunkte = [
                     // Oberlauf (Ostholzbach bis Kanu-Club)
                     { name: "1: Anfang Ostholzbach Mündung", lat: 51.4782, lon: 7.7785 },
@@ -513,8 +517,8 @@ function pruefeRuhrStandort() {
                     { name: "19: Streckenende Schoofsbrücke", lat: 51.4682, lon: 7.7375 },
                     { name: "20: Schoofsbrücke Auslauf", lat: 51.4678, lon: 7.7360 },
 
-                    // 🛠️ TEST-PUNKT ZUHAUSE
-                    { name: "21: Zuhause (Auf dem Spitt 42, Fröndenberg)", lat: 51.4717, lon: 7.7681 }
+                    // 🛠️ TEST-PUNKT ZUHAUSE (Auf dem Spitt 42, Fröndenberg)
+                    { name: "21: Zuhause", lat: 51.4717, lon: 7.7681 }
                 ];
 
                 const R = 6371e3;
@@ -532,8 +536,8 @@ function pruefeRuhrStandort() {
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     const entfernung = R * c;
 
-                    // 500 Meter Radius für flächendeckende Erfassung
-                    if (entfernung <= 500) {
+                    // 600 Meter Prüfradius für zuverlässige Ortung draußen
+                    if (entfernung <= 600) {
                         anDerRuhr = true;
                         break;
                     }
@@ -545,7 +549,7 @@ function pruefeRuhrStandort() {
                 console.warn("GPS-Fehler:", error);
                 resolve(false);
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            gpsOptions
         );
     });
 }

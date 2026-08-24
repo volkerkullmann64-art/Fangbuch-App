@@ -39,7 +39,7 @@ window.addEventListener('load', function() {
         triggerAutomaticWeatherFetch();
     }
 
-    // Wenn Online verbindung besteht, synchronisiere die Rekordwerte für den Offline-Einsatz
+    // Wenn Online-Verbindung besteht, synchronisiere die Rekordwerte für den Offline-Einsatz
     if (navigator.onLine) {
         aktualisiereLokaleHitparadeCache();
     }
@@ -260,6 +260,10 @@ function validateFisch() {
                         console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
                         ZeigeHitparadeMeldung(hitparadeBox);
                     } else {
+                        // Zeige kurzen Status-Hinweis während das GPS prüft
+                        hitparadeBox.style.display = "block";
+                        hitparadeBox.innerHTML = "<div style='color: #666; font-size: 13px; text-align: center; padding: 8px;'>📍 Standort wird geprüft...</div>";
+
                         pruefeRuhrStandort().then((amWasser) => {
                             if (amWasser) {
                                 ZeigeHitparadeMeldung(hitparadeBox);
@@ -481,18 +485,36 @@ function pruefeRuhrStandort() {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
+                // Engmaschiges Netz aus Ruhr-Punkten inkl. Testpunkt Zuhause
                 const ruhrPunkte = [
-                    { name: "1: Anfang Ostholzbach (Mündung)", lat: 51.4782, lon: 7.7785 },
-                    { name: "2: Ruhrwiesen oberhalb Kanu-Club", lat: 51.4768, lon: 7.7740 },
-                    { name: "3: Kanu-Club / Sportplatz", lat: 51.4755, lon: 7.7695 },
-                    { name: "4: Kurve vor dem Wehr", lat: 51.4748, lon: 7.7670 },
-                    { name: "5: Wehr Langschede", lat: 51.4744, lon: 7.7652 },
-                    { name: "6: Ruhrbrücke B63 (Mendener Str.)", lat: 51.4735, lon: 7.7595 },
-                    { name: "7: Ruhrwiesen unterhalb Brücke", lat: 51.4725, lon: 7.7540 },
-                    { name: "8: Erste große Flusskurve West", lat: 51.4712, lon: 7.7490 },
-                    { name: "9: Mitten in den Ruhrwiesen", lat: 51.4705, lon: 7.7470 },
-                    { name: "10: Gerade Strecke vor Ende", lat: 51.4692, lon: 7.7410 },
-                    { name: "11: Streckenende vor Schoofsbrücke", lat: 51.4682, lon: 7.7375 }
+                    // Oberlauf (Ostholzbach bis Kanu-Club)
+                    { name: "1: Anfang Ostholzbach Mündung", lat: 51.4782, lon: 7.7785 },
+                    { name: "2: Ostholzbach Wiesen", lat: 51.4775, lon: 7.7760 },
+                    { name: "3: Oberhalb Kanu-Club", lat: 51.4768, lon: 7.7740 },
+                    { name: "4: Kanu-Club Anleger", lat: 51.4760, lon: 7.7715 },
+                    { name: "5: Sportplatz Langschede", lat: 51.4755, lon: 7.7695 },
+                    
+                    // Mittellauf (Wehr & Ruhrbrücke B63)
+                    { name: "6: Kurve vor dem Wehr", lat: 51.4748, lon: 7.7670 },
+                    { name: "7: Wehr Langschede Oberwasser", lat: 51.4744, lon: 7.7652 },
+                    { name: "8: Wehr Unterwasser / Insel", lat: 51.4740, lon: 7.7625 },
+                    { name: "9: Ruhrbrücke B63 (Mendener Str.)", lat: 51.4735, lon: 7.7595 },
+                    { name: "10: Ruhrwiesen unterhalb Brücke", lat: 51.4728, lon: 7.7565 },
+
+                    // Unterlauf (Ruhrwiesen & Flussbögen Süd-West)
+                    { name: "11: Ruhrwiesen Mitte-Ost", lat: 51.4722, lon: 7.7535 },
+                    { name: "12: Erste große Flusskurve West", lat: 51.4715, lon: 7.7505 },
+                    { name: "13: Wiesen-Eingang West", lat: 51.4710, lon: 7.7485 },
+                    { name: "14: Südlicher Ruhrbogen Peak", lat: 51.4705, lon: 7.7470 },
+                    { name: "15: Mitten in den Wiesen", lat: 51.4698, lon: 7.7440 },
+                    { name: "16: Ausläufer Wiesen-Bogen", lat: 51.4694, lon: 7.7425 },
+                    { name: "17: Gerade Strecke vor Ende", lat: 51.4690, lon: 7.7410 },
+                    { name: "18: Vor-Ende Streckenabschnitt", lat: 51.4686, lon: 7.7390 },
+                    { name: "19: Streckenende Schoofsbrücke", lat: 51.4682, lon: 7.7375 },
+                    { name: "20: Schoofsbrücke Auslauf", lat: 51.4678, lon: 7.7360 },
+
+                    // 🛠️ TEST-PUNKT ZUHAUSE
+                    { name: "21: Zuhause (Auf dem Spitt 42, Fröndenberg)", lat: 51.4717, lon: 7.7681 }
                 ];
 
                 const R = 6371e3;
@@ -510,8 +532,8 @@ function pruefeRuhrStandort() {
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     const entfernung = R * c;
 
-                    // 300 Meter Radius für verlässlichen GPS-Empfang
-                    if (entfernung <= 300) {
+                    // 500 Meter Radius für flächendeckende Erfassung
+                    if (entfernung <= 500) {
                         anDerRuhr = true;
                         break;
                     }

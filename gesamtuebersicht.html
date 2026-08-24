@@ -142,6 +142,9 @@
             font-style: italic;
             color: #666;
         }
+        .heute-zeile {
+            background-color: #e8f5e9 !important;
+        }
     </style>
 </head>
 <body>
@@ -159,7 +162,7 @@
         <div class="filter-group">
             <label for="fischart-filter">🔍 Nach Fischart filtern:</label>
             <select id="fischart-filter" onchange="wendeFilterAn()">
-                <option value="ALLE">Alle Fischarten anzeigen</option>
+                <option value="ALLE">Alle Fischarten anzeigen (Neueste zuerst)</option>
                 <!-- Dynamische Liste aller vorhandenen Fischarten -->
             </select>
         </div>
@@ -210,6 +213,7 @@
 
     let alleFaengeCache = [];
     let mitgliederCache = [];
+    let medaillenMap = {}; // Speichert fang_id -> Medaille "🥇", "🥈", "🥉"
 
     // Pull-to-Refresh Schutz auf Handys
     let touchStart_Y = 0;
@@ -231,15 +235,19 @@
 
             mitgliederCache = mitglieder || [];
 
-            // 2. Fänge aus Supabase laden (größte Fische zuerst)
+            // 2. Fänge aus Supabase laden (nach Datum sortiert: Neueste zuerst)
             const { data, error } = await _supabase
                 .from('fangbuch-asv-langschede')
                 .select('*')
-                .order('laenge', { ascending: false });
+                .order('datum', { ascending: false })
+                .order('uhrzeit', { ascending: false });
 
             if (error) throw error;
 
             alleFaengeCache = data || [];
+
+            // 3. Jahreshitparade/Medaillen für das aktuelle Jahr berechnen
+            berechneJahresMedaillen(alleFaengeCache);
 
             // Pulldown-Menü mit Fischarten befüllen & Ansicht rendern
             fuelleFischartDropdown(alleFaengeCache);
@@ -251,6 +259,46 @@
         }
     }
 
+    // Berechnet dynamisch die 🥇 🥈 🥉 Medaillen für das aktuelle Jahr
+    function berechneJahresMedaillen(faenge) {
+        medaillenMap = {};
+        const aktuellesJahr = new Date().getFullYear().toString();
+
+        // Nur Vereinsgewässer-Fänge des aktuellen Jahres berücksichtigen
+        const jahresFaenge = faenge.filter(f => {
+            if (istFremdgewaesser(f)) return false;
+            if (!f.datum) return false;
+            return f.datum.startsWith(aktuellesJahr);
+        });
+
+        // Nach Fischart gruppieren
+        const gruppiert = {};
+        jahresFaenge.forEach(f => {
+            const art = (f.fischart || '').trim();
+            if (!art) return;
+            if (!gruppiert[art]) gruppiert[art] = [];
+            gruppiert[art].push(f);
+        });
+
+        // Für jede Fischart nach Größe sortieren und Top 3 mit Medaillen auszeichnen
+        const medaillenIcons = ["🥇", "🥈", "🥉"];
+        Object.keys(gruppiert).forEach(art => {
+            // Sortierung: Größte Länge zuerst, bei Gleichstand der ältere Fang zuerst
+            const sortiert = gruppiert[art].sort((a, b) => {
+                const lA = Number(a.laenge || 0);
+                const lB = Number(b.laenge || 0);
+                if (lB !== lA) return lB - lA;
+                return new Date(a.datum) - new Date(b.datum);
+            });
+
+            for (let i = 0; i < Math.min(3, sortiert.length); i++) {
+                if (sortiert[i].laenge && Number(sortiert[i].laenge) > 0) {
+                    medaillenMap[sortiert[i].id] = medaillenIcons[i];
+                }
+            }
+        });
+    }
+
     function istFremdgewaesser(fang) {
         const ort = (fang.fangort || '').trim().toLowerCase();
         const gewaesser = (fang.gewaesser || '').trim().toLowerCase();
@@ -259,7 +307,7 @@
 
     function fuelleFischartDropdown(faenge) {
         const select = document.getElementById('fischart-filter');
-        select.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen</option>';
+        select.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen (Neueste zuerst)</option>';
 
         // Eindeutige Fischarten ermitteln
         const artenSet = new Set();
@@ -281,11 +329,21 @@
 
     function wendeFilterAn() {
         const auswahl = document.getElementById('fischart-filter').value;
+        let gefilterteFaenge = [];
 
-        // Fänge nach gewählter Fischart filtern
-        const gefilterteFaenge = (auswahl === 'ALLE')
-            ? alleFaengeCache
-            : alleFaengeCache.filter(f => f.fischart && f.fischart.trim().toLowerCase() === auswahl.toLowerCase());
+        if (auswahl === 'ALLE') {
+            // Alle Fänge: Nach Datum (neueste zuerst)
+            gefilterteFaenge = [...alleFaengeCache].sort((a, b) => {
+                const dA = new Date((a.datum || '1970-01-01') + 'T' + (a.uhrzeit || '00:00'));
+                const dB = new Date((b.datum || '1970-01-01') + 'T' + (b.uhrzeit || '00:00'));
+                return dB - dA;
+            });
+        } else {
+            // Spezielle Fischart ausgewählt: Nach Länge (groß -> klein)
+            gefilterteFaenge = alleFaengeCache
+                .filter(f => f.fischart && f.fischart.trim().toLowerCase() === auswahl.toLowerCase())
+                .sort((a, b) => Number(b.laenge || 0) - Number(a.laenge || 0));
+        }
 
         // Infofenster-Werte aktualisieren
         berechneInfofenster(gefilterteFaenge);
@@ -304,7 +362,6 @@
             if (f.laenge && Number(f.laenge) > maxLaenge) maxLaenge = Number(f.laenge);
         });
 
-        // Exakte Umrechnung in kg mit bis zu 2 Nachkommastellen (ohne ungenaue Rundungsfehler)
         const gewichtKgNum = summeGewichtGramm / 1000;
         const gewichtKgText = (Math.round(gewichtKgNum * 100) / 100)
             .toString()
@@ -349,6 +406,11 @@
 
     function erstelleZeile(fang) {
         const tr = document.createElement('tr');
+        const heuteStr = new Date().toISOString().split('T')[0];
+
+        if (fang.datum === heuteStr) {
+            tr.className = 'heute-zeile';
+        }
 
         // Anglernamen ermitteln
         let anglerName = 'Unbekannt';
@@ -367,13 +429,23 @@
             ortsText = `Fremdgewässer (${fang.notiz})`;
         }
 
+        // Datum schön formatieren (DD.MM.YYYY)
+        let datumFormatiert = fang.datum || '-';
+        if (fang.datum) {
+            const t = fang.datum.split('-');
+            if (t.length === 3) datumFormatiert = `${t[2]}.${t[1]}.${t[0]}`;
+        }
+
+        // Medaillen-Badge ermitteln
+        const medaille = medaillenMap[fang.id] ? `${medaillenMap[fang.id]} ` : '';
+
         tr.innerHTML = `
             <td style="font-weight: bold; color: #555;">${anglerName}</td>
-            <td style="font-weight: bold; color: #2e6f40;">${fang.fischart || '-'}</td>
-            <td>${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
+            <td style="font-weight: bold; color: #2e6f40;">${medaille}${fang.fischart || '-'}</td>
+            <td style="font-weight: bold;">${fang.laenge ? fang.laenge + ' cm' : '-'}</td>
             <td>${fang.gewicht ? fang.gewicht + ' g' : '-'}</td>
             <td>${ortsText}</td>
-            <td>${fang.datum || '-'}</td>
+            <td style="white-space: nowrap;">${datumFormatiert}</td>
         `;
 
         return tr;

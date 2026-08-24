@@ -264,12 +264,12 @@ function validateFisch() {
                         hitparadeBox.style.display = "block";
                         hitparadeBox.innerHTML = "<div style='color: #2e5a44; font-size: 13px; text-align: center; padding: 8px; font-weight: bold;'>📍 Standort wird geprüft... (GPS)</div>";
 
-                        pruefeRuhrStandort().then((amWasser) => {
-                            if (amWasser) {
+                        pruefeRuhrStandort().then((ergebnis) => {
+                            if (ergebnis.anDerRuhr) {
                                 ZeigeHitparadeMeldung(hitparadeBox);
                             } else {
                                 hitparadeBox.style.display = "block";
-                                hitparadeBox.innerHTML = "<div style='color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; font-size: 13px; text-align: center; padding: 10px; border-radius: 6px;'>📍 Kein Hitparaden-Foto: Du befindest dich aktuell nicht an den ASV Vereinsgewässern.</div>";
+                                hitparadeBox.innerHTML = `<div style='color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; font-size: 13px; text-align: center; padding: 10px; border-radius: 6px;'>📍 Kein Hitparaden-Foto: Du befindest dich aktuell nicht an den ASV Vereinsgewässern.<br><span style='font-size:11px; opacity:0.8;'>(Gemessen: ${ergebnis.lat.toFixed(4)}, ${ergebnis.lon.toFixed(4)} | Nächster Punkt: ${Math.round(ergebnis.minDistanz)}m entfernt)</span></div>`;
                             }
                         });
                     }
@@ -477,7 +477,7 @@ async function saveFang() {
 function pruefeRuhrStandort() {
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
-            resolve(false); 
+            resolve({ anDerRuhr: false, lat: 0, lon: 0, minDistanz: 999999 }); 
             return;
         }
 
@@ -516,12 +516,13 @@ function pruefeRuhrStandort() {
                     { name: "19: Streckenende Schoofsbrücke", lat: 51.4682, lon: 7.7375 },
                     { name: "20: Schoofsbrücke Auslauf", lat: 51.4678, lon: 7.7360 },
 
-                    // 🛠️ TEST-PUNKT ZUHAUSE (Präzise Koordinaten + 1000m Radius)
+                    // 🛠️ TEST-PUNKT ZUHAUSE
                     { name: "21: Zuhause (Auf dem Spitt 42, Fröndenberg)", lat: 51.4745, lon: 7.7648, maxRadius: 1000 }
                 ];
 
                 const R = 6371e3;
                 let anDerRuhr = false;
+                let kleinsteEntfernung = 999999;
 
                 for (let punkt of ruhrPunkte) {
                     const phi1 = spielerLat * Math.PI / 180;
@@ -535,7 +536,10 @@ function pruefeRuhrStandort() {
                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                     const entfernung = R * c;
 
-                    // Nutzt 1000m für Zuhause oder 600m für die Ruhr
+                    if (entfernung < kleinsteEntfernung) {
+                        kleinsteEntfernung = entfernung;
+                    }
+
                     const erlaubterRadius = punkt.maxRadius || 600;
 
                     if (entfernung <= erlaubterRadius) {
@@ -544,11 +548,11 @@ function pruefeRuhrStandort() {
                     }
                 }
 
-                resolve(anDerRuhr);
+                resolve({ anDerRuhr: anDerRuhr, lat: spielerLat, lon: spielerLon, minDistanz: kleinsteEntfernung });
             },
             (error) => {
                 console.warn("GPS-Fehler:", error);
-                resolve(false);
+                resolve({ anDerRuhr: false, lat: 0, lon: 0, minDistanz: 999999 });
             },
             gpsOptions
         );

@@ -488,7 +488,7 @@ function pruefeRuhrStandort() {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
-                // Engmaschiges Netz aus Ruhr-Punkten + Zuhause (Auf dem Spitt 42, Fröndenberg)
+                // Engmaschiges Netz aus Ruhr-Punkten + Eure exakten Heim-Koordinaten
                 const ruhrPunkte = [
                     // Oberlauf (Ostholzbach bis Kanu-Club)
                     { name: "1: Anfang Ostholzbach Mündung", lat: 51.4782, lon: 7.7785 },
@@ -516,8 +516,8 @@ function pruefeRuhrStandort() {
                     { name: "19: Streckenende Schoofsbrücke", lat: 51.4682, lon: 7.7375 },
                     { name: "20: Schoofsbrücke Auslauf", lat: 51.4678, lon: 7.7360 },
 
-                    // 🛠️ TEST-PUNKT ZUHAUSE
-                    { name: "21: Zuhause (Auf dem Spitt 42, Fröndenberg)", lat: 51.4745, lon: 7.7648, maxRadius: 1000 }
+                    // 🛠️ EXAKTER TEST-PUNKT ZUHAUSE (Gemessene GPS-Position)
+                    { name: "21: Zuhause (Exakt gemessen)", lat: 51.4946, lon: 7.7441, maxRadius: 1000 }
                 ];
 
                 const R = 6371e3;

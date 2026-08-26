@@ -92,6 +92,9 @@
             text-align: center;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .stat-title {
             font-size: 11px;
@@ -101,9 +104,15 @@
             font-weight: bold;
         }
         .stat-value {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: var(--primary-color);
+        }
+        .stat-subvalue {
+            font-size: 11px;
+            color: #d35400;
+            font-weight: bold;
+            margin-top: 3px;
         }
 
         /* Tabelle Styling */
@@ -172,14 +181,16 @@
             <div class="stat-card">
                 <div class="stat-title">Anzahl</div>
                 <div class="stat-value" id="stat-anzahl">0</div>
+                <div class="stat-subvalue" id="stat-anzahl-entnommen">davon entnommen: 0</div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">Gesamtgewicht</div>
                 <div class="stat-value" id="stat-gewicht">0 kg</div>
+                <div class="stat-subvalue" id="stat-gewicht-entnommen">davon entnommen: 0 kg</div>
             </div>
             <div class="stat-card">
                 <div class="stat-title">Größter Fisch</div>
-                <div class="stat-value" id="stat-max-laenge">-</div>
+                <div class="stat-value" id="stat-max-laenge" style="margin-top: 6px;">-</div>
             </div>
         </div>
     </div>
@@ -353,22 +364,48 @@
     }
 
     function berechneInfofenster(faenge) {
-        const anzahl = faenge.length;
-        let summeGewichtGramm = 0;
+        const anzahlGesamt = faenge.length;
+        let anzahlEntnommen = 0;
+
+        let summeGewichtGesamtGramm = 0;
+        let summeGewichtEntnommenGramm = 0;
         let maxLaenge = 0;
 
         faenge.forEach(f => {
-            if (f.gewicht) summeGewichtGramm += Number(f.gewicht);
+            const gewicht = f.gewicht ? Number(f.gewicht) : 0;
+            const verbleibText = (f.verbleib || '').toLowerCase();
+            const istEntnommen = verbleibText.includes('entnommen');
+
+            // Gesamt-Summen
+            if (gewicht > 0) summeGewichtGesamtGramm += gewicht;
             if (f.laenge && Number(f.laenge) > maxLaenge) maxLaenge = Number(f.laenge);
+
+            // Entnommen-Summen
+            if (istEntnommen) {
+                anzahlEntnommen++;
+                if (gewicht > 0) summeGewichtEntnommenGramm += gewicht;
+            }
         });
 
-        const gewichtKgNum = summeGewichtGramm / 1000;
-        const gewichtKgText = (Math.round(gewichtKgNum * 100) / 100)
+        // Gewicht-Formatierung Gesamt
+        const gewichtGesamtKgNum = summeGewichtGesamtGramm / 1000;
+        const gewichtGesamtKgText = (Math.round(gewichtGesamtKgNum * 100) / 100)
             .toString()
             .replace('.', ',');
 
-        document.getElementById('stat-anzahl').textContent = anzahl;
-        document.getElementById('stat-gewicht').textContent = `${gewichtKgText} kg`;
+        // Gewicht-Formatierung Entnommen
+        const gewichtEntnommenKgNum = summeGewichtEntnommenGramm / 1000;
+        const gewichtEntnommenKgText = (Math.round(gewichtEntnommenKgNum * 100) / 100)
+            .toString()
+            .replace('.', ',');
+
+        // Werte in die DOM-Elemente schreiben
+        document.getElementById('stat-anzahl').textContent = `Gesamt: ${anzahlGesamt}`;
+        document.getElementById('stat-anzahl-entnommen').textContent = `davon entnommen: ${anzahlEntnommen}`;
+
+        document.getElementById('stat-gewicht').textContent = `${gewichtGesamtKgText} kg`;
+        document.getElementById('stat-gewicht-entnommen').textContent = `davon entnommen: ${gewichtEntnommenKgText} kg`;
+
         document.getElementById('stat-max-laenge').textContent = maxLaenge > 0 ? `${maxLaenge} cm` : '-';
     }
 

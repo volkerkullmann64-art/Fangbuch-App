@@ -488,10 +488,10 @@ function pruefeRuhrStandort() {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
-                // Engmaschiges Netz aus Ruhr-Punkten + Eure exakten Heim-Koordinaten
+                // Vollständig abdeckendes Netz aus Ruhr-Punkten
                 const ruhrPunkte = [
-                    // Oberlauf (Ostholzbach bis Kanu-Club)
-                    { name: "1: Anfang Ostholzbach Mündung", lat: 51.4782, lon: 7.7785 },
+                    // Oberlauf & Langschede
+                    { name: "1: Anfang Ostholzbach", lat: 51.4782, lon: 7.7785 },
                     { name: "2: Ostholzbach Wiesen", lat: 51.4775, lon: 7.7760 },
                     { name: "3: Oberhalb Kanu-Club", lat: 51.4768, lon: 7.7740 },
                     { name: "4: Kanu-Club Anleger", lat: 51.4760, lon: 7.7715 },
@@ -499,16 +499,16 @@ function pruefeRuhrStandort() {
                     
                     // Mittellauf (Wehr & Ruhrbrücke B63)
                     { name: "6: Kurve vor dem Wehr", lat: 51.4748, lon: 7.7670 },
-                    { name: "7: Wehr Langschede Oberwasser", lat: 51.4744, lon: 7.7652 },
-                    { name: "8: Wehr Unterwasser / Insel", lat: 51.4740, lon: 7.7625 },
-                    { name: "9: Ruhrbrücke B63 (Mendener Str.)", lat: 51.4735, lon: 7.7595 },
+                    { name: "7: Wehr Langschede", lat: 51.4744, lon: 7.7652 },
+                    { name: "8: Wehr Unterwasser", lat: 51.4740, lon: 7.7625 },
+                    { name: "9: Ruhrbrücke B63", lat: 51.4735, lon: 7.7595 },
                     { name: "10: Ruhrwiesen unterhalb Brücke", lat: 51.4728, lon: 7.7565 },
 
-                    // Unterlauf (Ruhrwiesen & Flussbögen Süd-West)
-                    { name: "11: Ruhrwiesen Mitte-Ost", lat: 51.4722, lon: 7.7535 },
-                    { name: "12: Erste große Flusskurve West", lat: 51.4715, lon: 7.7505 },
+                    // Unterlauf (Ruhrwiesen & Flussbögen)
+                    { name: "11: Ruhrwiesen Mitte", lat: 51.4722, lon: 7.7535 },
+                    { name: "12: Flusskurve West", lat: 51.4715, lon: 7.7505 },
                     { name: "13: Wiesen-Eingang West", lat: 51.4710, lon: 7.7485 },
-                    { name: "14: Südlicher Ruhrbogen Peak", lat: 51.4705, lon: 7.7470 },
+                    { name: "14: Südlicher Ruhrbogen", lat: 51.4705, lon: 7.7470 },
                     { name: "15: Mitten in den Wiesen", lat: 51.4698, lon: 7.7440 },
                     { name: "16: Ausläufer Wiesen-Bogen", lat: 51.4694, lon: 7.7425 },
                     { name: "17: Gerade Strecke vor Ende", lat: 51.4690, lon: 7.7410 },
@@ -516,8 +516,8 @@ function pruefeRuhrStandort() {
                     { name: "19: Streckenende Schoofsbrücke", lat: 51.4682, lon: 7.7375 },
                     { name: "20: Schoofsbrücke Auslauf", lat: 51.4678, lon: 7.7360 },
 
-                    // 🛠️ EXAKTER TEST-PUNKT ZUHAUSE (Gemessene GPS-Position)
-                    { name: "21: Zuhause (Exakt gemessen)", lat: 51.4946, lon: 7.7441, maxRadius: 1000 }
+                    // 🛠️ TEST-PUNKT ZUHAUSE
+                    { name: "21: Zuhause", lat: 51.4946, lon: 7.7441 }
                 ];
 
                 const R = 6371e3;
@@ -540,7 +540,8 @@ function pruefeRuhrStandort() {
                         kleinsteEntfernung = entfernung;
                     }
 
-                    const erlaubterRadius = punkt.maxRadius || 600;
+                    // Einheitlicher 1.500m (1,5 km) Toleranzradius für alle Ruhr-Punkte
+                    const erlaubterRadius = 1500;
 
                     if (entfernung <= erlaubterRadius) {
                         anDerRuhr = true;

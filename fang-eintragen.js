@@ -9,19 +9,19 @@ let geknipstesFotoBlob = null; // Speichert das komprimierte Foto im Speicher
 const offlineHitparadeMinimaFallback = {
     "Bachforelle": 40,
     "Äsche": 38,
-    "Hecht": 70,
-    "Zander": 65,
-    "Flussbarsch": 38,
+    "Hecht": 60,
+    "Zander": 40,
+    "Flussbarsch": 30,
     "Aal": 70,
-    "Wels": 90,
-    "Barbe": 80,
-    "Karpfen": 65,
-    "Schleie": 40,
-    "Döbel": 50,
-    "Brassen": 50,
-    "Aland": 45,
-    "Rotauge": 30,
-    "Rotfeder": 30
+    "Wels": 60,
+    "Barbe": 60,
+    "Karpfen": 55,
+    "Schleie": 30,
+    "Döbel": 30,
+    "Brassen": 25,
+    "Aland": 20,
+    "Rotauge": 20,
+    "Rotfeder": 20
 };
 
 window.addEventListener('load', function() {
@@ -527,8 +527,8 @@ function pruefeRuhrStandort() {
                         kleinsteEntfernung = entfernung;
                     }
 
-                    // Einheitlicher 1.500m (1,5 km) Toleranzradius
-                    const erlaubterRadius = 1500;
+                    // Exakter 800-Meter-Toleranzradius um die Punkte
+                    const erlaubterRadius = 800;
 
                     if (entfernung <= erlaubterRadius) {
                         anDerRuhr = true;

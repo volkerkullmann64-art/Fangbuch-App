@@ -12,18 +12,18 @@
             font-family: 'Segoe UI', sans-serif;
             background-color: #f4f6f8;
             margin: 0;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .container {
             background: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 600px;
+            max-width: 1100px; /* Am PC schön breit */
             box-sizing: border-box;
         }
         h2, h3 { color: #8e44ad; text-align: center; margin-top: 0; }
@@ -55,13 +55,14 @@
         .search-input {
             border: 2px solid #8e44ad !important;
             background-color: #fcf8ff;
+            font-size: 16px;
         }
         .card {
             background: #fafafa;
             border: 1px solid #e0e0e0;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .mitglieder-tabelle {
             width: 100%;
@@ -69,7 +70,7 @@
             margin-top: 10px;
         }
         .mitglieder-tabelle th, .mitglieder-tabelle td {
-            padding: 12px 8px;
+            padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ddd;
             font-size: 14px;
@@ -97,10 +98,16 @@
             gap: 10px;
             margin: 10px 0;
         }
+        /* Am PC zweispaltiges Anlege-Formular */
         .grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 10px;
+        }
+        @media (min-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
         }
         .treffer-info {
             font-size: 13px;
@@ -121,21 +128,32 @@
     <div class="container">
         <h2>👥 Mitgliederverwaltung</h2>
 
-        <!-- Zurück-Button ganz oben -->
         <button class="btn btn-zurueck" style="margin-bottom: 15px;" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
 
-        <!-- Button zum Aufklappen des Anlege-Formulars -->
         <button class="btn" style="background-color: #9b59b6; margin-bottom: 15px;" onclick="toggleAnlegenFormular()">➕ Neues Mitglied anlegen</button>
 
-        <!-- Aufklappbares Formular -->
         <div class="card" id="anlegen-formular" style="display: none; border: 2px solid #8e44ad;">
             <h3>➕ Neues Mitglied anlegen</h3>
             <div class="grid-2">
-                <input type="text" id="neu-vorname" placeholder="Vorname">
-                <input type="text" id="neu-nachname" placeholder="Nachname">
+                <div>
+                    <span class="info-label">Vorname:</span>
+                    <input type="text" id="neu-vorname" placeholder="Vorname">
+                </div>
+                <div>
+                    <span class="info-label">Nachname:</span>
+                    <input type="text" id="neu-nachname" placeholder="Nachname">
+                </div>
             </div>
-            <input type="email" id="neu-email" placeholder="E-Mail Adresse">
-            <input type="tel" id="neu-telefon" placeholder="Telefonnummer / Mobil">
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">E-Mail:</span>
+                    <input type="email" id="neu-email" placeholder="E-Mail Adresse">
+                </div>
+                <div>
+                    <span class="info-label">Telefon:</span>
+                    <input type="tel" id="neu-telefon" placeholder="Telefonnummer">
+                </div>
+            </div>
             
             <span class="info-label">Gruppe:</span>
             <select id="neu-gruppe">
@@ -150,11 +168,10 @@
             <button class="btn" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
         </div>
 
-        <!-- Mitgliederliste mit Live-Suche -->
         <div class="card">
             <h3>📋 Mitgliederliste</h3>
             
-            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail, Tel oder Ort..." oninput="tabelleZeichnen()">
+            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail, Telefon oder Ort suchen..." oninput="tabelleZeichnen()">
             <div class="treffer-info" id="treffer-anzeige">Lade Mitglieder...</div>
 
             <div style="overflow-x: auto;">
@@ -162,12 +179,14 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Kontakt</th>
+                            <th>E-Mail</th>
+                            <th>Telefon</th>
+                            <th>Ort</th>
                             <th>Aktion</th>
                         </tr>
                     </thead>
                     <tbody id="mitglieder-liste-body">
-                        <tr><td colspan="3">Lade Mitglieder...</td></tr>
+                        <tr><td colspan="5">Lade Mitglieder...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -193,7 +212,7 @@
 
         async function mitgliederLaden() {
             const tbody = document.getElementById('mitglieder-liste-body');
-            tbody.innerHTML = '<tr><td colspan="3">Lade Mitglieder...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5">Lade Mitglieder...</td></tr>';
 
             const { data, error } = await _supabase
                 .from('mitglieder')
@@ -237,7 +256,7 @@
             }
 
             if (gefiltert.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#888;">Keine passenden Mitglieder gefunden.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">Keine passenden Mitglieder gefunden.</td></tr>';
                 return;
             }
 
@@ -245,13 +264,13 @@
                 const tr = document.createElement('tr');
                 const adminTag = m.admin ? '<span class="badge-admin">Admin</span> ' : '';
                 const gruppeTag = m.gruppe ? `<span class="badge-gruppe">${m.gruppe}</span>` : '';
-                
-                // Telefonnummer als klickbarer Anruf-Link
-                const telInfo = m.telefon ? `<br><a href="tel:${m.telefon}" style="color:#8e44ad; font-weight:bold; text-decoration:none; font-size:12px;">📞 ${m.telefon}</a>` : '';
+                const telInfo = m.telefon ? `<a href="tel:${m.telefon}" style="color:#8e44ad; font-weight:bold; text-decoration:none;">📞 ${m.telefon}</a>` : '-';
 
                 tr.innerHTML = `
                     <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}<br>${adminTag}${gruppeTag}</td>
-                    <td><small>${m.email || ''}</small>${telInfo}</td>
+                    <td><small>${m.email || ''}</small></td>
+                    <td><small>${telInfo}</small></td>
+                    <td><small>${m.ort || '-'}</small></td>
                     <td>
                         <button class="btn btn-sm" onclick="location.href='admin-mitglied-edit.html?id=${m.id}'">✏️ Edit</button>
                     </td>

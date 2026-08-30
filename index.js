@@ -17,11 +17,6 @@ document.addEventListener('touchmove', function(e) {
     }
 }, { passive: false });
 
-
-
-
-
-
 // iOS-Aufweck-Schutz: NUR neu laden, wenn wirklich noch das Beenden-Fenster da steht!
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
@@ -38,8 +33,8 @@ const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Zeige die Auswahl-Buttons (Mit Vorname)
-function showDashboard() {
+// Zeige die Auswahl-Buttons (Mit Vorname + dynamischem Admin-Check)
+async function showDashboard() {
     const vorname = sessionStorage.getItem('userVorname') || localStorage.getItem('userVornameCache') || "";
     const begruessung = vorname ? `Willkommen ${vorname}` : "Willkommen";
 
@@ -50,8 +45,34 @@ function showDashboard() {
         <button class="btn" onclick="location.href='gesamtuebersicht.html'">📊 Vereins-Gesamtübersicht</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
         <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
+        <div id="admin-btn-container"></div>
         <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
     `;
+
+    // Admin-Rechte der angemeldeten E-Mail in Supabase prüfen
+    const eingeloggteEmail = sessionStorage.getItem('userEmail') || localStorage.getItem('userEmailCache');
+    if (eingeloggteEmail && navigator.onLine) {
+        try {
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('admin')
+                .eq('email', eingeloggteEmail)
+                .maybeSingle();
+
+            if (!error && data && data.admin === true) {
+                const adminContainer = document.getElementById('admin-btn-container');
+                if (adminContainer) {
+                    adminContainer.innerHTML = `
+                        <button class="btn" style="background-color: #8e44ad; margin-top: 10px; font-weight: bold;" onclick="location.href='admin.html'">
+                            ⚙️ Vorstand / Admin-Bereich
+                        </button>
+                    `;
+                }
+            }
+        } catch (e) {
+            console.warn("Admin-Check im Dashboard fehlgeschlagen:", e);
+        }
+    }
 }
 
 // Zeige das Login-Formular

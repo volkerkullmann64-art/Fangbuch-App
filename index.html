@@ -47,6 +47,21 @@
             font-size: 16px; 
             cursor: pointer; 
         }
+        .btn-admin {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0 5px 0;
+            border: none;
+            border-radius: 10px;
+            background-color: #8e44ad;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            box-sizing: border-box;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
         input { 
             width: 100%; 
             padding: 12px; 
@@ -78,22 +93,58 @@
         <h2>Lade Programm...</h2>
     </div>
 
+    <!-- Admin-Button Container (standardmäßig unsichtbar) -->
+    <div id="admin-bereich-container" style="display: none; width: 320px; box-sizing: border-box;">
+        <a href="admin.html" class="btn-admin">⚙️ Vorstand / Admin-Bereich</a>
+    </div>
+
     <script src="index.js"></script>
     <script>
+        // Supabase-Verbindung für den Admin-Check initialisieren
+        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+        const _supabaseAdminCheck = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function pruefeAdminStatus() {
+            const eingeloggteEmail = sessionStorage.getItem('userEmail');
+            const adminContainer = document.getElementById('admin-bereich-container');
+            
+            if (!eingeloggteEmail || !adminContainer) return;
+
+            try {
+                const { data, error } = await _supabaseAdminCheck
+                    .from('mitglieder')
+                    .select('admin')
+                    .eq('email', eingeloggteEmail)
+                    .maybeSingle();
+
+                if (!error && data && data.admin === true) {
+                    adminContainer.style.display = 'block';
+                } else {
+                    adminContainer.style.display = 'none';
+                }
+            } catch (e) {
+                console.warn("Admin-Check fehlgeschlagen:", e);
+            }
+        }
+
+        // Regelmäßig und beim Laden prüfen, ob eine E-Mail eingeloggt ist und Admin-Rechte hat
+        window.addEventListener('load', () => {
+            pruefeAdminStatus();
+            setInterval(pruefeAdminStatus, 1500);
+        });
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
                         console.log('Service Worker registriert!');
-
-                        // Prüft im Hintergrund sanft auf Updates auf GitHub
                         reg.update();
 
                         reg.onupdatefound = () => {
                             const newWorker = reg.installing;
                             if (newWorker) {
                                 newWorker.onstatechange = () => {
-                                    // Nur neu laden, wenn bereits eine alte Version aktiv war UND die neue fertig installiert ist
                                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                         console.log('Neues Update installiert! Lade einmalig neu...');
                                         window.location.reload();

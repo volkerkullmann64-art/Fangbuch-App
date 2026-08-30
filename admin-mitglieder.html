@@ -143,7 +143,7 @@
     <div class="container">
         <h2>👥 Mitgliederverwaltung</h2>
 
-        <!-- Detailansicht / Bearbeiten -->
+        <!-- Detailansicht / Bearbeiten (Wird als eigene Vollbildansicht eingeblendet) -->
         <div class="detail-card" id="bearbeiten-card" style="display: none;">
             <h3>✏️ Mitgliedsdaten bearbeiten</h3>
             <input type="hidden" id="edit-id">
@@ -192,7 +192,7 @@
                 </div>
             </div>
 
-            <div class="section-header">🏦 Verein & Bank</div>
+            <div class="section-header">🏦 Bankverbindung</div>
             <span class="info-label">IBAN:</span>
             <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
 
@@ -212,52 +212,55 @@
             <button class="btn btn-zurueck" onclick="bearbeitenAbbrechen()" style="margin-top: 15px;">❌ Schließen / Abbrechen</button>
         </div>
 
-        <!-- Neues Mitglied anlegen -->
-        <div class="card">
-            <h3>➕ Neues Mitglied anlegen</h3>
-            <div class="grid-2">
-                <input type="text" id="neu-vorname" placeholder="Vorname">
-                <input type="text" id="neu-nachname" placeholder="Nachname">
-            </div>
-            <input type="email" id="neu-email" placeholder="E-Mail Adresse">
-            
-            <span class="info-label">Gruppe:</span>
-            <select id="neu-gruppe">
-                <option value="Erwachsene">Erwachsene</option>
-                <option value="Jugendgruppe">Jugendgruppe</option>
-            </select>
+        <!-- Hauptbereich: Liste & Neues Mitglied -->
+        <div id="haupt-ansicht">
+            <!-- Neues Mitglied anlegen -->
+            <div class="card">
+                <h3>➕ Neues Mitglied anlegen</h3>
+                <div class="grid-2">
+                    <input type="text" id="neu-vorname" placeholder="Vorname">
+                    <input type="text" id="neu-nachname" placeholder="Nachname">
+                </div>
+                <input type="email" id="neu-email" placeholder="E-Mail Adresse">
+                
+                <span class="info-label">Gruppe:</span>
+                <select id="neu-gruppe">
+                    <option value="Erwachsene">Erwachsene</option>
+                    <option value="Jugendgruppe">Jugendgruppe</option>
+                </select>
 
-            <div class="form-row">
-                <input type="checkbox" id="neu-admin">
-                <label for="neu-admin">Als Vorstand/Admin festlegen</label>
+                <div class="form-row">
+                    <input type="checkbox" id="neu-admin">
+                    <label for="neu-admin">Als Vorstand/Admin festlegen</label>
+                </div>
+                <button class="btn" onclick="mitgliedAnlegen()">Mitglied speichern</button>
             </div>
-            <button class="btn" onclick="mitgliedAnlegen()">Mitglied speichern</button>
+
+            <!-- Mitgliederliste mit Live-Suche -->
+            <div class="card">
+                <h3>📋 Mitgliederliste</h3>
+                
+                <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail oder Ort suchen..." oninput="tabelleZeichnen()">
+                <div class="treffer-info" id="treffer-anzeige">Lade Mitglieder...</div>
+
+                <div style="overflow-x: auto;">
+                    <table class="mitglieder-tabelle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>E-Mail</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mitglieder-liste-body">
+                            <tr><td colspan="3">Lade Mitglieder...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button class="btn btn-zurueck" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
         </div>
-
-        <!-- Mitgliederliste mit Live-Suche -->
-        <div class="card">
-            <h3>📋 Mitgliederliste</h3>
-            
-            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail oder Ort suchen..." oninput="tabelleZeichnen()">
-            <div class="treffer-info" id="treffer-anzeige">Lade Mitglieder...</div>
-
-            <div style="overflow-x: auto;">
-                <table class="mitglieder-tabelle">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>E-Mail</th>
-                            <th>Aktion</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mitglieder-liste-body">
-                        <tr><td colspan="3">Lade Mitglieder...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <button class="btn btn-zurueck" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
     </div>
 
     <script>
@@ -390,13 +393,16 @@
             document.getElementById('edit-kennung').value = m.kennung || 'Keine Kennung';
             document.getElementById('edit-admin').checked = !!m.admin;
 
-            const editCard = document.getElementById('bearbeiten-card');
-            editCard.style.display = 'block';
-            editCard.scrollIntoView({ behavior: 'smooth' });
+            // Hauptansicht ausblenden und Detailansicht anzeigen
+            document.getElementById('haupt-ansicht').style.display = 'none';
+            document.getElementById('bearbeiten-card').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function bearbeitenAbbrechen() {
             document.getElementById('bearbeiten-card').style.display = 'none';
+            document.getElementById('haupt-ansicht').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function mitgliedSpeichern() {
@@ -442,10 +448,15 @@
         async function kontoZuruecksetzen() {
             const id = document.getElementById('edit-id').value;
             const vorname = document.getElementById('edit-vorname').value;
+            const nachname = document.getElementById('edit-nachname').value;
 
-            if (!confirm(`Möchtest du das Konto von ${vorname} wirklich zurücksetzen? Die Kennung wird auf 0000 gesetzt.`)) {
-                return;
-            }
+            // 1. Sicherheitsabfrage
+            const ersteBestatigung = confirm(`Möchtest du das Konto von ${vorname} ${nachname} wirklich zurücksetzen?`);
+            if (!ersteBestatigung) return;
+
+            // 2. Sicherheitsabfrage (Sperrhinweis)
+            const zweiteBestatigung = confirm(`⚠️ ACHTUNG: Das Konto von ${vorname} ${nachname} wird hiermit gesperrt (Kennung 0000). Das Mitglied kann sich danach nicht mehr anmelden! Wirklich durchführen?`);
+            if (!zweiteBestatigung) return;
 
             const { error } = await _supabase
                 .from('mitglieder')
@@ -455,7 +466,7 @@
             if (error) {
                 alert("Fehler beim Zurücksetzen: " + error.message);
             } else {
-                alert("Konto wurde zurückgesetzt (Kennung ist jetzt 0000).");
+                alert(`Konto von ${vorname} ${nachname} wurde erfolgreich zurückgesetzt (Kennung ist jetzt 0000).`);
                 bearbeitenAbbrechen();
                 mitgliederLaden();
             }

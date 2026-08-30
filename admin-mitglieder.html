@@ -43,7 +43,7 @@
         .btn-zurueck { background-color: #757575; }
         .btn-sm { width: auto; padding: 8px 14px; font-size: 14px; display: inline-block; font-weight: bold; }
         
-        input[type="text"], input[type="email"], select {
+        input[type="text"], input[type="email"], input[type="tel"], select {
             width: 100%;
             padding: 10px;
             margin: 4px 0 12px 0;
@@ -121,14 +121,21 @@
     <div class="container">
         <h2>👥 Mitgliederverwaltung</h2>
 
-        <!-- Neues Mitglied anlegen -->
-        <div class="card">
+        <!-- Zurück-Button ganz oben -->
+        <button class="btn btn-zurueck" style="margin-bottom: 15px;" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
+
+        <!-- Button zum Aufklappen des Anlege-Formulars -->
+        <button class="btn" style="background-color: #9b59b6; margin-bottom: 15px;" onclick="toggleAnlegenFormular()">➕ Neues Mitglied anlegen</button>
+
+        <!-- Aufklappbares Formular -->
+        <div class="card" id="anlegen-formular" style="display: none; border: 2px solid #8e44ad;">
             <h3>➕ Neues Mitglied anlegen</h3>
             <div class="grid-2">
                 <input type="text" id="neu-vorname" placeholder="Vorname">
                 <input type="text" id="neu-nachname" placeholder="Nachname">
             </div>
             <input type="email" id="neu-email" placeholder="E-Mail Adresse">
+            <input type="tel" id="neu-telefon" placeholder="Telefonnummer / Mobil">
             
             <span class="info-label">Gruppe:</span>
             <select id="neu-gruppe">
@@ -140,14 +147,14 @@
                 <input type="checkbox" id="neu-admin">
                 <label for="neu-admin">Als Vorstand/Admin festlegen</label>
             </div>
-            <button class="btn" onclick="mitgliedAnlegen()">Mitglied speichern</button>
+            <button class="btn" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
         </div>
 
         <!-- Mitgliederliste mit Live-Suche -->
         <div class="card">
             <h3>📋 Mitgliederliste</h3>
             
-            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail oder Ort suchen..." oninput="tabelleZeichnen()">
+            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail, Tel oder Ort..." oninput="tabelleZeichnen()">
             <div class="treffer-info" id="treffer-anzeige">Lade Mitglieder...</div>
 
             <div style="overflow-x: auto;">
@@ -155,7 +162,7 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>E-Mail</th>
+                            <th>Kontakt</th>
                             <th>Aktion</th>
                         </tr>
                     </thead>
@@ -166,7 +173,6 @@
             </div>
         </div>
 
-        <button class="btn btn-zurueck" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
     </div>
 
     <script>
@@ -179,6 +185,11 @@
         window.onload = function() {
             mitgliederLaden();
         };
+
+        function toggleAnlegenFormular() {
+            const form = document.getElementById('anlegen-formular');
+            form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+        }
 
         async function mitgliederLaden() {
             const tbody = document.getElementById('mitglieder-liste-body');
@@ -209,11 +220,13 @@
                 const vorname = (m.vorname || '').toLowerCase();
                 const nachname = (m.nachname || '').toLowerCase();
                 const email = (m.email || '').toLowerCase();
+                const telefon = (m.telefon || '').toLowerCase();
                 const ort = (m.ort || '').toLowerCase();
 
                 return vorname.includes(suchbegriff) || 
                        nachname.includes(suchbegriff) || 
                        email.includes(suchbegriff) ||
+                       telefon.includes(suchbegriff) ||
                        ort.includes(suchbegriff);
             });
 
@@ -232,10 +245,11 @@
                 const tr = document.createElement('tr');
                 const adminTag = m.admin ? '<span class="badge-admin">Admin</span> ' : '';
                 const gruppeTag = m.gruppe ? `<span class="badge-gruppe">${m.gruppe}</span>` : '';
-                
+                const telInfo = m.telefon ? `<br><small style="color:#555;">📞 ${m.telefon}</small>` : '';
+
                 tr.innerHTML = `
                     <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}<br>${adminTag}${gruppeTag}</td>
-                    <td><small>${m.email || ''}</small></td>
+                    <td><small>${m.email || ''}</small>${telInfo}</td>
                     <td>
                         <button class="btn btn-sm" onclick="location.href='admin-mitglied-edit.html?id=${m.id}'">✏️ Edit</button>
                     </td>
@@ -248,6 +262,7 @@
             const vorname = document.getElementById('neu-vorname').value.trim();
             const nachname = document.getElementById('neu-nachname').value.trim();
             const email = document.getElementById('neu-email').value.trim().toLowerCase();
+            const telefon = document.getElementById('neu-telefon').value.trim();
             const gruppe = document.getElementById('neu-gruppe').value;
             const isAdmin = document.getElementById('neu-admin').checked;
 
@@ -264,6 +279,7 @@
                     vorname: vorname,
                     nachname: nachname,
                     email: email,
+                    telefon: telefon,
                     gruppe: gruppe,
                     admin: isAdmin,
                     kennung: neueKennung
@@ -276,7 +292,9 @@
                 document.getElementById('neu-vorname').value = '';
                 document.getElementById('neu-nachname').value = '';
                 document.getElementById('neu-email').value = '';
+                document.getElementById('neu-telefon').value = '';
                 document.getElementById('neu-admin').checked = false;
+                toggleAnlegenFormular();
                 mitgliederLaden();
             }
         }

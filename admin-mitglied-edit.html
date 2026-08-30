@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASV Admin - Mitglied bearbeiten</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+        h2, h3 { color: #8e44ad; text-align: center; margin-top: 0; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            background-color: #8e44ad;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-zurueck { background-color: #757575; }
+        .btn-danger { background-color: #c0392b; }
+        
+        input[type="text"], input[type="email"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 4px 0 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .section-header {
+            font-weight: bold;
+            color: #8e44ad;
+            border-bottom: 2px solid #8e44ad;
+            padding-bottom: 4px;
+            margin: 15px 0 10px 0;
+            font-size: 14px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+            display: block;
+        }
+
+        /* Knallrotes Warnfenster (Modal) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: #fff0f0;
+            border: 3px solid #c0392b;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { color: #c0392b; margin-top: 0; }
+        .modal-box p { color: #333; font-size: 14px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>✏️ Mitgliedsdaten bearbeiten</h2>
+        <div id="lade-hinweis" style="text-align: center; color: #666;">Lade Mitgliedsdaten...</div>
+
+        <div id="edit-formular" style="display: none;">
+            <div class="section-header">👤 Persönliche Daten</div>
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Vorname:</span>
+                    <input type="text" id="edit-vorname">
+                </div>
+                <div>
+                    <span class="info-label">Nachname:</span>
+                    <input type="text" id="edit-nachname">
+                </div>
+            </div>
+
+            <span class="info-label">E-Mail Adresse:</span>
+            <input type="email" id="edit-email">
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Geburtsdatum:</span>
+                    <input type="text" id="edit-geburtsdatum" placeholder="TT.MM.JJJJ">
+                </div>
+                <div>
+                    <span class="info-label">Gruppe:</span>
+                    <select id="edit-gruppe">
+                        <option value="Erwachsene">Erwachsene</option>
+                        <option value="Jugendgruppe">Jugendgruppe</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-header">📍 Anschrift</div>
+            <span class="info-label">Straße & Hausnummer:</span>
+            <input type="text" id="edit-strasse">
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">PLZ:</span>
+                    <input type="text" id="edit-plz">
+                </div>
+                <div>
+                    <span class="info-label">Ort:</span>
+                    <input type="text" id="edit-ort">
+                </div>
+            </div>
+
+            <div class="section-header">🏦 Bankverbindung</div>
+            <span class="info-label">IBAN:</span>
+            <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
+
+            <span class="info-label">Aktuelle Kennung:</span>
+            <input type="text" id="edit-kennung" readonly style="background-color: #f0f0f0; color: #555; font-weight: bold;">
+
+            <div class="form-row" style="margin: 15px 0;">
+                <input type="checkbox" id="edit-admin" style="transform: scale(1.3);">
+                <label for="edit-admin" style="font-weight: bold; color: #8e44ad;">Vorstand / Admin-Rechte gewähren</label>
+            </div>
+
+            <div class="section-header">📝 Vorstands-Bemerkung (Intern)</div>
+            <textarea id="edit-bemerkung" placeholder="Interne Notizen zum Mitglied..."></textarea>
+
+            <button class="btn" onclick="mitgliedSpeichern()">💾 Änderungen speichern</button>
+            <button class="btn btn-danger" onclick="zeigeWarnung()" style="margin-top: 15px;">🔄 Konto zurücksetzen (Kennung 0000)</button>
+            <button class="btn btn-zurueck" onclick="location.href='admin-mitglieder.html'" style="margin-top: 15px;">❌ Schließen / Abbrechen</button>
+        </div>
+    </div>
+
+    <!-- Das rote Warn-Fenster (Modal) -->
+    <div class="modal-overlay" id="warn-modal">
+        <div class="modal-box">
+            <h3>🚨 ACHTUNG! KONTO SPERREN</h3>
+            <p>Möchtest du das Konto von <strong id="warn-name">diesem Mitglied</strong> wirklich zurücksetzen?</p>
+            <p style="background: #f8d7da; padding: 10px; border-radius: 6px; border: 1px solid #f5c6cb; color: #721c24;">
+                Die Kennung wird auf <strong>0000</strong> gesetzt. Das Mitglied wird sofort ausgeloggt und kann sich nicht mehr anmelden!
+            </p>
+            <button class="btn btn-danger" onclick="kontoZuruecksetzenJetzt()">Ja, Konto jetzt sperren!</button>
+            <button class="btn btn-zurueck" onclick="schliesseWarnung()">Abbrechen</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let mitgliedId = null;
+
+        window.onload = function() {
+            // ID aus der URL auslesen (?id=123)
+            const urlParams = new URLSearchParams(window.location.search);
+            mitgliedId = urlParams.get('id');
+
+            if (mitgliedId) {
+                mitgliedLaden(mitgliedId);
+            } else {
+                alert("Kein Mitglied ausgewählt!");
+                location.href = 'admin-mitglieder.html';
+            }
+        };
+
+        async function mitgliedLaden(id) {
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error || !data) {
+                alert("Fehler beim Laden der Mitgliedsdaten.");
+                location.href = 'admin-mitglieder.html';
+                return;
+            }
+
+            document.getElementById('edit-vorname').value = data.vorname || '';
+            document.getElementById('edit-nachname').value = data.nachname || '';
+            document.getElementById('edit-email').value = data.email || '';
+            document.getElementById('edit-geburtsdatum').value = data.geburtsdatum || '';
+            document.getElementById('edit-gruppe').value = data.gruppe || 'Erwachsene';
+            document.getElementById('edit-strasse').value = data.strasse || '';
+            document.getElementById('edit-plz').value = data.plz || '';
+            document.getElementById('edit-ort').value = data.ort || '';
+            document.getElementById('edit-iban').value = data.iban || '';
+            document.getElementById('edit-bemerkung').value = data.bemerkung || '';
+            document.getElementById('edit-kennung').value = data.kennung || 'Keine Kennung';
+            document.getElementById('edit-admin').checked = !!data.admin;
+
+            document.getElementById('warn-name').innerText = `${data.vorname || ''} ${data.nachname || ''}`;
+
+            document.getElementById('lade-hinweis').style.display = 'none';
+            document.getElementById('edit-formular').style.display = 'block';
+        }
+
+        async function mitgliedSpeichern() {
+            const vorname = document.getElementById('edit-vorname').value.trim();
+            const nachname = document.getElementById('edit-nachname').value.trim();
+            const email = document.getElementById('edit-email').value.trim().toLowerCase();
+            const geburtsdatum = document.getElementById('edit-geburtsdatum').value.trim();
+            const gruppe = document.getElementById('edit-gruppe').value;
+            const strasse = document.getElementById('edit-strasse').value.trim();
+            const plz = document.getElementById('edit-plz').value.trim();
+            const ort = document.getElementById('edit-ort').value.trim();
+            const iban = document.getElementById('edit-iban').value.trim();
+            const bemerkung = document.getElementById('edit-bemerkung').value.trim();
+            const isAdmin = document.getElementById('edit-admin').checked;
+
+            const { error } = await _supabase
+                .from('mitglieder')
+                .update({
+                    vorname: vorname,
+                    nachname: nachname,
+                    email: email,
+                    geburtsdatum: geburtsdatum,
+                    gruppe: gruppe,
+                    strasse: strasse,
+                    plz: plz,
+                    ort: ort,
+                    iban: iban,
+                    bemerkung: bemerkung,
+                    admin: isAdmin
+                })
+                .eq('id', mitgliedId);
+
+            if (error) {
+                alert("Fehler beim Speichern: " + error.message);
+            } else {
+                alert("Änderungen gespeichert!");
+                location.href = 'admin-mitglieder.html';
+            }
+        }
+
+        function zeigeWarnung() {
+            document.getElementById('warn-modal').style.display = 'flex';
+        }
+
+        function schliesseWarnung() {
+            document.getElementById('warn-modal').style.display = 'none';
+        }
+
+        async function kontoZuruecksetzenJetzt() {
+            const { error } = await _supabase
+                .from('mitglieder')
+                .update({ kennung: "0000" })
+                .eq('id', mitgliedId);
+
+            if (error) {
+                alert("Fehler beim Zurücksetzen: " + error.message);
+            } else {
+                alert("Konto wurde erfolgreich zurückgesetzt (Kennung ist jetzt 0000).");
+                location.href = 'admin-mitglieder.html';
+            }
+        }
+    </script>
+</body>
+</html>

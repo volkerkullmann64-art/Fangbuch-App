@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASV Admin - Mitgliederverwaltung</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+        h2, h3 { color: #8e44ad; text-align: center; margin-top: 0; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            background-color: #8e44ad;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-zurueck { background-color: #757575; }
+        .btn-danger { background-color: #c0392b; }
+        .btn-sm { width: auto; padding: 8px 14px; font-size: 14px; display: inline-block; font-weight: bold; }
+        
+        input[type="text"], input[type="email"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 4px 0 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .search-input {
+            border: 2px solid #8e44ad !important;
+            background-color: #fcf8ff;
+        }
+        .card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .detail-card {
+            background: #ffffff;
+            border: 2px solid #8e44ad;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(142, 68, 173, 0.15);
+            margin-bottom: 20px;
+        }
+        .section-header {
+            font-weight: bold;
+            color: #8e44ad;
+            border-bottom: 2px solid #8e44ad;
+            padding-bottom: 4px;
+            margin: 15px 0 10px 0;
+            font-size: 14px;
+        }
+        .mitglieder-tabelle {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .mitglieder-tabelle th, .mitglieder-tabelle td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .mitglieder-tabelle th { background-color: #f2f2f2; color: #333; }
+        .badge-admin {
+            background-color: #8e44ad;
+            color: white;
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-gruppe {
+            background-color: #27ae60;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .treffer-info {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            text-align: right;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>👥 Mitgliederverwaltung</h2>
+
+        <!-- Detailansicht / Bearbeiten -->
+        <div class="detail-card" id="bearbeiten-card" style="display: none;">
+            <h3>✏️ Mitgliedsdaten bearbeiten</h3>
+            <input type="hidden" id="edit-id">
+            
+            <div class="section-header">👤 Persönliche Daten</div>
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Vorname:</span>
+                    <input type="text" id="edit-vorname">
+                </div>
+                <div>
+                    <span class="info-label">Nachname:</span>
+                    <input type="text" id="edit-nachname">
+                </div>
+            </div>
+
+            <span class="info-label">E-Mail Adresse:</span>
+            <input type="email" id="edit-email">
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Geburtsdatum:</span>
+                    <input type="text" id="edit-geburtsdatum" placeholder="TT.MM.JJJJ">
+                </div>
+                <div>
+                    <span class="info-label">Gruppe:</span>
+                    <select id="edit-gruppe">
+                        <option value="Erwachsene">Erwachsene</option>
+                        <option value="Jugendgruppe">Jugendgruppe</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-header">📍 Anschrift</div>
+            <span class="info-label">Straße & Hausnummer:</span>
+            <input type="text" id="edit-strasse">
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">PLZ:</span>
+                    <input type="text" id="edit-plz">
+                </div>
+                <div>
+                    <span class="info-label">Ort:</span>
+                    <input type="text" id="edit-ort">
+                </div>
+            </div>
+
+            <div class="section-header">🏦 Verein & Bank</div>
+            <span class="info-label">IBAN:</span>
+            <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
+
+            <span class="info-label">Aktuelle Kennung:</span>
+            <input type="text" id="edit-kennung" readonly style="background-color: #f0f0f0; color: #555; font-weight: bold;">
+
+            <div class="form-row" style="margin: 15px 0;">
+                <input type="checkbox" id="edit-admin" style="transform: scale(1.3);">
+                <label for="edit-admin" style="font-weight: bold; color: #8e44ad;">Vorstand / Admin-Rechte gewähren</label>
+            </div>
+
+            <div class="section-header">📝 Vorstands-Bemerkung (Intern)</div>
+            <textarea id="edit-bemerkung" placeholder="Interne Notizen zum Mitglied..."></textarea>
+
+            <button class="btn" onclick="mitgliedSpeichern()">💾 Änderungen speichern</button>
+            <button class="btn btn-danger" onclick="kontoZuruecksetzen()" style="margin-top: 15px;">🔄 Konto zurücksetzen (Kennung 0000)</button>
+            <button class="btn btn-zurueck" onclick="bearbeitenAbbrechen()" style="margin-top: 15px;">❌ Schließen / Abbrechen</button>
+        </div>
+
+        <!-- Neues Mitglied anlegen -->
+        <div class="card">
+            <h3>➕ Neues Mitglied anlegen</h3>
+            <div class="grid-2">
+                <input type="text" id="neu-vorname" placeholder="Vorname">
+                <input type="text" id="neu-nachname" placeholder="Nachname">
+            </div>
+            <input type="email" id="neu-email" placeholder="E-Mail Adresse">
+            
+            <span class="info-label">Gruppe:</span>
+            <select id="neu-gruppe">
+                <option value="Erwachsene">Erwachsene</option>
+                <option value="Jugendgruppe">Jugendgruppe</option>
+            </select>
+
+            <div class="form-row">
+                <input type="checkbox" id="neu-admin">
+                <label for="neu-admin">Als Vorstand/Admin festlegen</label>
+            </div>
+            <button class="btn" onclick="mitgliedAnlegen()">Mitglied speichern</button>
+        </div>
+
+        <!-- Mitgliederliste mit Live-Suche -->
+        <div class="card">
+            <h3>📋 Mitgliederliste</h3>
+            
+            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail oder Ort suchen..." oninput="tabelleZeichnen()">
+            <div class="treffer-info" id="treffer-anzeige">Lade Mitglieder...</div>
+
+            <div style="overflow-x: auto;">
+                <table class="mitglieder-tabelle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>E-Mail</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mitglieder-liste-body">
+                        <tr><td colspan="3">Lade Mitglieder...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button class="btn btn-zurueck" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let alleMitglieder = [];
+
+        window.onload = function() {
+            mitgliederLaden();
+        };
+
+        async function mitgliederLaden() {
+            const tbody = document.getElementById('mitglieder-liste-body');
+            tbody.innerHTML = '<tr><td colspan="3">Lade Mitglieder...</td></tr>';
+
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('*')
+                .order('nachname', { ascending: true });
+
+            if (error) {
+                alert("Fehler beim Laden der Mitglieder: " + error.message);
+                return;
+            }
+
+            alleMitglieder = data || [];
+            tabelleZeichnen();
+        }
+
+        function tabelleZeichnen() {
+            const tbody = document.getElementById('mitglieder-liste-body');
+            const suchbegriff = document.getElementById('suchfeld').value.trim().toLowerCase();
+            const trefferAnzeige = document.getElementById('treffer-anzeige');
+
+            tbody.innerHTML = '';
+
+            const gefiltert = alleMitglieder.filter(m => {
+                const vorname = (m.vorname || '').toLowerCase();
+                const nachname = (m.nachname || '').toLowerCase();
+                const email = (m.email || '').toLowerCase();
+                const ort = (m.ort || '').toLowerCase();
+
+                return vorname.includes(suchbegriff) || 
+                       nachname.includes(suchbegriff) || 
+                       email.includes(suchbegriff) ||
+                       ort.includes(suchbegriff);
+            });
+
+            if (suchbegriff === '') {
+                trefferAnzeige.textContent = `Gesamt: ${alleMitglieder.length} Mitglieder`;
+            } else {
+                trefferAnzeige.textContent = `Gefunden: ${gefiltert.length} von ${alleMitglieder.length} Mitgliedern`;
+            }
+
+            if (gefiltert.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#888;">Keine passenden Mitglieder gefunden.</td></tr>';
+                return;
+            }
+
+            gefiltert.forEach(m => {
+                const tr = document.createElement('tr');
+                const adminTag = m.admin ? '<span class="badge-admin">Admin</span> ' : '';
+                const gruppeTag = m.gruppe ? `<span class="badge-gruppe">${m.gruppe}</span>` : '';
+                
+                tr.innerHTML = `
+                    <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}<br>${adminTag}${gruppeTag}</td>
+                    <td><small>${m.email || ''}</small></td>
+                    <td>
+                        <button class="btn btn-sm" onclick="bearbeitenStarten('${m.id}')">✏️ Edit</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function mitgliedAnlegen() {
+            const vorname = document.getElementById('neu-vorname').value.trim();
+            const nachname = document.getElementById('neu-nachname').value.trim();
+            const email = document.getElementById('neu-email').value.trim().toLowerCase();
+            const gruppe = document.getElementById('neu-gruppe').value;
+            const isAdmin = document.getElementById('neu-admin').checked;
+
+            if (!vorname || !nachname || !email) {
+                alert("Bitte Vorname, Nachname und E-Mail ausfüllen.");
+                return;
+            }
+
+            const neueKennung = String(Date.now()).slice(-8);
+
+            const { error } = await _supabase
+                .from('mitglieder')
+                .insert([{
+                    vorname: vorname,
+                    nachname: nachname,
+                    email: email,
+                    gruppe: gruppe,
+                    admin: isAdmin,
+                    kennung: neueKennung
+                }]);
+
+            if (error) {
+                alert("Fehler beim Anlegen: " + error.message);
+            } else {
+                alert("Mitglied erfolgreich angelegt!");
+                document.getElementById('neu-vorname').value = '';
+                document.getElementById('neu-nachname').value = '';
+                document.getElementById('neu-email').value = '';
+                document.getElementById('neu-admin').checked = false;
+                mitgliederLaden();
+            }
+        }
+
+        function bearbeitenStarten(id) {
+            const m = alleMitglieder.find(item => String(item.id) === String(id));
+            if (!m) return;
+
+            document.getElementById('edit-id').value = m.id;
+            document.getElementById('edit-vorname').value = m.vorname || '';
+            document.getElementById('edit-nachname').value = m.nachname || '';
+            document.getElementById('edit-email').value = m.email || '';
+            document.getElementById('edit-geburtsdatum').value = m.geburtsdatum || '';
+            document.getElementById('edit-gruppe').value = m.gruppe || 'Erwachsene';
+            document.getElementById('edit-strasse').value = m.strasse || '';
+            document.getElementById('edit-plz').value = m.plz || '';
+            document.getElementById('edit-ort').value = m.ort || '';
+            document.getElementById('edit-iban').value = m.iban || '';
+            document.getElementById('edit-bemerkung').value = m.bemerkung || '';
+            document.getElementById('edit-kennung').value = m.kennung || 'Keine Kennung';
+            document.getElementById('edit-admin').checked = !!m.admin;
+
+            const editCard = document.getElementById('bearbeiten-card');
+            editCard.style.display = 'block';
+            editCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function bearbeitenAbbrechen() {
+            document.getElementById('bearbeiten-card').style.display = 'none';
+        }
+
+        async function mitgliedSpeichern() {
+            const id = document.getElementById('edit-id').value;
+            const vorname = document.getElementById('edit-vorname').value.trim();
+            const nachname = document.getElementById('edit-nachname').value.trim();
+            const email = document.getElementById('edit-email').value.trim().toLowerCase();
+            const geburtsdatum = document.getElementById('edit-geburtsdatum').value.trim();
+            const gruppe = document.getElementById('edit-gruppe').value;
+            const strasse = document.getElementById('edit-strasse').value.trim();
+            const plz = document.getElementById('edit-plz').value.trim();
+            const ort = document.getElementById('edit-ort').value.trim();
+            const iban = document.getElementById('edit-iban').value.trim();
+            const bemerkung = document.getElementById('edit-bemerkung').value.trim();
+            const isAdmin = document.getElementById('edit-admin').checked;
+
+            const { error } = await _supabase
+                .from('mitglieder')
+                .update({
+                    vorname: vorname,
+                    nachname: nachname,
+                    email: email,
+                    geburtsdatum: geburtsdatum,
+                    gruppe: gruppe,
+                    strasse: strasse,
+                    plz: plz,
+                    ort: ort,
+                    iban: iban,
+                    bemerkung: bemerkung,
+                    admin: isAdmin
+                })
+                .eq('id', id);
+
+            if (error) {
+                alert("Fehler beim Speichern: " + error.message);
+            } else {
+                alert("Änderungen gespeichert!");
+                bearbeitenAbbrechen();
+                mitgliederLaden();
+            }
+        }
+
+        async function kontoZuruecksetzen() {
+            const id = document.getElementById('edit-id').value;
+            const vorname = document.getElementById('edit-vorname').value;
+
+            if (!confirm(`Möchtest du das Konto von ${vorname} wirklich zurücksetzen? Die Kennung wird auf 0000 gesetzt.`)) {
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('mitglieder')
+                .update({ kennung: "0000" })
+                .eq('id', id);
+
+            if (error) {
+                alert("Fehler beim Zurücksetzen: " + error.message);
+            } else {
+                alert("Konto wurde zurückgesetzt (Kennung ist jetzt 0000).");
+                bearbeitenAbbrechen();
+                mitgliederLaden();
+            }
+        }
+    </script>
+</body>
+</html>

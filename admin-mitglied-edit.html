@@ -133,7 +133,10 @@
                 </div>
                 <div>
                     <span class="info-label">Telefonnummer:</span>
-                    <input type="tel" id="edit-telefon" placeholder="0171 1234567">
+                    <input type="tel" id="edit-telefon" placeholder="0171 1234567" oninput="aktualisiereAnrufLink()">
+                    <a id="btn-anrufen" href="#" style="display:none; margin-top:-6px; margin-bottom:10px; color:#27ae60; font-weight:bold; text-decoration:none; font-size:13px;">
+                        📞 Diese Nummer anrufen
+                    </a>
                 </div>
             </div>
 
@@ -248,8 +251,22 @@
 
             document.getElementById('warn-name').innerText = `${data.vorname || ''} ${data.nachname || ''}`;
 
+            aktualisiereAnrufLink();
+
             document.getElementById('lade-hinweis').style.display = 'none';
             document.getElementById('edit-formular').style.display = 'block';
+        }
+
+        function aktualisiereAnrufLink() {
+            const tel = document.getElementById('edit-telefon').value.trim();
+            const anrufBtn = document.getElementById('btn-anrufen');
+
+            if (tel) {
+                anrufBtn.href = `tel:${tel}`;
+                anrufBtn.style.display = 'inline-block';
+            } else {
+                anrufBtn.style.display = 'none';
+            }
         }
 
         async function mitgliedSpeichern() {

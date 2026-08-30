@@ -23,7 +23,7 @@
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 1100px; /* Am PC schön breit */
+            max-width: 1100px;
             box-sizing: border-box;
         }
         h2, h3 { color: #8e44ad; text-align: center; margin-top: 0; }
@@ -55,7 +55,7 @@
         .search-input {
             border: 2px solid #8e44ad !important;
             background-color: #fcf8ff;
-            font-size: 16px;
+            font-size: 15px;
         }
         .card {
             background: #fafafa;
@@ -79,17 +79,10 @@
         .badge-admin {
             background-color: #8e44ad;
             color: white;
-            padding: 3px 7px;
+            padding: 2px 6px;
             border-radius: 4px;
             font-size: 11px;
             font-weight: bold;
-        }
-        .badge-gruppe {
-            background-color: #27ae60;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
             margin-left: 5px;
         }
         .form-row {
@@ -98,16 +91,19 @@
             gap: 10px;
             margin: 10px 0;
         }
-        /* Am PC zweispaltiges Anlege-Formular */
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr;
             gap: 10px;
         }
+        .grid-search {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
         @media (min-width: 600px) {
-            .grid-2 {
-                grid-template-columns: 1fr 1fr;
-            }
+            .grid-2 { grid-template-columns: 1fr 1fr; }
+            .grid-search { grid-template-columns: 2fr 1fr; }
         }
         .treffer-info {
             font-size: 13px;
@@ -132,6 +128,7 @@
 
         <button class="btn" style="background-color: #9b59b6; margin-bottom: 15px;" onclick="toggleAnlegenFormular()">➕ Neues Mitglied anlegen</button>
 
+        <!-- Formular zum Anlegen -->
         <div class="card" id="anlegen-formular" style="display: none; border: 2px solid #8e44ad;">
             <h3>➕ Neues Mitglied anlegen</h3>
             <div class="grid-2">
@@ -168,10 +165,20 @@
             <button class="btn" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
         </div>
 
+        <!-- Mitgliederliste mit Suche & Gruppenfilter -->
         <div class="card">
             <h3>📋 Mitgliederliste</h3>
             
-            <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail, Telefon oder Ort suchen..." oninput="tabelleZeichnen()">
+            <div class="grid-search">
+                <input type="text" id="suchfeld" class="search-input" placeholder="🔍 Name, E-Mail, Telefon oder Ort..." oninput="tabelleZeichnen()">
+                
+                <select id="gruppen-filter" onchange="tabelleZeichnen()" style="border: 2px solid #8e44ad; font-weight: bold;">
+                    <option value="alle">👥 Alle Gruppen anzeigen</option>
+                    <option value="Erwachsene">👨‍💼 Nur Erwachsene</option>
+                    <option value="Jugendgruppe">👦 Nur Jugendgruppe</option>
+                </select>
+            </div>
+
             <div class="treffer-info" id="treffer-anzeige">Lade Mitglieder...</div>
 
             <div style="overflow-x: auto;">
@@ -231,6 +238,7 @@
         function tabelleZeichnen() {
             const tbody = document.getElementById('mitglieder-liste-body');
             const suchbegriff = document.getElementById('suchfeld').value.trim().toLowerCase();
+            const gewaehlteGruppe = document.getElementById('gruppen-filter').value;
             const trefferAnzeige = document.getElementById('treffer-anzeige');
 
             tbody.innerHTML = '';
@@ -241,15 +249,22 @@
                 const email = (m.email || '').toLowerCase();
                 const telefon = (m.telefon || '').toLowerCase();
                 const ort = (m.ort || '').toLowerCase();
+                const gruppe = m.gruppe || 'Erwachsene';
 
-                return vorname.includes(suchbegriff) || 
-                       nachname.includes(suchbegriff) || 
-                       email.includes(suchbegriff) ||
-                       telefon.includes(suchbegriff) ||
-                       ort.includes(suchbegriff);
+                // 1. Textsuche prüfen
+                const passtSuche = vorname.includes(suchbegriff) || 
+                                  nachname.includes(suchbegriff) || 
+                                  email.includes(suchbegriff) ||
+                                  telefon.includes(suchbegriff) ||
+                                  ort.includes(suchbegriff);
+
+                // 2. Gruppen-Filter prüfen
+                const passtGruppe = (gewaehlteGruppe === 'alle') || (gruppe === gewaehlteGruppe);
+
+                return passtSuche && passtGruppe;
             });
 
-            if (suchbegriff === '') {
+            if (suchbegriff === '' && gewaehlteGruppe === 'alle') {
                 trefferAnzeige.textContent = `Gesamt: ${alleMitglieder.length} Mitglieder`;
             } else {
                 trefferAnzeige.textContent = `Gefunden: ${gefiltert.length} von ${alleMitglieder.length} Mitgliedern`;
@@ -262,12 +277,11 @@
 
             gefiltert.forEach(m => {
                 const tr = document.createElement('tr');
-                const adminTag = m.admin ? '<span class="badge-admin">Admin</span> ' : '';
-                const gruppeTag = m.gruppe ? `<span class="badge-gruppe">${m.gruppe}</span>` : '';
+                const adminTag = m.admin ? ' <span class="badge-admin">Admin</span>' : '';
                 const telInfo = m.telefon ? `<a href="tel:${m.telefon}" style="color:#8e44ad; font-weight:bold; text-decoration:none;">📞 ${m.telefon}</a>` : '-';
 
                 tr.innerHTML = `
-                    <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}<br>${adminTag}${gruppeTag}</td>
+                    <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}${adminTag}</td>
                     <td><small>${m.email || ''}</small></td>
                     <td><small>${telInfo}</small></td>
                     <td><small>${m.ort || '-'}</small></td>

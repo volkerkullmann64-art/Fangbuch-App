@@ -12,18 +12,18 @@
             font-family: 'Segoe UI', sans-serif;
             background-color: #f4f6f8;
             margin: 0;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .container {
             background: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 600px;
+            max-width: 900px; /* Schön breit am PC */
             box-sizing: border-box;
         }
         h2, h3 { color: #8e44ad; text-align: center; margin-top: 0; }
@@ -55,15 +55,15 @@
         }
         textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 100px;
         }
         .section-header {
             font-weight: bold;
             color: #8e44ad;
             border-bottom: 2px solid #8e44ad;
             padding-bottom: 4px;
-            margin: 15px 0 10px 0;
-            font-size: 14px;
+            margin: 20px 0 12px 0;
+            font-size: 15px;
         }
         .form-row {
             display: flex;
@@ -71,11 +71,16 @@
             gap: 10px;
             margin: 10px 0;
         }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        
+        /* Layout-Grids für Handys und PCs */
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr; gap: 15px; }
+
+        @media (min-width: 650px) {
+            .grid-2 { grid-template-columns: 1fr 1fr; }
+            .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
         }
+
         .info-label {
             font-weight: bold;
             color: #555;
@@ -83,7 +88,7 @@
             display: block;
         }
 
-        /* Knallrotes Warnfenster (Modal) */
+        /* Knallrotes Warnfenster */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -98,7 +103,7 @@
             border: 3px solid #c0392b;
             padding: 25px;
             border-radius: 12px;
-            max-width: 400px;
+            max-width: 450px;
             width: 90%;
             text-align: center;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
@@ -114,7 +119,7 @@
         <div id="lade-hinweis" style="text-align: center; color: #666;">Lade Mitgliedsdaten...</div>
 
         <div id="edit-formular" style="display: none;">
-            <div class="section-header">👤 Persönliche Daten</div>
+            <div class="section-header">👤 Persönliche Daten & Kontakt</div>
             <div class="grid-2">
                 <div>
                     <span class="info-label">Vorname:</span>
@@ -169,12 +174,17 @@
                 </div>
             </div>
 
-            <div class="section-header">🏦 Bankverbindung</div>
-            <span class="info-label">IBAN:</span>
-            <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
-
-            <span class="info-label">Aktuelle Kennung:</span>
-            <input type="text" id="edit-kennung" readonly style="background-color: #f0f0f0; color: #555; font-weight: bold;">
+            <div class="section-header">🏦 Bankverbindung & Status</div>
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">IBAN:</span>
+                    <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
+                </div>
+                <div>
+                    <span class="info-label">Aktuelle Kennung:</span>
+                    <input type="text" id="edit-kennung" readonly style="background-color: #f0f0f0; color: #555; font-weight: bold;">
+                </div>
+            </div>
 
             <div class="form-row" style="margin: 15px 0;">
                 <input type="checkbox" id="edit-admin" style="transform: scale(1.3);">
@@ -184,9 +194,12 @@
             <div class="section-header">📝 Vorstands-Bemerkung (Intern)</div>
             <textarea id="edit-bemerkung" placeholder="Interne Notizen zum Mitglied..."></textarea>
 
-            <button class="btn" onclick="mitgliedSpeichern()">💾 Änderungen speichern</button>
+            <div class="grid-2" style="margin-top: 20px;">
+                <button class="btn" onclick="mitgliedSpeichern()">💾 Änderungen speichern</button>
+                <button class="btn btn-zurueck" onclick="location.href='admin-mitglieder.html'">❌ Schließen / Abbrechen</button>
+            </div>
+            
             <button class="btn btn-danger" onclick="zeigeWarnung()" style="margin-top: 15px;">🔄 Konto zurücksetzen (Kennung 0000)</button>
-            <button class="btn btn-zurueck" onclick="location.href='admin-mitglieder.html'" style="margin-top: 15px;">❌ Schließen / Abbrechen</button>
         </div>
     </div>
 

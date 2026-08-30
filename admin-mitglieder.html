@@ -41,7 +41,7 @@
             cursor: pointer;
         }
         .btn-zurueck { background-color: #757575; }
-        .btn-sm { width: auto; padding: 8px 14px; font-size: 14px; display: inline-block; font-weight: bold; }
+        .btn-sm { width: auto; padding: 6px 12px; font-size: 13px; display: inline-block; font-weight: bold; }
         
         input[type="text"], input[type="email"], input[type="tel"], select {
             width: 100%;
@@ -70,7 +70,7 @@
             margin-top: 10px;
         }
         .mitglieder-tabelle th, .mitglieder-tabelle td {
-            padding: 12px;
+            padding: 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
             font-size: 14px;
@@ -185,11 +185,11 @@
                 <table class="mitglieder-tabelle">
                     <thead>
                         <tr>
+                            <th style="width: 70px;">Aktion</th>
                             <th>Name</th>
                             <th>E-Mail</th>
                             <th>Telefon</th>
                             <th>Ort</th>
-                            <th>Aktion</th>
                         </tr>
                     </thead>
                     <tbody id="mitglieder-liste-body">
@@ -251,14 +251,12 @@
                 const ort = (m.ort || '').toLowerCase();
                 const gruppe = m.gruppe || 'Erwachsene';
 
-                // 1. Textsuche prüfen
                 const passtSuche = vorname.includes(suchbegriff) || 
                                   nachname.includes(suchbegriff) || 
                                   email.includes(suchbegriff) ||
                                   telefon.includes(suchbegriff) ||
                                   ort.includes(suchbegriff);
 
-                // 2. Gruppen-Filter prüfen
                 const passtGruppe = (gewaehlteGruppe === 'alle') || (gruppe === gewaehlteGruppe);
 
                 return passtSuche && passtGruppe;
@@ -281,13 +279,13 @@
                 const telInfo = m.telefon ? `<a href="tel:${m.telefon}" style="color:#8e44ad; font-weight:bold; text-decoration:none;">📞 ${m.telefon}</a>` : '-';
 
                 tr.innerHTML = `
+                    <td>
+                        <button class="btn btn-sm" onclick="location.href='admin-mitglied-edit.html?id=${m.id}'">✏️ Edit</button>
+                    </td>
                     <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}${adminTag}</td>
                     <td><small>${m.email || ''}</small></td>
                     <td><small>${telInfo}</small></td>
                     <td><small>${m.ort || '-'}</small></td>
-                    <td>
-                        <button class="btn btn-sm" onclick="location.href='admin-mitglied-edit.html?id=${m.id}'">✏️ Edit</button>
-                    </td>
                 `;
                 tbody.appendChild(tr);
             });

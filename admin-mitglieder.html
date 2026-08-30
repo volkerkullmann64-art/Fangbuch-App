@@ -245,7 +245,9 @@
                 const tr = document.createElement('tr');
                 const adminTag = m.admin ? '<span class="badge-admin">Admin</span> ' : '';
                 const gruppeTag = m.gruppe ? `<span class="badge-gruppe">${m.gruppe}</span>` : '';
-                const telInfo = m.telefon ? `<br><small style="color:#555;">📞 ${m.telefon}</small>` : '';
+                
+                // Telefonnummer als klickbarer Anruf-Link
+                const telInfo = m.telefon ? `<br><a href="tel:${m.telefon}" style="color:#8e44ad; font-weight:bold; text-decoration:none; font-size:12px;">📞 ${m.telefon}</a>` : '';
 
                 tr.innerHTML = `
                     <td><b>${m.nachname || ''}</b>, ${m.vorname || ''}<br>${adminTag}${gruppeTag}</td>

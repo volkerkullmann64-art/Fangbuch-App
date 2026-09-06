@@ -39,13 +39,27 @@ window.addEventListener('load', function() {
         triggerAutomaticWeatherFetch();
     }
 
-    // Wenn Online-Verbindung besteht, synchronisiere die Rekordwerte für den Offline-Einsatz
     if (navigator.onLine) {
         aktualisiereLokaleHitparadeCache();
     }
 
     pruefePflichtfelder(); 
 });
+
+function pruefeFremdgewaesserAnzeige() {
+    const fangortSelect = document.getElementById('fangort');
+    const fremdGruppe = document.getElementById('fremdgewaesser-gruppe');
+    
+    if (fangortSelect && fremdGruppe) {
+        if (fangortSelect.value === 'Fremdgewässer') {
+            fremdGruppe.style.display = 'block';
+        } else {
+            fremdGruppe.style.display = 'none';
+            document.getElementById('fremdgewaesser-name').value = '';
+        }
+    }
+    validateFisch();
+}
 
 function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
@@ -143,6 +157,12 @@ async function ladeFangDatenFuerEdit(id) {
             document.getElementById('luftdruck').value = data.luftdruck || '';
             document.getElementById('truebung').value = data.truebung || '';
             document.getElementById('fangort').value = data.fangort || '';
+            
+            if (data.fangort === 'Fremdgewässer') {
+                document.getElementById('fremdgewaesser-gruppe').style.display = 'block';
+                document.getElementById('fremdgewaesser-name').value = data.gewaesser || '';
+            }
+
             document.getElementById('notiz').value = data.notiz || '';
         }
     } catch(e) {
@@ -247,20 +267,17 @@ function validateFisch() {
             if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
         }
 
-        // Bei Fremdgewässer keine Hitparade
         if (fangortVal.includes("Fremdgewässer")) {
             if (hitparadeBox) hitparadeBox.style.display = "none";
         } else {
             holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
                 if (!hitparadeBox) return;
 
-                // Bei Gleichstand oder größer wird die Meldung getriggert
                 if (laenge >= mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
                     if (notizText.includes("test") || notizText.includes("sofa")) {
                         console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
                         ZeigeHitparadeMeldung(hitparadeBox);
                     } else {
-                        // Zeige kurzen Status-Hinweis während das GPS prüft
                         hitparadeBox.style.display = "block";
                         hitparadeBox.innerHTML = "<div style='color: #2e5a44; font-size: 13px; text-align: center; padding: 8px; font-weight: bold;'>📍 Standort wird geprüft... (GPS)</div>";
 
@@ -381,6 +398,15 @@ async function saveFang() {
     const ldruckRaw = document.getElementById('luftdruck').value;
     const ldruckVal = ldruckRaw ? parseFloat(ldruckRaw) : null;
     
+    const fangortAuswahl = document.getElementById('fangort').value || null;
+    const fremdGewaesserEingabe = document.getElementById('fremdgewaesser-name').value.trim();
+
+    // Gewässer-Zuordnung: Bei Fremdgewässer wird der eingegebene Name gespeichert, sonst "Ruhr"
+    let gewaesserName = "Ruhr";
+    if (fangortAuswahl === "Fremdgewässer") {
+        gewaesserName = fremdGewaesserEingabe !== "" ? fremdGewaesserEingabe : "Fremdgewässer";
+    }
+
     let uploadedFotoUrl = null;
 
     try {
@@ -422,7 +448,8 @@ async function saveFang() {
             wetter: document.getElementById('wetter').value || null,
             luftdruck: ldruckVal,
             truebung: document.getElementById('truebung').value || null,
-            fangort: document.getElementById('fangort').value || null,
+            fangort: fangortAuswahl,
+            gewaesser: gewaesserName,
             notiz: document.getElementById('notiz').value,
             angler_email: schnelleEmail,
             foto_url: uploadedFotoUrl
@@ -488,7 +515,6 @@ function pruefeRuhrStandort() {
                 const spielerLat = position.coords.latitude;
                 const spielerLon = position.coords.longitude;
 
-                // Deine exakt vorgegebenen Ruhr-Koordinaten
                 const ruhrPunkte = [
                     { name: "Punkt 1", lat: 51.4722288, lon: 7.7282183 },
                     { name: "Punkt 2", lat: 51.4723675, lon: 7.7256994 },
@@ -502,8 +528,6 @@ function pruefeRuhrStandort() {
                     { name: "Punkt 10", lat: 51.4717518, lon: 7.6886282 },
                     { name: "Punkt 10b (Neu eingefügt)", lat: 51.4724475, lon: 7.6909671 },
                     { name: "Punkt 11", lat: 51.4689779, lon: 7.6807590 },
-
-                    // 🛠️ TEST-PUNKT ZUHAUSE
                     { name: "Zuhause Test-Punkt", lat: 51.4946, lon: 7.7441 }
                 ];
 
@@ -527,7 +551,6 @@ function pruefeRuhrStandort() {
                         kleinsteEntfernung = entfernung;
                     }
 
-                    // Exakter 800-Meter-Toleranzradius um die Punkte
                     const erlaubterRadius = 800;
 
                     if (entfernung <= erlaubterRadius) {
@@ -547,7 +570,6 @@ function pruefeRuhrStandort() {
     });
 }
 
-// Lädt bei Online-Verbindung die echten Mindestlängen herunter und speichert sie lokal ab
 async function aktualisiereLokaleHitparadeCache() {
     try {
         const { data, error } = await _supabase
@@ -571,9 +593,9 @@ async function aktualisiereLokaleHitparadeCache() {
 
         for (const [art, laengen] of Object.entries(gruppiert)) {
             if (laengen.length >= 3) {
-                minLängenMap[art] = laengen[laengen.length - 1]; // Der 3. Platz
+                minLängenMap[art] = laengen[laengen.length - 1];
             } else {
-                minLängenMap[art] = 0; // Noch Platz frei
+                minLängenMap[art] = 0;
             }
         }
 
@@ -583,11 +605,9 @@ async function aktualisiereLokaleHitparadeCache() {
     }
 }
 
-// Holt die Mindestlänge für Platz 3 (erst Supabase, dann lokaler Cache, dann Fallback)
 async function holeMindestLaengeFuerHitparade(fischart) {
     if (navigator.onLine) {
         try {
-            // Sortierung: Größte Länge zuerst, bei Gleichstand der ÄLTESTE Fang zuerst (Wer zuerst kommt, mahlt zuerst)
             const { data, error } = await _supabase
                 .from('fangbuch-asv-langschede')
                 .select('laenge')
@@ -598,7 +618,7 @@ async function holeMindestLaengeFuerHitparade(fischart) {
                 .range(0, 2);
 
             if (!error && data) {
-                if (data.length < 3) return 0; // Wenn weniger als 3 Fänge existieren, zählt jeder Fisch
+                if (data.length < 3) return 0;
                 const platz3 = data[data.length - 1];
                 return platz3.laenge ? parseFloat(platz3.laenge) : 0;
             }
@@ -607,7 +627,6 @@ async function holeMindestLaengeFuerHitparade(fischart) {
         }
     }
 
-    // Offline-Pfad: Versuche den lokal synchronisierten Cache zu nutzen
     try {
         const cached = JSON.parse(localStorage.getItem('cachedHitparadeMinima'));
         if (cached && cached[fischart] !== undefined) {
@@ -615,7 +634,6 @@ async function holeMindestLaengeFuerHitparade(fischart) {
         }
     } catch(e) {}
 
-    // Notfall-Fallback
     return offlineHitparadeMinimaFallback[fischart] || 0;
 }
 

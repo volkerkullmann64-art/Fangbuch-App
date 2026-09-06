@@ -150,17 +150,23 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 
 <div class="form-group">
     <label for="fangort">Fangort / Stelle</label>
-    <select id="fangort" required>
+    <select id="fangort" onchange="pruefeFremdgewaesserAnzeige()" required>
         <option value="" disabled selected>Stelle auswählen...</option>
         <option value="Ostholzbach">Ostholzbach</option><option value="Bei Kloppert">Bei Kloppert</option><option value="Wehr bis Anfang Sportplatz">Wehr bis Anfang Sportplatz</option>
-        <option value="Anfang Sportplatz bis Kuhbrücke">Anfang Sportplatz bis Kuhbrücke</option><option value="Kuhbrücke bis Ende">Kuhbrücke bis Ende</option><option value="Fremdgewässer">Fremdgewässer (Name in Notizen eintragen)</option>
+        <option value="Anfang Sportplatz bis Kuhbrücke">Anfang Sportplatz bis Kuhbrücke</option><option value="Kuhbrücke bis Ende">Kuhbrücke bis Ende</option><option value="Fremdgewässer">Fremdgewässer</option>
     </select>
 </div>
 
+<!-- Dynamisches Zusatzfeld für Fremdgewässer -->
+<div class="form-group" id="fremdgewaesser-gruppe" style="display: none;">
+    <label for="fremdgewaesser-name" style="color: #d68c45;">🏞️ Name des Fremdgewässers</label>
+    <input type="text" id="fremdgewaesser-name" placeholder="z.B. Ostsee, Möhne, Edersee...">
+</div>
+
 <div class="form-group">
-    <label for="notiz">Notiz / Köder / Fremdgewässer</label>
+    <label for="notiz">Köder / Notiz</label>
     <div class="input-with-btn">
-        <input type="text" id="notiz" placeholder="Köder oder Notizen einsprechen..." oninput="validateFisch()">
+        <input type="text" id="notiz" placeholder="z.B. Wobbler 10cm, Maden..." oninput="validateFisch()">
         <button type="button" class="icon-btn" id="mic-btn" onclick="startSpeechRecognition()">🎙️</button>
     </div>
 </div>

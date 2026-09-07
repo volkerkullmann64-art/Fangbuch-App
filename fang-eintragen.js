@@ -11,7 +11,6 @@ const offlineHitparadeMinimaFallback = {
     "Regenbogenforelle": 40,
     "Seeforelle": 50,
     "Bachsaibling": 35,
-    "Seesaibling": 35,
     "Äsche": 38,
     "Hecht": 60,
     "Zander": 40,
@@ -28,11 +27,19 @@ const offlineHitparadeMinimaFallback = {
     "Rotfeder": 20
 };
 
+// Vordefinierte Standardköder als Startbasis
+const standardKoederListe = [
+    "Tauwurm", "Maden", "Bienenmade", "Rotwurm", "Mais", "Teig", 
+    "Spinner", "Blinker", "Wobbler", "Gummifisch", 
+    "Nymphe", "Trockenfliege", "Streamer", "Köderfisch", "Boilie"
+];
+
 window.addEventListener('load', function() {
     const urlParams = new URLSearchParams(window.location.search);
     editFangId = urlParams.get('editId');
 
     initFormDefaults();
+    ladeKoederVorschlaege();
 
     if (editFangId) {
         document.getElementById('form-titel').innerText = "Fang bearbeiten";
@@ -49,6 +56,44 @@ window.addEventListener('load', function() {
 
     pruefePflichtfelder(); 
 });
+
+// Lädt die Köder-Vorschlagsliste in das <datalist>-Element
+function ladeKoederVorschlaege() {
+    const datalist = document.getElementById('koeder-vorschlaege');
+    if (!datalist) return;
+
+    let gespeicherteKoeder = [];
+    try {
+        gespeicherteKoeder = JSON.parse(localStorage.getItem('gespeicherteKoeder')) || [];
+    } catch(e) {}
+
+    // Vereinen von Standards und individuell eingegebenen Ködern
+    const alleKoeder = Array.from(new Set([...standardKoederListe, ...gespeicherteKoeder])).sort((a,b) => a.localeCompare(b, 'de'));
+
+    datalist.innerHTML = '';
+    alleKoeder.forEach(k => {
+        const option = document.createElement('option');
+        option.value = k;
+        datalist.appendChild(option);
+    });
+}
+
+// Speichert einen neu eingegebenen Köder im lokalen Speicher
+function merkeNeuenKoeder(koederText) {
+    if (!koederText || koederText.trim() === "") return;
+    const sauber = koederText.trim();
+
+    let gespeicherteKoeder = [];
+    try {
+        gespeicherteKoeder = JSON.parse(localStorage.getItem('gespeicherteKoeder')) || [];
+    } catch(e) {}
+
+    if (!gespeicherteKoeder.includes(sauber)) {
+        gespeicherteKoeder.push(sauber);
+        localStorage.setItem('gespeicherteKoeder', JSON.stringify(gespeicherteKoeder));
+        ladeKoederVorschlaege();
+    }
+}
 
 function pruefeFremdgewaesserAnzeige() {
     const fangortSelect = document.getElementById('fangort');
@@ -179,7 +224,6 @@ const fischDatenbank = {
 "Regenbogenforelle": { mass: 25, k: 1.2, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
 "Seeforelle": { mass: 60, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 3, bisD: 15 } },
 "Bachsaibling": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
-"Seesaibling": { mass: 30, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 3, bisD: 15 } },
 "Äsche": { mass: 30, k: 1.0, schonzeit: { vonM: 2, vonD: 1, bisM: 3, bisD: 30 } },
 "Hecht": { mass: 45, k: 0.9, schonzeit: { vonM: 1, vonD: 15, bisM: 3, bisD: 30 } },
 "Zander": { mass: 50, k: 1.0, schonzeit: { vonM: 1, vonD: 1, bisM: 4, bisD: 31 } },
@@ -409,11 +453,13 @@ async function saveFang() {
     const fangortAuswahl = document.getElementById('fangort').value || null;
     const fremdGewaesserEingabe = document.getElementById('fremdgewaesser-name').value.trim();
 
-    // Gewässer-Zuordnung: Bei Fremdgewässer wird der eingegebene Name gespeichert, sonst "Ruhr"
     let gewaesserName = "Ruhr";
     if (fangortAuswahl === "Fremdgewässer") {
         gewaesserName = fremdGewaesserEingabe !== "" ? fremdGewaesserEingabe : "Fremdgewässer";
     }
+
+    const eingetragenerKoeder = document.getElementById('notiz').value;
+    merkeNeuenKoeder(eingetragenerKoeder);
 
     let uploadedFotoUrl = null;
 
@@ -458,7 +504,7 @@ async function saveFang() {
             truebung: document.getElementById('truebung').value || null,
             fangort: fangortAuswahl,
             gewaesser: gewaesserName,
-            notiz: document.getElementById('notiz').value,
+            notiz: eingetragenerKoeder,
             angler_email: schnelleEmail,
             foto_url: uploadedFotoUrl
         };

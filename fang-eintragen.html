@@ -26,6 +26,8 @@ h2 { color: var(--primary-color); text-align: center; margin-bottom: 20px; }
 input[type="date"], input[type="time"] { width: 100% !important; box-sizing: border-box; -webkit-appearance: none; min-height: 48px; }
 
 label { display: block; font-weight: bold; margin-bottom: 6px; color: #444; }
+.pflicht-stern { color: var(--warning-color); margin-left: 2px; }
+
 input[type="text"], input[type="number"], input[type="date"], select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border-color 0.3s; }
 input:focus, select:focus { border-color: var(--secondary-color); }
 
@@ -44,8 +46,10 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 .fisch-info-box img { width: 100%; max-height: 180px; object-fit: contain; border-radius: 6px; background: #fff; border: 1px solid #eee; margin-bottom: 6px; padding: 5px; }
 .fisch-info-box span { font-size: 14px; font-weight: bold; color: var(--primary-color); display: block; }
 
-.submit-btn { width: 100%; background-color: var(--primary-color); color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
+.submit-btn { width: 100%; background-color: var(--primary-color); color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
 .submit-btn:hover { background-color: var(--secondary-color); }
+
+.pflicht-hinweis { color: #d68c45; font-size: 13px; font-weight: bold; text-align: center; margin-top: 12px; min-height: 20px; }
 
 .delete-btn { width: 100%; background-color: var(--warning-color); color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; display: none; }
 .sync-badge { background-color: var(--accent-color); color: white; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 15px; width: 100%; max-width: 500px; display: none; }
@@ -64,17 +68,17 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 
 <div class="row">
     <div class="form-group">
-        <label for="datum">Datum</label>
+        <label for="datum">Datum <span class="pflicht-stern">*</span></label>
         <input type="date" id="datum" onchange="validateFisch()" required>
     </div>
     <div class="form-group">
-        <label for="uhrzeit">Uhrzeit (15-Min)</label>
+        <label for="uhrzeit">Uhrzeit (15-Min) <span class="pflicht-stern">*</span></label>
         <select id="uhrzeit" required></select>
     </div>
 </div>
 
 <div class="form-group">
-    <label for="fischart">Fischart</label>
+    <label for="fischart">Fischart <span class="pflicht-stern">*</span></label>
     <select id="fischart" onchange="validateFisch()" required>
         <option value="" disabled selected>Bitte wählen...</option>
         <optgroup label="Edelfische / Raubfische">
@@ -110,7 +114,7 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 </div>
 
 <div class="form-group">
-    <label for="laenge">Länge (cm)</label>
+    <label for="laenge">Länge (cm) <span class="pflicht-stern">*</span></label>
     <input type="text" id="laenge" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="z.B. 45" oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateFisch();" required>
     <div id="status-hint" class="hint-box"></div>
     <div id="hitparade-meldung" style="display: none;"></div>
@@ -123,7 +127,7 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 </div>
 
 <div class="form-group">
-    <label for="verbleib">Verbleib des Fisches</label>
+    <label for="verbleib">Verbleib des Fisches <span class="pflicht-stern">*</span></label>
     <select id="verbleib" required></select>
 </div>
 
@@ -152,7 +156,7 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 </div>
 
 <div class="form-group">
-    <label for="fangort">Fangort / Stelle</label>
+    <label for="fangort">Fangort / Stelle <span class="pflicht-stern">*</span></label>
     <select id="fangort" onchange="pruefeFremdgewaesserAnzeige()" required>
         <option value="" disabled selected>Stelle auswählen...</option>
         <option value="Ostholzbach">Ostholzbach</option><option value="Bei Kloppert">Bei Kloppert</option><option value="Wehr bis Anfang Sportplatz">Wehr bis Anfang Sportplatz</option>
@@ -162,11 +166,11 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 
 <!-- Dynamisches Zusatzfeld für Fremdgewässer -->
 <div class="form-group" id="fremdgewaesser-gruppe" style="display: none;">
-    <label for="fremdgewaesser-name" style="color: #d68c45;">🏞️ Name des Fremdgewässers</label>
+    <label for="fremdgewaesser-name" style="color: #d68c45;">🏞️ Name des Fremdgewässers <span class="pflicht-stern">*</span></label>
     <input type="text" id="fremdgewaesser-name" placeholder="z.B. Ostsee, Möhne, Edersee...">
 </div>
 
-<!-- Köder & Notiz Feld mit lernender Vorschlagsliste -->
+<!-- Köder & Notiz Feld -->
 <div class="form-group">
     <label for="notiz">Köder / Notiz</label>
     <div class="input-with-btn">
@@ -174,9 +178,11 @@ input:focus, select:focus { border-color: var(--secondary-color); }
         <button type="button" class="icon-btn" id="mic-btn" onclick="startSpeechRecognition()">🎙️</button>
     </div>
     
-    <!-- Dynamische Vorschlagsliste für Autocomplete -->
     <datalist id="koeder-vorschlaege"></datalist>
 </div>
+
+<!-- Dynamischer Hinweistext für unvollständige Felder -->
+<div id="pflicht-hinweis" class="pflicht-hinweis"></div>
 
 <button type="button" id="speichern-btn" class="submit-btn" onclick="saveFang()" disabled>Fang speichern</button>
 <button type="button" id="loeschen-btn" class="delete-btn" onclick="loescheAktuellenFang()">Fang löschen</button>

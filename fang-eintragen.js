@@ -100,6 +100,7 @@ function merkeNeuenKoeder(koederText) {
     }
 }
 
+// KORREKTUR: validateFisch() HIER ENTFERNT, DAMIT VERBLEIB NICHT ZURÜCKGESETZT WIRD!
 function pruefeFremdgewaesserAnzeige() {
     const fangortSelect = document.getElementById('fangort');
     const fremdGruppe = document.getElementById('fremdgewaesser-gruppe');
@@ -301,12 +302,11 @@ function initFormDefaults() {
     pruefePflichtfelder();
 }
 
-// UPDATE VERBLEIB: SMARTES BEIBEHALTEN DER AUSWAHL
+// UPDATE VERBLEIB: BEHÄLT DIE VORHERIGE AUSWAHL DES ANGLERS BEI
 function updateVerbleibOptions(modus) {
     const verbleibSelect = document.getElementById('verbleib');
     const bisherigeAuswahl = verbleibSelect.value; 
 
-    // Prüfung, ob der Angler bereits grundsätzlich "Entnommen" oder "Zurückgesetzt" gewählt hatte
     const warEntnommen = bisherigeAuswahl.toLowerCase().includes('entnommen');
     const warZurueckgesetzt = bisherigeAuswahl.toLowerCase().includes('zurückgesetzt');
 
@@ -328,7 +328,6 @@ function updateVerbleibOptions(modus) {
         verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); 
     }
 
-    // Passende Option im neuen Modus wieder auswählen
     if (warEntnommen) {
         for (let i = 0; i < verbleibSelect.options.length; i++) {
             if (verbleibSelect.options[i].value.toLowerCase().includes('entnommen')) {

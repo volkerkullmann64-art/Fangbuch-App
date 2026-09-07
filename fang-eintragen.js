@@ -8,6 +8,10 @@ let geknipstesFotoBlob = null; // Speichert das komprimierte Foto im Speicher
 // Initial-Fallbacks für den allerersten App-Start ohne bisherige Netzverbindung
 const offlineHitparadeMinimaFallback = {
     "Bachforelle": 40,
+    "Regenbogenforelle": 40,
+    "Seeforelle": 50,
+    "Bachsaibling": 35,
+    "Seesaibling": 35,
     "Äsche": 38,
     "Hecht": 60,
     "Zander": 40,
@@ -172,6 +176,10 @@ async function ladeFangDatenFuerEdit(id) {
 
 const fischDatenbank = {
 "Bachforelle": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
+"Regenbogenforelle": { mass: 25, k: 1.2, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
+"Seeforelle": { mass: 60, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 3, bisD: 15 } },
+"Bachsaibling": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
+"Seesaibling": { mass: 30, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 3, bisD: 15 } },
 "Äsche": { mass: 30, k: 1.0, schonzeit: { vonM: 2, vonD: 1, bisM: 3, bisD: 30 } },
 "Hecht": { mass: 45, k: 0.9, schonzeit: { vonM: 1, vonD: 15, bisM: 3, bisD: 30 } },
 "Zander": { mass: 50, k: 1.0, schonzeit: { vonM: 1, vonD: 1, bisM: 4, bisD: 31 } },

@@ -41,7 +41,7 @@ window.addEventListener('load', function() {
     initFormDefaults();
     ladeKoederVorschlaege();
 
-    // Event-Listener für Pflichtfeld-Prüfung an alle relevanten Feldern hängen
+    // Event-Listener für Pflichtfeld-Prüfung an alle relevanten Felder hängen
     document.getElementById('verbleib').addEventListener('change', pruefePflichtfelder);
     document.getElementById('fangort').addEventListener('change', pruefePflichtfelder);
     document.getElementById('fremdgewaesser-name').addEventListener('input', pruefePflichtfelder);
@@ -116,7 +116,7 @@ function pruefeFremdgewaesserAnzeige() {
     pruefePflichtfelder();
 }
 
-// ERWEITERTE PFLICHTFELD-PRÜFUNG: Datum, Uhrzeit, Fischart, Länge, Verbleib & Fangort/Stelle
+// INTELLIGENTE PFLICHTFELD-PRÜFUNG MIT DEZENTEM HINWEISTEXT
 function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
     const uhrzeit = document.getElementById('uhrzeit').value;
@@ -127,23 +127,30 @@ function pruefePflichtfelder() {
     const fremdGewaesserName = document.getElementById('fremdgewaesser-name').value.trim();
 
     const btn = document.getElementById('speichern-btn');
-    
-    // Grundlegende Pflichtfelder prüfen
-    let alleGueltig = datum && uhrzeit && fischart && laenge && verbleib && fangort;
+    const hinweisBox = document.getElementById('pflicht-hinweis');
 
-    // Wenn "Fremdgewässer" gewählt ist, muss auch der Name eingegeben sein
-    if (fangort === 'Fremdgewässer' && !fremdGewaesserName) {
-        alleGueltig = false;
-    }
+    const fehlendeFelder = [];
 
-    if (alleGueltig) {
+    if (!datum) fehlendeFelder.push("Datum");
+    if (!uhrzeit) fehlendeFelder.push("Uhrzeit");
+    if (!fischart) fehlendeFelder.push("Fischart");
+    if (!laenge) fehlendeFelder.push("Länge");
+    if (!verbleib) fehlendeFelder.push("Verbleib");
+    if (!fangort) fehlendeFelder.push("Fangort");
+    if (fangort === 'Fremdgewässer' && !fremdGewaesserName) fehlendeFelder.push("Gewässer-Name");
+
+    if (fehlendeFelder.length === 0) {
         btn.disabled = false;
         btn.style.backgroundColor = '#2e5a44'; 
         btn.style.cursor = "pointer";
+        if (hinweisBox) hinweisBox.innerHTML = "";
     } else {
         btn.disabled = true;
         btn.style.backgroundColor = '#cccccc'; 
         btn.style.cursor = "not-allowed";
+        if (hinweisBox) {
+            hinweisBox.innerHTML = `⚠️ Bitte noch ausfüllen: <b>${fehlendeFelder.join(", ")}</b>`;
+        }
     }
 }
 

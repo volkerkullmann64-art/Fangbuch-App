@@ -14,7 +14,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .container { width: 100%; max-width: 900px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .btn-back { background-color: #7f8c8d; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: bold; }
@@ -27,11 +27,11 @@
         th { background-color: var(--primary-color); color: white; font-size: 13px; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         
-        input[type="text"], input[type="number"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; text-align: center; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; text-align: center; background-color: white; }
         
         .save-container { margin-top: 20px; text-align: center; }
-        .save-btn { background-color: #27ae60; color: white; border: none; padding: 14px 25px; font-size: 17px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; }
-        .save-btn:hover { background-color: #219653; }
+        .save-btn { background-color: #9b59b6; color: white; border: none; padding: 14px 25px; font-size: 17px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.3s; }
+        .save-btn:hover { background-color: #8e44ad; }
         
         .loading-text { text-align: center; padding: 20px; font-style: italic; color: #666; }
     </style>
@@ -43,7 +43,7 @@
         <a href="admin-einstellungen.html" class="btn-back">↩ Zurück zu Einstellungen</a>
     </div>
 
-    <h2>🐟 Fischarten, Mindestmaße & Fenster</h2>
+    <h2>🐟 Fischarten, Mindestmaße & Schutzstatus</h2>
 
     <div id="loading" class="loading-text">Lade Regeln aus der Datenbank...</div>
 
@@ -56,15 +56,16 @@
                     <th>Maximalmaß / Fenster (cm)</th>
                     <th>Schonzeit Von</th>
                     <th>Schonzeit Bis</th>
+                    <th>Schutzstatus</th>
                 </tr>
             </thead>
             <tbody id="regeln-tbody">
-                <!--  Wird per JavaScript befüllt -->
+                <!-- Wird per JavaScript befüllt -->
             </tbody>
         </table>
         
         <div class="save-container">
-            <button class="save-btn" style="background-color: #9b59b6;" onclick="speichereAlleRegeln()">💾 Änderungen in Datenbank speichern</button>
+            <button class="save-btn" onclick="speichereAlleRegeln()">💾 Änderungen in Datenbank speichern</button>
         </div>
     </div>
 </div>
@@ -107,6 +108,13 @@
                     <td><input type="number" id="max-${index}" value="${regel.maximalmass_cm || 0}" min="0" max="300"></td>
                     <td><input type="text" id="von-${index}" value="${regel.schonzeit_von || ''}" placeholder="09-20"></td>
                     <td><input type="text" id="bis-${index}" value="${regel.schonzeit_bis || ''}" placeholder="02-15"></td>
+                    <td>
+                        <select id="status-${index}">
+                            <option value="normal" ${regel.schutzstatus === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="geschuetzt" ${regel.schutzstatus === 'geschuetzt' ? 'selected' : ''}>🔒 Geschützt</option>
+                            <option value="invasiv" ${regel.schutzstatus === 'invasiv' ? 'selected' : ''}>⚠️ Invasiv</option>
+                        </select>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -121,7 +129,7 @@
     }
 
     async function speichereAlleRegeln() {
-        if (!confirm("Möchtest du die geänderten Maße und Schonzeiten für den gesamten Verein speichern?")) return;
+        if (!confirm("Möchtest du die geänderten Maße, Schonzeiten und Schutzstatus für den gesamten Verein speichern?")) return;
 
         try {
             for (let i = 0; i < geladeneRegelnCache.length; i++) {
@@ -130,6 +138,7 @@
                 const neuesMaximal = parseFloat(document.getElementById(`max-${i}`).value) || 0;
                 const neueVon = document.getElementById(`von-${i}`).value.trim() || null;
                 const neueBis = document.getElementById(`bis-${i}`).value.trim() || null;
+                const neuerStatus = document.getElementById(`status-${i}`).value;
 
                 const { error } = await _supabase
                     .from('fischarten_regeln')
@@ -137,14 +146,15 @@
                         mindestmass_cm: neuesMindest,
                         maximalmass_cm: neuesMaximal,
                         schonzeit_von: neueVon,
-                        schonzeit_bis: neueBis
+                        schonzeit_bis: neueBis,
+                        schutzstatus: neuerStatus
                     })
                     .eq('id', regel.id);
 
                 if (error) throw error;
             }
 
-            alert("✅ Alle Fisch-Regeln wurden erfolgreich in der Datenbank aktualisiert!");
+            alert("✅ Alle Fisch-Regeln und Status wurden erfolgreich in der Datenbank aktualisiert!");
             ladeFischRegeln();
 
         } catch (err) {

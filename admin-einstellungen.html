@@ -21,11 +21,16 @@
         
         h2 { color: var(--primary-color); text-align: center; margin-bottom: 20px; }
         
-        .menu-section { text-align: center; margin-bottom: 20px; }
-        .action-btn { background-color: var(--primary-color); color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* Einstellungs-Kacheln / Unter-Buttons */
+        .einstellungen-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .setting-card { background: #fdfdfd; border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .setting-info h3 { font-size: 16px; color: var(--primary-color); margin-bottom: 4px; }
+        .setting-info p { font-size: 13px; color: #666; }
+        
+        .action-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 16px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.3s; white-space: nowrap; }
         .action-btn:hover { background-color: var(--secondary-color); }
 
-        .table-responsive { overflow-x: auto; margin-top: 15px; display: none; }
+        .table-responsive { overflow-x: auto; margin-top: 20px; display: none; border-top: 2px solid #eee; padding-top: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: var(--primary-color); color: white; font-size: 13px; }
@@ -33,7 +38,7 @@
         
         input[type="text"], input[type="number"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; text-align: center; }
         
-        .save-container { margin-top: 20px; text-align: center; display: none; }
+        .save-container { margin-top: 20px; text-align: center; }
         .save-btn { background-color: #27ae60; color: white; border: none; padding: 14px 25px; font-size: 17px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; }
         .save-btn:hover { background-color: #219653; }
         
@@ -44,28 +49,35 @@
 
 <div class="container">
     <div class="top-bar">
-        <a href="index.html" class="btn-back">↩ Hauptmenü</a>
+        <a href="admin.html" class="btn-back">↩ Zurück zum Admin-Bereich</a>
     </div>
 
-    <h2>⚙️ Admin-Einstellungen</h2>
+    <h2>⚙️ Vereinseinstellungen</h2>
 
-    <!-- Button, um die Einstellungen zu öffnen -->
-    <div class="menu-section">
-        <button class="action-btn" onclick="ladeFischRegeln()">🐟 Fischarten, Mindestmaße & Fenster verwalten</button>
+    <!-- Übersichts-Kacheln für kommende Einstellungen -->
+    <div class="einstellungen-grid">
+        <div class="setting-card">
+            <div class="setting-info">
+                <h3>🐟 Fischarten & Mindestmaße</h3>
+                <p>Mindestmaße, Entnahmefenster und Schonzeiten verwalten.</p>
+            </div>
+            <button class="action-btn" onclick="ladeFischRegeln()">Bearbeiten</button>
+        </div>
     </div>
 
-    <div id="loading" class="loading-text">Lade Einstellungen aus der Datenbank...</div>
+    <div id="loading" class="loading-text">Lade Fisch-Regeln aus der Datenbank...</div>
 
-    <!-- Die dynamische Tabelle -->
+    <!-- Die dynamische Tabelle, die sich beim Klick öffnet -->
     <div class="table-responsive" id="tabelle-wrapper">
+        <h3 style="color: var(--primary-color); margin-bottom: 10px; font-size: 16px;">Regeln für Fänge anpassen:</h3>
         <table id="regeln-tabelle">
             <thead>
                 <tr>
                     <th>Fischart</th>
                     <th>Mindestmaß (cm)</th>
                     <th>Maximalmaß / Fenster (cm)</th>
-                    <th>Schonzeit Von (MM-TT)</th>
-                    <th>Schonzeit Bis (MM-TT)</th>
+                    <th>Schonzeit Von</th>
+                    <th>Schonzeit Bis</th>
                 </tr>
             </thead>
             <tbody id="regeln-tbody">
@@ -73,7 +85,7 @@
             </tbody>
         </table>
         
-        <div class="save-container" id="save-container-div">
+        <div class="save-container">
             <button class="save-btn" onclick="speichereAlleRegeln()">💾 Änderungen in Datenbank speichern</button>
         </div>
     </div>
@@ -89,7 +101,6 @@
     async function ladeFischRegeln() {
         const loadingDiv = document.getElementById('loading');
         const tabelleWrapper = document.getElementById('tabelle-wrapper');
-        const saveContainer = document.getElementById('save-container-div');
         const tbody = document.getElementById('regeln-tbody');
 
         loadingDiv.style.display = 'block';
@@ -120,7 +131,6 @@
 
             loadingDiv.style.display = 'none';
             tabelleWrapper.style.display = 'block';
-            saveContainer.style.display = 'block';
 
         } catch (err) {
             loadingDiv.style.display = 'none';

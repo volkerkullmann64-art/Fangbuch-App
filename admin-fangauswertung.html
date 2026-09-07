@@ -54,11 +54,19 @@
             border-radius: 12px;
             border: 1px solid #e1bee7;
         }
+
+        /* Responsive Filter-Grid */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
         .filter-group {
             display: flex;
             flex-direction: column;
             gap: 5px;
-            margin-bottom: 15px;
         }
         .filter-group label {
             font-weight: bold;
@@ -66,10 +74,10 @@
             font-size: 14px;
         }
         .filter-group select {
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             border: 2px solid #8e44ad;
-            font-size: 16px;
+            font-size: 15px;
             background-color: white;
             color: #8e44ad;
             font-weight: bold;
@@ -149,11 +157,21 @@
     <h2>📊 Admin-Fangauswertung (Vollständig)</h2>
 
     <div class="info-box-container">
-        <div class="filter-group">
-            <label for="fischart-filter">🔍 Nach Fischart filtern:</label>
-            <select id="fischart-filter" onchange="wendeFilterAn()">
-                <option value="ALLE">Alle Fischarten anzeigen (Nach Fischart A-Z &amp; Länge aufsteigend)</option>
-            </select>
+        <!-- Nebeneinander gelagerte Filter -->
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label for="fischart-filter">🐟 Nach Fischart filtern:</label>
+                <select id="fischart-filter" onchange="wendeFilterAn()">
+                    <option value="ALLE">Alle Fischarten anzeigen</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="fangort-filter">📍 Nach Fangort / Stelle filtern:</label>
+                <select id="fangort-filter" onchange="wendeFilterAn()">
+                    <option value="ALLE">Alle Stellen anzeigen</option>
+                </select>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -225,7 +243,7 @@
 
             alleFaengeCache = data || [];
 
-            fuelleFischartDropdown(alleFaengeCache);
+            fuelleDropdowns(alleFaengeCache);
             wendeFilterAn();
 
         } catch (f) {
@@ -234,9 +252,10 @@
         }
     }
 
-    function fuelleFischartDropdown(faenge) {
-        const select = document.getElementById('fischart-filter');
-        select.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen (Nach Fischart A-Z & Länge aufsteigend)</option>';
+    function fuelleDropdowns(faenge) {
+        // 1. Fischarten-Dropdown befüllen
+        const selectFisch = document.getElementById('fischart-filter');
+        selectFisch.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen</option>';
 
         const artenSet = new Set();
         faenge.forEach(f => {
@@ -246,33 +265,57 @@
         });
 
         const sortierteArten = Array.from(artenSet).sort((a, b) => a.localeCompare(b, 'de'));
-
         sortierteArten.forEach(art => {
             const opt = document.createElement('option');
             opt.value = art;
             opt.textContent = art;
-            select.appendChild(opt);
+            selectFisch.appendChild(opt);
+        });
+
+        // 2. Fangort/Stellen-Dropdown befüllen
+        const selectOrt = document.getElementById('fangort-filter');
+        selectOrt.innerHTML = '<option value="ALLE">Alle Stellen anzeigen</option>';
+
+        const orteSet = new Set();
+        faenge.forEach(f => {
+            if (f.fangort && f.fangort.trim() !== '') {
+                orteSet.add(f.fangort.trim());
+            }
+        });
+
+        const sortierteOrte = Array.from(orteSet).sort((a, b) => a.localeCompare(b, 'de'));
+        sortierteOrte.forEach(ort => {
+            const opt = document.createElement('option');
+            opt.value = ort;
+            opt.textContent = ort;
+            selectOrt.appendChild(opt);
         });
     }
 
     function wendeFilterAn() {
-        const auswahl = document.getElementById('fischart-filter').value;
-        let gefilterteFaenge = [];
+        const fischAuswahl = document.getElementById('fischart-filter').value;
+        const ortAuswahl = document.getElementById('fangort-filter').value;
 
-        if (auswahl === 'ALLE') {
-            gefilterteFaenge = [...alleFaengeCache].sort((a, b) => {
-                const fischA = (a.fischart || '').toLowerCase();
-                const fischB = (b.fischart || '').toLowerCase();
-                if (fischA !== fischB) {
-                    return fischA.localeCompare(fischB, 'de');
-                }
-                return Number(a.laenge || 0) - Number(b.laenge || 0);
-            });
-        } else {
-            gefilterteFaenge = alleFaengeCache
-                .filter(f => f.fischart && f.fischart.trim().toLowerCase() === auswahl.toLowerCase())
-                .sort((a, b) => Number(a.laenge || 0) - Number(b.laenge || 0));
-        }
+        // Kombinierter Filter für Fischart UND Fangort
+        let gefilterteFaenge = alleFaengeCache.filter(f => {
+            const passtFisch = (fischAuswahl === 'ALLE') || 
+                (f.fischart && f.fischart.trim().toLowerCase() === fischAuswahl.toLowerCase());
+            
+            const passtOrt = (ortAuswahl === 'ALLE') || 
+                (f.fangort && f.fangort.trim().toLowerCase() === ortAuswahl.toLowerCase());
+
+            return passtFisch && passtOrt;
+        });
+
+        // Sortierung: Alphabetisch nach Fischart, danach aufsteigend nach Länge
+        gefilterteFaenge.sort((a, b) => {
+            const fischA = (a.fischart || '').toLowerCase();
+            const fischB = (b.fischart || '').toLowerCase();
+            if (fischA !== fischB) {
+                return fischA.localeCompare(fischB, 'de');
+            }
+            return Number(a.laenge || 0) - Number(b.laenge || 0);
+        });
 
         berechneInfofenster(gefilterteFaenge);
         rendereTabelle(gefilterteFaenge);
@@ -323,7 +366,7 @@
         const tbody = document.getElementById('gesamt-tabelle-body');
 
         if (!faenge || faenge.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 20px; color: #777;">Keine Fänge gefunden.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 20px; color: #777;">Keine Fänge für diese Filterkombination gefunden.</td></tr>`;
             return;
         }
 

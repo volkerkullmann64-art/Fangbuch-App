@@ -55,7 +55,6 @@
             border: 1px solid #e1bee7;
         }
 
-        /* Responsive Filter-Grid */
         .filter-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -157,19 +156,26 @@
     <h2>📊 Admin-Fangauswertung (Vollständig)</h2>
 
     <div class="info-box-container">
-        <!-- Nebeneinander gelagerte Filter -->
         <div class="filter-grid">
+            <!-- 1. Fischart Filter -->
             <div class="filter-group">
-                <label for="fischart-filter">🐟 Nach Fischart filtern:</label>
+                <label for="fischart-filter">🔍 Nach Fischart filtern:</label>
                 <select id="fischart-filter" onchange="wendeFilterAn()">
                     <option value="ALLE">Alle Fischarten anzeigen</option>
                 </select>
             </div>
 
+            <!-- 2. Exakter Fangort / Stellen Filter -->
             <div class="filter-group">
                 <label for="fangort-filter">📍 Nach Fangort / Stelle filtern:</label>
                 <select id="fangort-filter" onchange="wendeFilterAn()">
                     <option value="ALLE">Alle Stellen anzeigen</option>
+                    <option value="Ostholzbach">Ostholzbach</option>
+                    <option value="Bei Kloppert">Bei Kloppert</option>
+                    <option value="Wehr bis Anfang Sportplatz">Wehr bis Anfang Sportplatz</option>
+                    <option value="Anfang Sportplatz bis Kuhbrücke">Anfang Sportplatz bis Kuhbrücke</option>
+                    <option value="Kuhbrücke bis Ende">Kuhbrücke bis Ende</option>
+                    <option value="Fremdgewässer">Fremdgewässer</option>
                 </select>
             </div>
         </div>
@@ -243,7 +249,7 @@
 
             alleFaengeCache = data || [];
 
-            fuelleDropdowns(alleFaengeCache);
+            fuelleFischartDropdown(alleFaengeCache);
             wendeFilterAn();
 
         } catch (f) {
@@ -252,8 +258,7 @@
         }
     }
 
-    function fuelleDropdowns(faenge) {
-        // 1. Fischarten-Dropdown befüllen
+    function fuelleFischartDropdown(faenge) {
         const selectFisch = document.getElementById('fischart-filter');
         selectFisch.innerHTML = '<option value="ALLE">Alle Fischarten anzeigen</option>';
 
@@ -270,25 +275,6 @@
             opt.value = art;
             opt.textContent = art;
             selectFisch.appendChild(opt);
-        });
-
-        // 2. Fangort/Stellen-Dropdown befüllen
-        const selectOrt = document.getElementById('fangort-filter');
-        selectOrt.innerHTML = '<option value="ALLE">Alle Stellen anzeigen</option>';
-
-        const orteSet = new Set();
-        faenge.forEach(f => {
-            if (f.fangort && f.fangort.trim() !== '') {
-                orteSet.add(f.fangort.trim());
-            }
-        });
-
-        const sortierteOrte = Array.from(orteSet).sort((a, b) => a.localeCompare(b, 'de'));
-        sortierteOrte.forEach(ort => {
-            const opt = document.createElement('option');
-            opt.value = ort;
-            opt.textContent = ort;
-            selectOrt.appendChild(opt);
         });
     }
 

@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary-color: #2e5a44;
-            --secondary-color: #4a7c59;
+            --primary-color: #5b2c6f; /* Identischer Violett-Ton */
+            --secondary-color: #7d3c98;
             --bg-color: #f4f7f5;
             --text-color: #333;
         }
@@ -102,7 +102,7 @@
             geladeneRegelnCache.forEach((regel, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="font-weight: bold; color: #2e5a44;">${regel.fischart}</td>
+                    <td style="font-weight: bold; color: #5b2c6f;">${regel.fischart}</td>
                     <td><input type="number" id="min-${index}" value="${regel.mindestmass_cm || 0}" min="0" max="300"></td>
                     <td><input type="number" id="max-${index}" value="${regel.maximalmass_cm || 0}" min="0" max="300"></td>
                     <td><input type="text" id="von-${index}" value="${regel.schonzeit_von || ''}" placeholder="09-20"></td>

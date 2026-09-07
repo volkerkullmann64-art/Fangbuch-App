@@ -112,7 +112,6 @@ function pruefeFremdgewaesserAnzeige() {
             document.getElementById('fremdgewaesser-name').value = '';
         }
     }
-    validateFisch();
     pruefePflichtfelder();
 }
 
@@ -302,13 +301,49 @@ function initFormDefaults() {
     pruefePflichtfelder();
 }
 
+// UPDATE VERBLEIB: SMARTES BEIBEHALTEN DER AUSWAHL
 function updateVerbleibOptions(modus) {
     const verbleibSelect = document.getElementById('verbleib');
+    const bisherigeAuswahl = verbleibSelect.value; 
+
+    // Prüfung, ob der Angler bereits grundsätzlich "Entnommen" oder "Zurückgesetzt" gewählt hatte
+    const warEntnommen = bisherigeAuswahl.toLowerCase().includes('entnommen');
+    const warZurueckgesetzt = bisherigeAuswahl.toLowerCase().includes('zurückgesetzt');
+
     verbleibSelect.innerHTML = "";
-    const placeholder = new Option("Bitte wählen...", ""); placeholder.disabled = true; placeholder.selected = true; verbleibSelect.options.add(placeholder);
-    if (modus === "untermasig" || modus === "schonzeit") { verbleibSelect.options.add(new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt")); verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); }
-    else if (modus === "invasiv") { verbleibSelect.options.add(new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)")); }
-    else { verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); }
+    const placeholder = new Option("Bitte wählen...", ""); 
+    placeholder.disabled = true; 
+    placeholder.selected = true; 
+    verbleibSelect.options.add(placeholder);
+
+    if (modus === "untermasig" || modus === "schonzeit") { 
+        verbleibSelect.options.add(new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt")); 
+        verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); 
+    }
+    else if (modus === "invasiv") { 
+        verbleibSelect.options.add(new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)")); 
+    }
+    else { 
+        verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); 
+        verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); 
+    }
+
+    // Passende Option im neuen Modus wieder auswählen
+    if (warEntnommen) {
+        for (let i = 0; i < verbleibSelect.options.length; i++) {
+            if (verbleibSelect.options[i].value.toLowerCase().includes('entnommen')) {
+                verbleibSelect.selectedIndex = i;
+                break;
+            }
+        }
+    } else if (warZurueckgesetzt) {
+        for (let i = 0; i < verbleibSelect.options.length; i++) {
+            if (verbleibSelect.options[i].value.toLowerCase().includes('zurückgesetzt')) {
+                verbleibSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
 }
 
 function validateFisch() {

@@ -166,12 +166,16 @@ input:focus, select:focus { border-color: var(--secondary-color); }
     <input type="text" id="fremdgewaesser-name" placeholder="z.B. Ostsee, Möhne, Edersee...">
 </div>
 
+<!-- Köder & Notiz Feld mit lernender Vorschlagsliste -->
 <div class="form-group">
     <label for="notiz">Köder / Notiz</label>
     <div class="input-with-btn">
-        <input type="text" id="notiz" placeholder="z.B. Wobbler 10cm, Maden..." oninput="validateFisch()">
+        <input type="text" id="notiz" list="koeder-vorschlaege" placeholder="z.B. Tauwurm, Maden, Nymphe..." oninput="validateFisch()">
         <button type="button" class="icon-btn" id="mic-btn" onclick="startSpeechRecognition()">🎙️</button>
     </div>
+    
+    <!-- Dynamische Vorschlagsliste für Autocomplete -->
+    <datalist id="koeder-vorschlaege"></datalist>
 </div>
 
 <button type="button" id="speichern-btn" class="submit-btn" onclick="saveFang()" disabled>Fang speichern</button>

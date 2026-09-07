@@ -41,6 +41,11 @@ window.addEventListener('load', function() {
     initFormDefaults();
     ladeKoederVorschlaege();
 
+    // Event-Listener für Pflichtfeld-Prüfung an alle relevanten Feldern hängen
+    document.getElementById('verbleib').addEventListener('change', pruefePflichtfelder);
+    document.getElementById('fangort').addEventListener('change', pruefePflichtfelder);
+    document.getElementById('fremdgewaesser-name').addEventListener('input', pruefePflichtfelder);
+
     if (editFangId) {
         document.getElementById('form-titel').innerText = "Fang bearbeiten";
         document.getElementById('speichern-btn').innerText = "Änderungen speichern";
@@ -108,17 +113,30 @@ function pruefeFremdgewaesserAnzeige() {
         }
     }
     validateFisch();
+    pruefePflichtfelder();
 }
 
+// ERWEITERTE PFLICHTFELD-PRÜFUNG: Datum, Uhrzeit, Fischart, Länge, Verbleib & Fangort/Stelle
 function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
     const uhrzeit = document.getElementById('uhrzeit').value;
     const fischart = document.getElementById('fischart').value;
     const laenge = document.getElementById('laenge').value.trim();
-    
+    const verbleib = document.getElementById('verbleib').value;
+    const fangort = document.getElementById('fangort').value;
+    const fremdGewaesserName = document.getElementById('fremdgewaesser-name').value.trim();
+
     const btn = document.getElementById('speichern-btn');
     
-    if (datum && uhrzeit && fischart && laenge) {
+    // Grundlegende Pflichtfelder prüfen
+    let alleGueltig = datum && uhrzeit && fischart && laenge && verbleib && fangort;
+
+    // Wenn "Fremdgewässer" gewählt ist, muss auch der Name eingegeben sein
+    if (fangort === 'Fremdgewässer' && !fremdGewaesserName) {
+        alleGueltig = false;
+    }
+
+    if (alleGueltig) {
         btn.disabled = false;
         btn.style.backgroundColor = '#2e5a44'; 
         btn.style.cursor = "pointer";
@@ -200,6 +218,7 @@ async function ladeFangDatenFuerEdit(id) {
             setTimeout(() => { 
                 validateFisch(); 
                 if(data.verbleib) document.getElementById('verbleib').value = data.verbleib; 
+                pruefePflichtfelder();
             }, 100);
 
             document.getElementById('wetter').value = data.wetter || 'Bewölkt';
@@ -213,6 +232,7 @@ async function ladeFangDatenFuerEdit(id) {
             }
 
             document.getElementById('notiz').value = data.notiz || '';
+            pruefePflichtfelder();
         }
     } catch(e) {
         console.log("Edit-Laden abgefangen:", e);
@@ -300,6 +320,7 @@ function validateFisch() {
     if (!fischart) { 
         if (erkennungsBox) erkennungsBox.style.display = 'none'; 
         if (hitparadeBox) hitparadeBox.style.display = 'none';
+        pruefePflichtfelder();
         return; 
     }
     

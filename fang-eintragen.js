@@ -66,6 +66,7 @@ window.addEventListener('load', async function() {
 
     initFormDefaults();
     ladeKoederVorschlaege();
+    ladeStellenVorschlaege(); // Lädt die gespeicherten genauen Stellen
     
     // Offline-Cache laden & online aktualisieren
     await ladeOderAktualisiereFischRegelnCache();
@@ -178,16 +179,65 @@ function merkeNeuenKoeder(koederText) {
     }
 }
 
+// Lädt die Vorschlagsliste für genaue Stellen in das <datalist>-Element
+function ladeStellenVorschlaege() {
+    const datalist = document.getElementById('stellen-vorschlaege');
+    if (!datalist) return;
+
+    let gespeicherteStellen = [];
+    try {
+        gespeicherteStellen = JSON.parse(localStorage.getItem('gespeicherteStellen')) || [];
+    } catch(e) {}
+
+    const alleStellen = Array.from(new Set(gespeicherteStellen)).sort((a, b) => a.localeCompare(b, 'de'));
+
+    datalist.innerHTML = '';
+    alleStellen.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s;
+        datalist.appendChild(option);
+    });
+}
+
+function merkeNeueStelle(stellenText) {
+    if (!stellenText || stellenText.trim() === "") return;
+    const sauber = stellenText.trim();
+
+    let gespeicherteStellen = [];
+    try {
+        gespeicherteStellen = JSON.parse(localStorage.getItem('gespeicherteStellen')) || [];
+    } catch(e) {}
+
+    if (!gespeicherteStellen.includes(sauber)) {
+        gespeicherteStellen.push(sauber);
+        localStorage.setItem('gespeicherteStellen', JSON.stringify(gespeicherteStellen));
+        ladeStellenVorschlaege();
+    }
+}
+
 function pruefeFremdgewaesserAnzeige() {
     const fangortSelect = document.getElementById('fangort');
     const fremdGruppe = document.getElementById('fremdgewaesser-gruppe');
+    const genaueStelleGruppe = document.getElementById('genaue-stelle-gruppe');
     
-    if (fangortSelect && fremdGruppe) {
-        if (fangortSelect.value === 'Fremdgewässer') {
-            fremdGruppe.style.display = 'block';
+    if (fangortSelect) {
+        const wert = fangortSelect.value;
+        
+        if (wert === 'Fremdgewässer') {
+            if (fremdGruppe) fremdGruppe.style.display = 'block';
+            if (genaueStelleGruppe) genaueStelleGruppe.style.display = 'none';
+            document.getElementById('genaue-stelle').value = '';
+        } else if (wert !== "") {
+            if (fremdGruppe) {
+                fremdGruppe.style.display = 'none';
+                document.getElementById('fremdgewaesser-name').value = '';
+            }
+            if (genaueStelleGruppe) {
+                genaueStelleGruppe.style.display = 'block';
+            }
         } else {
-            fremdGruppe.style.display = 'none';
-            document.getElementById('fremdgewaesser-name').value = '';
+            if (fremdGruppe) fremdGruppe.style.display = 'none';
+            if (genaueStelleGruppe) genaueStelleGruppe.style.display = 'none';
         }
     }
     pruefePflichtfelder();
@@ -309,9 +359,12 @@ async function ladeFangDatenFuerEdit(id) {
             document.getElementById('truebung').value = data.truebung || '';
             document.getElementById('fangort').value = data.fangort || '';
             
+            pruefeFremdgewaesserAnzeige();
+
             if (data.fangort === 'Fremdgewässer') {
-                document.getElementById('fremdgewaesser-gruppe').style.display = 'block';
                 document.getElementById('fremdgewaesser-name').value = data.gewaesser || '';
+            } else {
+                document.getElementById('genaue-stelle').value = data.genaue_stelle || '';
             }
 
             document.getElementById('notiz').value = data.notiz || '';
@@ -363,25 +416,25 @@ function updateVerbleibOptions(modus) {
 
     if (modus === "untermasig") { 
         const opt1 = new Option("Zurückgesetzt (Untermaßig)", "Zurückgesetzt");
-        opt1.selected = true; // Automatische Vorauswahl bei untermaßigen Fischen!
+        opt1.selected = true; 
         verbleibSelect.options.add(opt1); 
         verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); 
     }
     else if (modus === "schonzeit") { 
         const opt2 = new Option("Zurückgesetzt (Schonzeit / Schutz)", "Zurückgesetzt");
-        opt2.selected = true; // Automatische Vorauswahl bei Schonzeit oder geschützten Arten!
+        opt2.selected = true; 
         verbleibSelect.options.add(opt2); 
         verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); 
     }
     else if (modus === "kapital") { 
         const opt3 = new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)");
-        opt3.selected = true; // Automatische Vorauswahl bei kapitale Laichfischen!
+        opt3.selected = true; 
         verbleibSelect.options.add(opt3);
         verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)"));
     }
     else if (modus === "invasiv") { 
         const opt4 = new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)");
-        opt4.selected = true; // Automatische Vorauswahl bei invasiven Arten!
+        opt4.selected = true; 
         verbleibSelect.options.add(opt4); 
     }
     else { 
@@ -467,10 +520,9 @@ function validateFisch() {
                 aktuellerModus = "untermasig";
             }
             if (regel.maximalmass_cm > 0 && laenge > regel.maximalmass_cm) {
-                // Kameradschaftlicher Appell für kapitale Laichfische + automatischer Kapital-Modus
                 infoTexte.push(`🎣 Wunderschöner Kapitale! Dieser große Fisch ist wichtig für die Nachzucht. Bitte schonend zurücksetzen! 🙏`); 
                 istWarnung = false; 
-                aktuellerModus = "kapital"; // Schaltet Verbleib direkt auf "Zurückgesetzt (Schonung / Kapital)"
+                aktuellerModus = "kapital"; 
             }
         }
 
@@ -607,14 +659,17 @@ async function saveFang() {
     
     const fangortAuswahl = document.getElementById('fangort').value || null;
     const fremdGewaesserEingabe = document.getElementById('fremdgewaesser-name').value.trim();
+    const genaueStelleEingabe = document.getElementById('genaue-stelle').value.trim();
 
     let gewaesserName = "Ruhr";
     if (fangortAuswahl === "Fremdgewässer") {
         gewaesserName = fremdGewaesserEingabe !== "" ? fremdGewaesserEingabe : "Fremdgewässer";
     }
 
+    // Merke Köder & genaue Stelle lokal
     const eingetragenerKoeder = document.getElementById('notiz').value;
     merkeNeuenKoeder(eingetragenerKoeder);
+    merkeNeueStelle(genaueStelleEingabe);
 
     let uploadedFotoUrl = null;
 
@@ -659,6 +714,7 @@ async function saveFang() {
             truebung: document.getElementById('truebung').value || null,
             fangort: fangortAuswahl,
             gewaesser: gewaesserName,
+            genaue_stelle: genaueStelleEingabe !== "" ? genaueStelleEingabe : null,
             notiz: eingetragenerKoeder,
             angler_email: schnelleEmail,
             foto_url: uploadedFotoUrl

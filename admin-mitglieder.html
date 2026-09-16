@@ -117,6 +117,30 @@
             font-size: 12px;
             display: block;
         }
+
+        /* STABILES POPUP-MODAL FÜR NEUES MITGLIED */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -124,45 +148,9 @@
     <div class="container">
         <h2>👥 Mitgliederverwaltung</h2>
 
-        <button class="btn btn-zurueck" style="margin-bottom: 15px;" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
-
-        <button class="btn" style="background-color: #9b59b6; margin-bottom: 15px;" onclick="toggleAnlegenFormular()">➕ Neues Mitglied anlegen</button>
-
-        <!-- Formular zum Anlegen -->
-        <div class="card" id="anlegen-formular" style="display: none; border: 2px solid #8e44ad;">
-            <h3>➕ Neues Mitglied anlegen</h3>
-            <div class="grid-2">
-                <div>
-                    <span class="info-label">Vorname:</span>
-                    <input type="text" id="neu-vorname" placeholder="Vorname">
-                </div>
-                <div>
-                    <span class="info-label">Nachname:</span>
-                    <input type="text" id="neu-nachname" placeholder="Nachname">
-                </div>
-            </div>
-            <div class="grid-2">
-                <div>
-                    <span class="info-label">E-Mail:</span>
-                    <input type="email" id="neu-email" placeholder="E-Mail Adresse">
-                </div>
-                <div>
-                    <span class="info-label">Telefon:</span>
-                    <input type="tel" id="neu-telefon" placeholder="Telefonnummer">
-                </div>
-            </div>
-            
-            <span class="info-label">Gruppe:</span>
-            <select id="neu-gruppe">
-                <option value="Erwachsene">Erwachsene</option>
-                <option value="Jugendgruppe">Jugendgruppe</option>
-            </select>
-
-            <div class="form-row">
-                <input type="checkbox" id="neu-admin">
-                <label for="neu-admin">Als Vorstand/Admin festlegen</label>
-            </div>
-            <button class="btn" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+            <button class="btn btn-zurueck" style="flex: 1; margin: 0;" onclick="location.href='admin.html'">⬅️ Zurück zum Admin-Menü</button>
+            <button class="btn" style="background-color: #9b59b6; flex: 2; margin: 0;" onclick="oeffneAnlegenModal()">➕ Neues Mitglied anlegen</button>
         </div>
 
         <!-- Mitgliederliste mit Suche & Gruppenfilter -->
@@ -201,6 +189,47 @@
 
     </div>
 
+    <!-- STARRES MODAL FÜR NEUES MITGLIED -->
+    <div class="modal-overlay" id="anlegen-modal">
+        <div class="modal-content">
+            <h3>➕ Neues Mitglied anlegen</h3>
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Vorname:</span>
+                    <input type="text" id="neu-vorname" placeholder="Vorname">
+                </div>
+                <div>
+                    <span class="info-label">Nachname:</span>
+                    <input type="text" id="neu-nachname" placeholder="Nachname">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">E-Mail:</span>
+                    <input type="email" id="neu-email" placeholder="E-Mail Adresse">
+                </div>
+                <div>
+                    <span class="info-label">Telefon:</span>
+                    <input type="tel" id="neu-telefon" placeholder="Telefonnummer">
+                </div>
+            </div>
+            
+            <span class="info-label">Gruppe:</span>
+            <select id="neu-gruppe">
+                <option value="Erwachsene">Erwachsene</option>
+                <option value="Jugendgruppe">Jugendgruppe</option>
+            </select>
+
+            <div class="form-row">
+                <input type="checkbox" id="neu-admin" style="transform: scale(1.2);">
+                <label for="neu-admin" style="font-weight: bold; color: #8e44ad;">Als Vorstand/Admin festlegen</label>
+            </div>
+
+            <button class="btn" style="margin-top: 15px;" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
+            <button class="btn btn-zurueck" onclick="schliesseAnlegenModal()">Abbrechen</button>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
         const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
@@ -212,9 +241,12 @@
             mitgliederLaden();
         };
 
-        function toggleAnlegenFormular() {
-            const form = document.getElementById('anlegen-formular');
-            form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+        function oeffneAnlegenModal() {
+            document.getElementById('anlegen-modal').style.display = 'flex';
+        }
+
+        function schliesseAnlegenModal() {
+            document.getElementById('anlegen-modal').style.display = 'none';
         }
 
         async function mitgliederLaden() {
@@ -315,7 +347,9 @@
                     telefon: telefon,
                     gruppe: gruppe,
                     admin: isAdmin,
-                    kennung: neueKennung
+                    kennung: neueKennung,
+                    einwilligung_name: false,
+                    einwilligung_foto: false
                 }]);
 
             if (error) {
@@ -327,7 +361,7 @@
                 document.getElementById('neu-email').value = '';
                 document.getElementById('neu-telefon').value = '';
                 document.getElementById('neu-admin').checked = false;
-                toggleAnlegenFormular();
+                schliesseAnlegenModal();
                 mitgliederLaden();
             }
         }

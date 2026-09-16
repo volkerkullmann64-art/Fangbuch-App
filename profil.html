@@ -88,7 +88,7 @@
             <!-- Selfie / Foto Upload -->
             <div style="text-align: center; margin-bottom: 20px;">
                 <div style="margin-bottom: 10px;">
-                    <img id="profil-foto-vorschau" src="" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #2e7d32; display: none; margin: 0 auto;">
+                    <img id="profil-foto-vorschau" src="" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #2e7d32; display: none; margin: 0 auto; cursor: pointer;" title="Klicken um neues Foto zu wählen" onclick="document.getElementById('profil-foto-input').click();">
                 </div>
                 <label for="profil-foto-input" style="display: inline-block; background-color: #d68c45; color: white; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">
                     📸 Selfie / Foto aufnehmen / auswählen
@@ -115,8 +115,8 @@
 
             <div class="section-header">📋 Vereinsdaten</div>
             <div>
-                <span class="info-label">Mitgliedsnummer:</span>
-                <input type="text" id="edit-mitgliedsnummer" placeholder="z.B. 1234">
+                <span class="info-label">Mitgliedsnummer (wird vom Verein vergeben):</span>
+                <input type="text" id="edit-mitgliedsnummer" readonly style="background-color: #f0f0f0; color: #555; font-weight: bold;">
             </div>
 
             <div class="section-header">👤 Kontaktdaten</div>
@@ -224,7 +224,7 @@
                 document.getElementById('edit-plz').value = data.plz || '';
                 document.getElementById('edit-ort').value = data.ort || '';
                 document.getElementById('edit-iban').value = data.iban || '';
-                document.getElementById('edit-mitgliedsnummer').value = data.mitgliedsnummer || '';
+                document.getElementById('edit-mitgliedsnummer').value = data.mitgliedsnummer || 'Noch nicht vergeben';
 
                 // DSGVO Haken setzen
                 document.getElementById('check-einwilligung-name').checked = !!data.einwilligung_name;
@@ -299,6 +299,8 @@
                     if (urlData) uploadedFotoUrl = urlData.publicUrl;
                 }
 
+                // Hinweis: Mitgliedsnummer wird hier bewusst NICHT aus dem Input gelesen, 
+                // da sie vom Verein (Admin) verwaltet wird und für den User readonly ist.
                 const updateDaten = {
                     vorname: document.getElementById('edit-vorname').value.trim(),
                     nachname: document.getElementById('edit-nachname').value.trim(),
@@ -310,7 +312,6 @@
                     plz: document.getElementById('edit-plz').value.trim(),
                     ort: document.getElementById('edit-ort').value.trim(),
                     iban: document.getElementById('edit-iban').value.trim(),
-                    mitgliedsnummer: document.getElementById('edit-mitgliedsnummer').value.trim(),
                     einwilligung_name: document.getElementById('check-einwilligung-name').checked,
                     einwilligung_foto: document.getElementById('check-einwilligung-foto').checked
                 };

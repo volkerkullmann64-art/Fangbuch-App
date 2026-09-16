@@ -109,7 +109,7 @@ async function performLogin() {
         if (!istRegistrierungSichtbar) {
             const { data, error } = await _supabase
                 .from('mitglieder')
-                .select('email, kennung, vorname, nachname, mitgliedsnummer')
+                .select('email, kennung, vorname')
                 .eq('email', emailInput)
                 .maybeSingle();
 
@@ -131,14 +131,6 @@ async function performLogin() {
                 sessionStorage.setItem('userEmail', emailInput);
                 sessionStorage.setItem('userVorname', String(data.vorname || ''));
                 sessionStorage.setItem('angemeldet', 'ja');
-
-                // WÄCHTER: Wenn wesentliche Daten fehlen, direkt abfangen und aufs Profil leiten!
-                if (!data.vorname || !data.nachname || !data.mitgliedsnummer) {
-                    alert("Bitte vervollständige kurz deine persönlichen Daten und deine Mitgliedsnummer.");
-                    location.href = 'profil.html';
-                    return;
-                }
-
                 showDashboard();
             }
         } else {
@@ -159,7 +151,9 @@ async function performLogin() {
                         email: emailInput, 
                         vorname: vornameInput, 
                         nachname: nachnameInput, 
-                        kennung: neueKennung 
+                        kennung: neueKennung,
+                        einwilligung_name: false,
+                        einwilligung_foto: false
                     }
                 ]);
 
@@ -176,8 +170,8 @@ async function performLogin() {
             sessionStorage.setItem('userVorname', vornameInput);
             sessionStorage.setItem('angemeldet', 'ja');
             
-            alert(`Willkommen beim ASV! Du wurdest registriert. Bitte vervollständige nun deine Mitgliedsnummer und Daten im Profil.`);
-            location.href = 'profil.html';
+            alert(`Willkommen beim ASV! Deine Kennung lautet: ${neueKennung}. Du kannst deine Mitgliedsnummer und dein Profil jederzeit unter "Persönliche Daten" ergänzen.`);
+            showDashboard();
         }
     } else {
         alert("Bitte E-Mail eingeben");
@@ -199,7 +193,7 @@ function beendeProgramm() {
             document.body.innerHTML = `
                 <div style="text-align: center; margin-top: 100px; font-family: sans-serif; color: #333;">
                     <h2>Auf Wiedersehen!</h2>
-                    <p>Das Programm wurde ordnungsgemaess beendet.</p>
+                    <p>Das Programm wurde ordnunggemaess beendet.</p>
                     <p>Du kannst diesen Tab jetzt schliessen.</p>
                 </div>
             `;
@@ -255,7 +249,7 @@ window.onload = async function() {
         try {
             const dbPromise = _supabase
                 .from('mitglieder')
-                .select('email, kennung, vorname, nachname, mitgliedsnummer')
+                .select('email, kennung, vorname')
                 .eq('kennung', gespeicherteKennung)
                 .maybeSingle();
 
@@ -273,13 +267,6 @@ window.onload = async function() {
                 sessionStorage.setItem('userEmail', data.email);
                 sessionStorage.setItem('userVorname', data.vorname || '');
                 sessionStorage.setItem('angemeldet', 'ja');
-
-                // WÄCHTER beim automatischen Laden
-                if (!data.vorname || !data.nachname || !data.mitgliedsnummer) {
-                    location.href = 'profil.html';
-                    return;
-                }
-
                 showDashboard();
             }
         } catch (e) {

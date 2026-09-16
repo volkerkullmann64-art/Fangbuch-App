@@ -45,6 +45,7 @@ async function showDashboard() {
         <button class="btn" onclick="location.href='gesamtuebersicht.html'">📊 Vereins-Gesamtübersicht</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
         <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>
+        <button class="btn" style="background-color: #3f51b5; margin-top: 10px;" onclick="location.href='profil.html'">👤 Persönliche Daten</button>
         <div id="admin-btn-container"></div>
         <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
     `;
@@ -108,7 +109,7 @@ async function performLogin() {
         if (!istRegistrierungSichtbar) {
             const { data, error } = await _supabase
                 .from('mitglieder')
-                .select('email, kennung, vorname')
+                .select('email, kennung, vorname, nachname, mitgliedsnummer')
                 .eq('email', emailInput)
                 .maybeSingle();
 
@@ -130,6 +131,14 @@ async function performLogin() {
                 sessionStorage.setItem('userEmail', emailInput);
                 sessionStorage.setItem('userVorname', String(data.vorname || ''));
                 sessionStorage.setItem('angemeldet', 'ja');
+
+                // WÄCHTER: Wenn wesentliche Daten fehlen, direkt abfangen und aufs Profil leiten!
+                if (!data.vorname || !data.nachname || !data.mitgliedsnummer) {
+                    alert("Bitte vervollständige kurz deine persönlichen Daten und deine Mitgliedsnummer.");
+                    location.href = 'profil.html';
+                    return;
+                }
+
                 showDashboard();
             }
         } else {
@@ -167,8 +176,8 @@ async function performLogin() {
             sessionStorage.setItem('userVorname', vornameInput);
             sessionStorage.setItem('angemeldet', 'ja');
             
-            alert(`Willkommen beim ASV! Du wurdest registriert. Deine persönliche Kennung lautet: ${neueKennung}`);
-            showDashboard();
+            alert(`Willkommen beim ASV! Du wurdest registriert. Bitte vervollständige nun deine Mitgliedsnummer und Daten im Profil.`);
+            location.href = 'profil.html';
         }
     } else {
         alert("Bitte E-Mail eingeben");
@@ -190,7 +199,7 @@ function beendeProgramm() {
             document.body.innerHTML = `
                 <div style="text-align: center; margin-top: 100px; font-family: sans-serif; color: #333;">
                     <h2>Auf Wiedersehen!</h2>
-                    <p>Das Programm wurde ordnunggemaess beendet.</p>
+                    <p>Das Programm wurde ordnungsgemaess beendet.</p>
                     <p>Du kannst diesen Tab jetzt schliessen.</p>
                 </div>
             `;
@@ -246,7 +255,7 @@ window.onload = async function() {
         try {
             const dbPromise = _supabase
                 .from('mitglieder')
-                .select('email, kennung, vorname')
+                .select('email, kennung, vorname, nachname, mitgliedsnummer')
                 .eq('kennung', gespeicherteKennung)
                 .maybeSingle();
 
@@ -264,6 +273,13 @@ window.onload = async function() {
                 sessionStorage.setItem('userEmail', data.email);
                 sessionStorage.setItem('userVorname', data.vorname || '');
                 sessionStorage.setItem('angemeldet', 'ja');
+
+                // WÄCHTER beim automatischen Laden
+                if (!data.vorname || !data.nachname || !data.mitgliedsnummer) {
+                    location.href = 'profil.html';
+                    return;
+                }
+
                 showDashboard();
             }
         } catch (e) {

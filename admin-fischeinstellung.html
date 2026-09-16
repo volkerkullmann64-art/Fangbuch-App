@@ -54,8 +54,8 @@
                     <th>Fischart</th>
                     <th>Mindestmaß (cm)</th>
                     <th>Maximalmaß / Fenster (cm)</th>
-                    <th>Schonzeit Von (TT.MM)</th>
-                    <th>Schonzeit Bis (TT.MM)</th>
+                    <th>Schonzeit Von (TT-MM)</th>
+                    <th>Schonzeit Bis (TT-MM)</th>
                     <th>Schutzstatus</th>
                 </tr>
             </thead>
@@ -73,7 +73,7 @@
 <script>
     const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
     const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPAGE_KEY = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)); // Kleinigkeits-Korrektur im Geiste
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let geladeneRegelnCache = [];
 
@@ -81,22 +81,22 @@
         ladeFischRegeln();
     });
 
-    // Hilfsfunktion: Wandelt Datenbank-Format (MM-DD) für die Anzeige in Deutsch (TT-MM) um
+    // Wandelt Datenbank-Format (MM-DD) in Anzeige-Format (TT-MM)
     function dbToUiDatum(dbWert) {
         if (!dbWert) return '';
         const teile = String(dbWert).trim().split('-');
         if (teile.length === 2) {
-            return `${teile[1]}-${teile[0]}`; // Tauscht Monat-Tag zu Tag-Monat
+            return `${teile[1]}-${teile[0]}`;
         }
         return dbWert;
     }
 
-    // Hilfsfunktion: Wandelt deutsche Eingabe (TT-MM) zurück in Datenbank-Format (MM-DD)
+    // Wandelt Anzeige-Format (TT-MM) zurück in Datenbank-Format (MM-DD)
     function uiToDbDatum(uiWert) {
         if (!uiWert || uiWert.trim() === '') return null;
         const teile = String(uiWert).trim().split('-');
         if (teile.length === 2) {
-            return `${teile[1]}-${teile[0]}`; // Tauscht Tag-Monat zurück zu Monat-Tag für die DB
+            return `${teile[1]}-${teile[0]}`;
         }
         return uiWert.trim();
     }
@@ -125,7 +125,7 @@
                 if (regel.schonzeit_von != null) {
                     const sVon = String(regel.schonzeit_von).trim();
                     if (sVon !== '' && sVon.toLowerCase() !== 'null' && sVon.toLowerCase() !== 'undefined') {
-                        vonWert = dbToUiDatum(sVon); // Hier wird gedreht für die Anzeige
+                        vonWert = dbToUiDatum(sVon);
                     }
                 }
 
@@ -133,7 +133,7 @@
                 if (regel.schonzeit_bis != null) {
                     const sBis = String(regel.schonzeit_bis).trim();
                     if (sBis !== '' && sBis.toLowerCase() !== 'null' && sBis.toLowerCase() !== 'undefined') {
-                        bisWert = dbToUiDatum(sBis); // Hier wird gedreht für die Anzeige
+                        bisWert = dbToUiDatum(sBis);
                     }
                 }
 
@@ -155,12 +155,12 @@
                 tbody.appendChild(tr);
             });
 
-            loadingDiv.style.display = 'none';
             tabelleWrapper.style.display = 'block';
 
         } catch (err) {
-            loadingDiv.style.display = 'none';
             alert("⚠️ Fehler beim Laden der Regeln: " + err.message);
+        } finally {
+            loadingDiv.style.display = 'none'; // Versteckt den Lade-Text in jedem Fall
         }
     }
 
@@ -176,7 +176,6 @@
                 const vonEingabe = document.getElementById(`von-${i}`).value;
                 const bisEingabe = document.getElementById(`bis-${i}`).value;
                 
-                // Hier wird deine Eingabe für die Datenbank wieder in das Berechnungsformat gedreht
                 const neueVon = uiToDbDatum(vonEingabe);
                 const neueBis = uiToDbDatum(bisEingabe);
                 const neuerStatus = document.getElementById(`status-${i}`).value;

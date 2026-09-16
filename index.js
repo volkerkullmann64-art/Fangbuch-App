@@ -41,7 +41,7 @@ async function showDashboard() {
     document.getElementById('app').innerHTML = `
         <h2>${begruessung}</h2>
         <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
-        <button class="btn" onclick="location.href='auswertung.html'">📊 Auswertung</button>
+        <button class="btn" onclick="location.href='auswertung.html'">📊 Meine-Auswertung</button>
         <button class="btn" onclick="location.href='gesamtuebersicht.html'">📊 Vereins-Gesamtübersicht</button>
         <button class="btn" onclick="location.href='galerie.html'">📸 Galerie</button>
         <button class="btn" onclick="location.href='partner.html'">🤝 Partner</button>

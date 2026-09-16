@@ -87,6 +87,24 @@
             min-height: 20px;
             word-break: break-all;
         }
+
+        /* BLINKENDER HINWEIS (Blau-Rot Wechsel) */
+        @keyframes blauRotBlinken {
+            0% { background-color: #e3f2fd; border-color: #1976d2; color: #0d47a1; }
+            50% { background-color: #ffebee; border-color: #c62828; color: #b71c1c; }
+            100% { background-color: #e3f2fd; border-color: #1976d2; color: #0d47a1; }
+        }
+        .blink-warnung {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #1976d2;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+            animation: blauRotBlinken 1.5s infinite;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -97,6 +115,11 @@
 
         <div id="profil-hauptbereich" style="display: none;">
             
+            <!-- BLINKENDER HINWEIS BEI UNVOLLSTÄNDIGEN DATEN -->
+            <div id="unvollstaendig-banner" class="blink-warnung">
+                ⚠️ Deine persönlichen Daten sind noch nicht vollständig! Bitte klicke auf "Daten bearbeiten" und ergänze die fehlenden Angaben.
+            </div>
+
             <!-- Globaler Bearbeiten-Button ganz oben -->
             <button class="btn btn-edit" id="btn-modus-aendern" onclick="schalteBearbeitenModusEin()">✏️ Daten bearbeiten</button>
 
@@ -167,7 +190,7 @@
                 </div>
 
                 <div class="section-header">🏦 Bankverbindung</div>
-                <span class="info-label">IBAN:</span>
+                <span class="info-label">IBAN (optional):</span>
                 <div class="view-field" id="view-iban">-</div>
 
                 <div style="margin-top: 25px;">
@@ -266,7 +289,7 @@
 
                 <div class="section-header">🏦 Bankverbindung</div>
                 <div>
-                    <span class="info-label">IBAN:</span>
+                    <span class="info-label">IBAN (optional):</span>
                     <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
                 </div>
 
@@ -313,24 +336,37 @@
                 geladeneDaten = data;
                 erfülleAnsicht(data);
                 erfülleFormular(data);
+                pruefeVollstaendigkeit(data);
             }
 
             document.getElementById('lade-hinweis').style.display = 'none';
             document.getElementById('profil-hauptbereich').style.display = 'block';
         }
 
+        function pruefeVollstaendigkeit(data) {
+            // Wir prüfen, ob wichtige Felder (außer IBAN) leer sind
+            const istUnvollstaendig = !data.telefon || !data.geburtsdatum || !data.strasse || !data.plz || !data.ort;
+
+            const banner = document.getElementById('unvollstaendig-banner');
+            if (istUnvollstaendig) {
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
         function erfülleAnsicht(data) {
             document.getElementById('view-vorname').innerText = data.vorname || '-';
             document.getElementById('view-nachname').innerText = data.nachname || '-';
             document.getElementById('view-email').innerText = data.email || '-';
-            document.getElementById('view-telefon').innerText = data.telefon || '-';
-            document.getElementById('view-geburtsdatum').innerText = data.geburtsdatum || '-';
+            document.getElementById('view-telefon').innerText = data.telefon || '❌ Fehlt noch';
+            document.getElementById('view-geburtsdatum').innerText = data.geburtsdatum || '❌ Fehlt noch';
             document.getElementById('view-gruppe').innerText = data.gruppe || 'Erwachsene';
-            document.getElementById('view-strasse').innerText = data.strasse || '-';
-            document.getElementById('view-plz').innerText = data.plz || '-';
-            document.getElementById('view-ort').innerText = data.ort || '-';
-            document.getElementById('view-iban').innerText = data.iban ? '•••• ' + data.iban.slice(-4) : '-'; // IBAN aus Sicherheitsgründen maskiert anzeigen
-            document.getElementById('view-mitgliedsnummer').innerText = data.mitgliedsnummer || 'Noch nicht vergeben';
+            document.getElementById('view-strasse').innerText = data.strasse || '❌ Fehlt noch';
+            document.getElementById('view-plz').innerText = data.plz || '❌ Fehlt noch';
+            document.getElementById('view-ort').innerText = data.ort || '❌ Fehlt noch';
+            document.getElementById('view-iban').innerText = data.iban ? '•••• ' + data.iban.slice(-4) : 'Noch nicht hinterlegt';
+            document.getElementById('view-mitgliedsnummer').innerText = data.mitgliedsnummer || 'Noch vom Verein zu vergeben';
 
             document.getElementById('view-einwilligung-name').innerText = data.einwilligung_name ? '✅ Ja (Eingewilligt)' : '❌ Nein';
             document.getElementById('view-einwilligung-foto').innerText = data.einwilligung_foto ? '✅ Ja (Eingewilligt)' : '❌ Nein';
@@ -357,7 +393,7 @@
             document.getElementById('edit-plz').value = data.plz || '';
             document.getElementById('edit-ort').value = data.ort || '';
             document.getElementById('edit-iban').value = data.iban || '';
-            document.getElementById('edit-mitgliedsnummer').value = data.mitgliedsnummer || 'Noch nicht vergeben';
+            document.getElementById('edit-mitgliedsnummer').value = data.mitgliedsnummer || 'Noch vom Verein zu vergeben';
 
             document.getElementById('check-einwilligung-name').checked = !!data.einwilligung_name;
             document.getElementById('check-einwilligung-foto').checked = !!data.einwilligung_foto;
@@ -376,7 +412,7 @@
         }
 
         function schalteBearbeitenModusAus() {
-            if (geladeneDaten) erfülleFormular(geladeneDaten); // Eingaben verwerfen
+            if (geladeneDaten) erfülleFormular(geladeneDaten);
             document.getElementById('bearbeiten-modus').style.display = 'none';
             document.getElementById('ansicht-modus').style.display = 'block';
             document.getElementById('btn-modus-aendern').style.display = 'block';
@@ -449,7 +485,7 @@
                     plz: document.getElementById('edit-plz').value.trim(),
                     ort: document.getElementById('edit-ort').value.trim(),
                     iban: document.getElementById('edit-iban').value.trim(),
-                    einwilligung_name: document.getElementById('check-einwilligung-name').checked,
+                    einwilligung_name: document.getElementById('check-einwilligung-name'].checked,
                     einwilligung_foto: document.getElementById('check-einwilligung-foto').checked
                 };
 
@@ -465,7 +501,7 @@
                 if (error) throw new Error(error.message);
 
                 alert("✅ Deine persönlichen Daten wurden erfolgreich gespeichert!");
-                location.reload(); // Seite neu laden, damit die neuen Ansichts-Daten greifen
+                location.reload();
 
             } catch (err) {
                 alert("⚠️ Fehler beim Speichern: " + err.message);

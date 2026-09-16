@@ -93,6 +93,41 @@ window.addEventListener('load', async function() {
     pruefePflichtfelder(); 
 });
 
+// Astronomische Berechnung für die Tageszeit
+function ermittleAnglerTageszeit(datumStr, uhrzeitStr) {
+    if (!datumStr || !uhrzeitStr) return "";
+
+    const teileDatum = datumStr.split('-');
+    if (teileDatum.length !== 3) return "";
+    const jahr = parseInt(teileDatum[0], 10);
+    const monat = parseInt(teileDatum[1], 10);
+    const tag = parseInt(teileDatum[2], 10);
+
+    const datumObj = new Date(jahr, monat - 1, tag);
+    const startDesJahres = new Date(jahr, 0, 1);
+    const pastDays = Math.floor((datumObj - startDesJahres) / (24 * 60 * 60 * 1000));
+
+    const zeitSumme = Math.round(412 + 100 * Math.sin((pastDays - 80) * 2 * Math.PI / 365));
+    const untergangSumme = Math.round(1147 - 100 * Math.sin((pastDays - 80) * 2 * Math.PI / 365));
+
+    const aufgangMin = Math.floor(zeitSumme / 60) * 60 + (zeitSumme % 60);
+    const untergangMin = Math.floor(untergangSumme / 60) * 60 + (untergangSumme % 60);
+
+    const zeitTeile = uhrzeitStr.split(':');
+    if (zeitTeile.length < 2) return "";
+    const fangMinuten = parseInt(zeitTeile[0], 10) * 60 + parseInt(zeitTeile[1], 10);
+
+    if (fangMinuten >= aufgangMin - 60 && fangMinuten <= aufgangMin + 45) {
+        return "Morgendämmerung 🌅";
+    } else if (fangMinuten >= untergangMin - 45 && fangMinuten <= untergangMin + 60) {
+        return "Abenddämmerung 🌇";
+    } else if (fangMinuten > aufgangMin + 45 && fangMinuten < untergangMin - 45) {
+        return "Tag ☀️";
+    } else {
+        return "Nacht 🌙";
+    }
+}
+
 // Lädt Regeln aus Supabase (wenn online) oder aus dem localStorage (offline)
 async function ladeOderAktualisiereFischRegelnCache() {
     try {
@@ -118,7 +153,6 @@ async function ladeOderAktualisiereFischRegelnCache() {
         console.warn("Konnte Regeln nicht online laden, nutze lokalen Cache.", e);
     }
 
-    // Fallback auf lokalen Cache auf dem Smartphone
     try {
         const local = JSON.parse(localStorage.getItem('cachedFischRegeln'));
         if (local && Object.keys(local).length > 0) {
@@ -127,7 +161,6 @@ async function ladeOderAktualisiereFischRegelnCache() {
     } catch(e) {}
 }
 
-// Hilfsfunktion: Prüft, ob ein Datum (im Format MM-DD) innerhalb einer Schonzeit liegt
 function istInSchonzeit(schonzeitVon, schonzeitBis, datumStr) {
     if (!schonzeitVon || !schonzeitBis || !datumStr) return false;
     
@@ -144,7 +177,6 @@ function istInSchonzeit(schonzeitVon, schonzeitBis, datumStr) {
     }
 }
 
-// Lädt die Köder-Vorschlagsliste in das <datalist>-Element
 function ladeKoederVorschlaege() {
     const datalist = document.getElementById('koeder-vorschlaege');
     if (!datalist) return;
@@ -180,7 +212,6 @@ function merkeNeuenKoeder(koederText) {
     }
 }
 
-// Lädt die Vorschlagsliste für genaue Stellen in das <datalist>-Element
 function ladeStellenVorschlaege() {
     const datalist = document.getElementById('stellen-vorschlaege');
     if (!datalist) return;
@@ -353,7 +384,6 @@ async function ladeFangDatenFuerEdit(id) {
             document.getElementById('datum').value = data.datum || '';
             if (data.uhrzeit) document.getElementById('uhrzeit').value = data.uhrzeit.substring(0,5);
             
-            // Schneider-Status setzen
             const istSchneider = data.ist_schneider === true;
             document.getElementById('ist-schneider').checked = istSchneider;
             toggleSchneiderModus();
@@ -478,10 +508,9 @@ function updateVerbleibOptions(modus) {
     }
 }
 
-// DYNAMISCHE VALIDIERUNG ANHAND DER ADMIN-REGELN (MIT NACHZUCHT-APPELL)
 function validateFisch() {
     const istSchneider = document.getElementById('ist-schneider').checked;
-    if (istSchneider) return; // Wenn Schneider, keine Fischvalidierung nötig
+    if (istSchneider) return;
 
     const fischart = document.getElementById('fischart').value;
     const laenge = parseFloat(document.getElementById('laenge').value);
@@ -508,7 +537,6 @@ function validateFisch() {
 
     let infoTexte = []; let istWarnung = false; let aktuellerModus = "masig";
 
-    // 1. Schutzstatus prüfen
     if (regel && regel.schutzstatus === 'geschuetzt') {
         infoTexte.push("⚠️ STRENG GESCHÜTZT!"); 
         istWarnung = true; 
@@ -519,7 +547,6 @@ function validateFisch() {
         aktuellerModus = "invasiv";
     }
 
-    // 2. Schonzeit prüfen
     if (regel && regel.schonzeit_von && regel.schonzeit_bis && datumVal) {
         if (istInSchonzeit(regel.schonzeit_von, regel.schonzeit_bis, datumVal)) {
             infoTexte.push(`⚠️ Schonzeit aktiv (${regel.schonzeit_von} bis ${regel.schonzeit_bis})!`);
@@ -529,10 +556,8 @@ function validateFisch() {
     }
     
     if (!isNaN(laenge) && laenge > 0) {
-        // Gewicht schätzen
         if (kFaktor) gewichtInput.placeholder = `ca. ${Math.round((kFaktor * Math.pow(laenge, 3)) / 100)} g`;
         
-        // 3. Mindestmaß & Maximalmaß / Kapitalen-Appell prüfen
         if (regel && regel.schutzstatus === 'normal' && aktuellerModus !== "schonzeit") {
             if (regel.mindestmass_cm > 0 && laenge < regel.mindestmass_cm) {
                 infoTexte.push(`⚠️ Untermaßig! (Mindestmaß: ${regel.mindestmass_cm} cm)`); 
@@ -554,7 +579,6 @@ function validateFisch() {
 
                 if (laenge >= mindestLaenge && (!regel || regel.schutzstatus === 'normal') && aktuellerModus !== "schonzeit") {
                     if (notizText.includes("test") || notizText.includes("sofa")) {
-                        console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
                         ZeigeHitparadeMeldung(hitparadeBox);
                     } else {
                         hitparadeBox.style.display = "block";
@@ -693,8 +717,12 @@ async function saveFang() {
 
     let uploadedFotoUrl = null;
 
+    // Berechne die Tageszeit direkt beim Speichern für die DB
+    const aktuellesDatum = document.getElementById('datum').value;
+    const aktuelleUhrzeit = document.getElementById('uhrzeit').value;
+    const berechneteTageszeit = ermittleAnglerTageszeit(aktuellesDatum, aktuelleUhrzeit);
+
     try {
-        // Nur wenn es KEIN Schneider ist und ein Foto vorliegt, wird ein Foto hochgeladen
         if (!istSchneider && geknipstesFotoBlob && navigator.onLine) {
             const dateiname = `fang_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
             
@@ -728,8 +756,9 @@ async function saveFang() {
                 }
                 return null;
             })(),
-            datum: document.getElementById('datum').value,
-            uhrzeit: document.getElementById('uhrzeit').value,
+            datum: aktuellesDatum,
+            uhrzeit: aktuelleUhrzeit,
+            tageszeit: berechneteTageszeit, // NEU: Direkt in der DB abgespeichert!
             verbleib: istSchneider ? null : document.getElementById('verbleib').value,
             wetter: document.getElementById('wetter').value || null,
             luftdruck: ldruckVal,
@@ -872,7 +901,7 @@ async function aktualisiereLokaleHitparadeCache() {
         const gruppiert = {};
 
         data.forEach(item => {
-            if (!item.fischart) return; // Schneider-Tage überspringen
+            if (!item.fischart) return;
             if (!gruppiert[item.fischart]) gruppiert[item.fischart] = [];
             if (gruppiert[item.fischart].length < 3 && item.laenge) {
                 gruppiert[item.fischart].push(parseFloat(item.laenge));

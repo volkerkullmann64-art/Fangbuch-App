@@ -66,7 +66,7 @@ window.addEventListener('load', async function() {
 
     initFormDefaults();
     ladeKoederVorschlaege();
-    ladeStellenVorschlaege(); // Lädt die gespeicherten genauen Stellen
+    ladeStellenVorschlaege(); 
     
     // Offline-Cache laden & online aktualisieren
     await ladeOderAktualisiereFischRegelnCache();
@@ -75,6 +75,7 @@ window.addEventListener('load', async function() {
     document.getElementById('verbleib').addEventListener('change', pruefePflichtfelder);
     document.getElementById('fangort').addEventListener('change', pruefePflichtfelder);
     document.getElementById('fremdgewaesser-name').addEventListener('input', pruefePflichtfelder);
+    document.getElementById('ist-schneider').addEventListener('change', pruefePflichtfelder);
 
     if (editFangId) {
         document.getElementById('form-titel').innerText = "Fang bearbeiten";
@@ -246,9 +247,12 @@ function pruefeFremdgewaesserAnzeige() {
 function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
     const uhrzeit = document.getElementById('uhrzeit').value;
+    const istSchneider = document.getElementById('ist-schneider').checked;
+    
     const fischart = document.getElementById('fischart').value;
     const laenge = document.getElementById('laenge').value.trim();
     const verbleib = document.getElementById('verbleib').value;
+    
     const fangort = document.getElementById('fangort').value;
     const fremdGewaesserName = document.getElementById('fremdgewaesser-name').value.trim();
 
@@ -259,9 +263,13 @@ function pruefePflichtfelder() {
 
     if (!datum) fehlendeFelder.push("Datum");
     if (!uhrzeit) fehlendeFelder.push("Uhrzeit");
-    if (!fischart) fehlendeFelder.push("Fischart");
-    if (!laenge) fehlendeFelder.push("Länge");
-    if (!verbleib) fehlendeFelder.push("Verbleib");
+    
+    if (!istSchneider) {
+        if (!fischart) fehlendeFelder.push("Fischart");
+        if (!laenge) fehlendeFelder.push("Länge");
+        if (!verbleib) fehlendeFelder.push("Verbleib");
+    }
+
     if (!fangort) fehlendeFelder.push("Fangort");
     if (fangort === 'Fremdgewässer' && !fremdGewaesserName) fehlendeFelder.push("Gewässer-Name");
 
@@ -344,15 +352,23 @@ async function ladeFangDatenFuerEdit(id) {
         if (data && !error) {
             document.getElementById('datum').value = data.datum || '';
             if (data.uhrzeit) document.getElementById('uhrzeit').value = data.uhrzeit.substring(0,5);
-            document.getElementById('fischart').value = data.fischart || '';
-            document.getElementById('laenge').value = data.laenge || '';
-            document.getElementById('gewicht').value = data.gewicht || '';
             
-            setTimeout(() => { 
-                validateFisch(); 
-                if(data.verbleib) document.getElementById('verbleib').value = data.verbleib; 
-                pruefePflichtfelder();
-            }, 100);
+            // Schneider-Status setzen
+            const istSchneider = data.ist_schneider === true;
+            document.getElementById('ist-schneider').checked = istSchneider;
+            toggleSchneiderModus();
+
+            if (!istSchneider) {
+                document.getElementById('fischart').value = data.fischart || '';
+                document.getElementById('laenge').value = data.laenge || '';
+                document.getElementById('gewicht').value = data.gewicht || '';
+                
+                setTimeout(() => { 
+                    validateFisch(); 
+                    if(data.verbleib) document.getElementById('verbleib').value = data.verbleib; 
+                    pruefePflichtfelder();
+                }, 100);
+            }
 
             document.getElementById('wetter').value = data.wetter || 'Bewölkt';
             document.getElementById('luftdruck').value = data.luftdruck || '';
@@ -403,6 +419,7 @@ function initFormDefaults() {
 
 function updateVerbleibOptions(modus) {
     const verbleibSelect = document.getElementById('verbleib');
+    if (!verbleibSelect) return;
     const bisherigeAuswahl = verbleibSelect.value; 
 
     const warEntnommen = bisherigeAuswahl.toLowerCase().includes('entnommen');
@@ -463,6 +480,9 @@ function updateVerbleibOptions(modus) {
 
 // DYNAMISCHE VALIDIERUNG ANHAND DER ADMIN-REGELN (MIT NACHZUCHT-APPELL)
 function validateFisch() {
+    const istSchneider = document.getElementById('ist-schneider').checked;
+    if (istSchneider) return; // Wenn Schneider, keine Fischvalidierung nötig
+
     const fischart = document.getElementById('fischart').value;
     const laenge = parseFloat(document.getElementById('laenge').value);
     const datumVal = document.getElementById('datum').value;
@@ -657,6 +677,7 @@ async function saveFang() {
     const ldruckRaw = document.getElementById('luftdruck').value;
     const ldruckVal = ldruckRaw ? parseFloat(ldruckRaw) : null;
     
+    const istSchneider = document.getElementById('ist-schneider').checked;
     const fangortAuswahl = document.getElementById('fangort').value || null;
     const fremdGewaesserEingabe = document.getElementById('fremdgewaesser-name').value.trim();
     const genaueStelleEingabe = document.getElementById('genaue-stelle').value.trim();
@@ -666,7 +687,6 @@ async function saveFang() {
         gewaesserName = fremdGewaesserEingabe !== "" ? fremdGewaesserEingabe : "Fremdgewässer";
     }
 
-    // Merke Köder & genaue Stelle lokal
     const eingetragenerKoeder = document.getElementById('notiz').value;
     merkeNeuenKoeder(eingetragenerKoeder);
     merkeNeueStelle(genaueStelleEingabe);
@@ -674,7 +694,8 @@ async function saveFang() {
     let uploadedFotoUrl = null;
 
     try {
-        if (geknipstesFotoBlob && navigator.onLine) {
+        // Nur wenn es KEIN Schneider ist und ein Foto vorliegt, wird ein Foto hochgeladen
+        if (!istSchneider && geknipstesFotoBlob && navigator.onLine) {
             const dateiname = `fang_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
             
             const { data: storageData, error: storageError } = await _supabase.storage
@@ -693,9 +714,10 @@ async function saveFang() {
         }
 
         const fangDaten = {
-            fischart: document.getElementById('fischart').value,
-            laenge: parseFloat(document.getElementById('laenge').value),
-            gewicht: (function() {
+            ist_schneider: istSchneider,
+            fischart: istSchneider ? null : document.getElementById('fischart').value,
+            laenge: istSchneider ? null : parseFloat(document.getElementById('laenge').value),
+            gewicht: istSchneider ? null : (function() {
                 const gewichtInput = document.getElementById('gewicht');
                 if (gewichtInput.value.trim() !== "") {
                     return parseFloat(gewichtInput.value);
@@ -708,7 +730,7 @@ async function saveFang() {
             })(),
             datum: document.getElementById('datum').value,
             uhrzeit: document.getElementById('uhrzeit').value,
-            verbleib: document.getElementById('verbleib').value,
+            verbleib: istSchneider ? null : document.getElementById('verbleib').value,
             wetter: document.getElementById('wetter').value || null,
             luftdruck: ldruckVal,
             truebung: document.getElementById('truebung').value || null,
@@ -850,6 +872,7 @@ async function aktualisiereLokaleHitparadeCache() {
         const gruppiert = {};
 
         data.forEach(item => {
+            if (!item.fischart) return; // Schneider-Tage überspringen
             if (!gruppiert[item.fischart]) gruppiert[item.fischart] = [];
             if (gruppiert[item.fischart].length < 3 && item.laenge) {
                 gruppiert[item.fischart].push(parseFloat(item.laenge));

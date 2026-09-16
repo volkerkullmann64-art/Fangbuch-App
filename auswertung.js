@@ -42,7 +42,6 @@ async function ladeMeineFaenge() {
         }
 
         // Korrekte Auswertung nach eindeutigen Angeltagen (Datum)
-        // Wir sammeln alle eindeutigen Daten, an denen der Angler unterwegs war
         const datenMap = {};
 
         data.forEach(fang => {
@@ -56,7 +55,7 @@ async function ladeMeineFaenge() {
             if (fang.ist_schneider === true) {
                 datenMap[datum].hatSchneider = true;
             } else {
-                datenMap[datum].hatFisch = true; // Mindestens ein Fisch an diesem Tag gefangen
+                datenMap[datum].hatFisch = true;
             }
         });
 
@@ -67,8 +66,6 @@ async function ladeMeineFaenge() {
 
         alleDaten.forEach(datum => {
             const info = datenMap[datum];
-            // Wenn an dem Tag mindestens ein Fisch gefangen wurde, werten wir ihn als erfolgreich
-            // (selbst wenn es am selben Tag evtl. auch einen Schneider-Eintrag gab)
             if (info.hatFisch) {
                 erfolgreicheAngeltage++;
             } else if (info.hatSchneider) {
@@ -113,11 +110,15 @@ async function ladeMeineFaenge() {
                 if (t.length === 3) datumFormatiert = `${t[2]}.${t[1]}.${t[0]}`;
             }
 
+            const uhrzeit = fang.uhrzeit ? fang.uhrzeit.substring(0, 5) + ' Uhr' : '-';
             const gewicht = istSchneider ? '-' : (fang.gewicht ? `${fang.gewicht} g` : '-');
             const verbleib = istSchneider ? '-' : (fang.verbleib || '-');
             const fangort = fang.fangort || '-';
             const gewaesser = fang.gewaesser || 'Ruhr';
             const genaueStelle = fang.genaue_stelle || '-';
+            const wetter = fang.wetter || '-';
+            const luftdruck = fang.luftdruck ? `${fang.luftdruck} hPa` : '-';
+            const truebung = fang.truebung || '-';
             const notiz = fang.notiz || '-';
 
             html += `
@@ -129,12 +130,15 @@ async function ladeMeineFaenge() {
                 </tr>
                 <tr id="details-${id}" class="details-row" style="display: none; background-color: #f4fdf4;">
                     <td colspan="${isEditMode ? 4 : 3}" style="padding: 10px; font-size: 13px; color: #444;">
-                        ${istSchneider ? '<p style="color: #7f8c8d; font-weight: bold; margin-bottom: 5px;">An diesem Tag leider kein Fisch am Band.</p>' : `
+                        ${istSchneider ? '<p style="color: #7f8c8d; font-weight: bold; margin-bottom: 5px;">🚫 An diesem Tag leider kein Fisch am Band.</p>' : `
                             <p>⚖️ <b>Gewicht:</b> ${gewicht}</p>
                             <p>🐟 <b>Verbleib:</b> ${verbleib}</p>
                         `}
+                        <p>⏰ <b>Uhrzeit:</b> ${uhrzeit}</p>
                         <p>📍 <b>Fangort / Abschnitt:</b> ${fangort} (${gewaesser})</p>
                         <p>📌 <b>Genaue Stelle:</b> ${genaueStelle}</p>
+                        <p>🌤️ <b>Wetter:</b> ${wetter} | 📊 <b>Luftdruck:</b> ${luftdruck}</p>
+                        <p>💧 <b>Wassertrübung:</b> ${truebung}</p>
                         <p>📝 <b>Notiz / Köder:</b> ${notiz}</p>
                     </td>
                 </tr>

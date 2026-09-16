@@ -156,9 +156,9 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 </div>
 
 <div class="form-group">
-    <label for="fangort">Fangort / Stelle <span class="pflicht-stern">*</span></label>
+    <label for="fangort">Fangort / Abschnitt <span class="pflicht-stern">*</span></label>
     <select id="fangort" onchange="pruefeFremdgewaesserAnzeige()" required>
-        <option value="" disabled selected>Stelle auswählen...</option>
+        <option value="" disabled selected>Abschnitt auswählen...</option>
         <option value="Ostholzbach">Ostholzbach</option><option value="Bei Kloppert">Bei Kloppert</option><option value="Wehr bis Anfang Sportplatz">Wehr bis Anfang Sportplatz</option>
         <option value="Anfang Sportplatz bis Kuhbrücke">Anfang Sportplatz bis Kuhbrücke</option><option value="Kuhbrücke bis Ende">Kuhbrücke bis Ende</option><option value="Fremdgewässer">Fremdgewässer</option>
     </select>
@@ -168,6 +168,13 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 <div class="form-group" id="fremdgewaesser-gruppe" style="display: none;">
     <label for="fremdgewaesser-name" style="color: #d68c45;">🏞️ Name des Fremdgewässers <span class="pflicht-stern">*</span></label>
     <input type="text" id="fremdgewaesser-name" placeholder="z.B. Ostsee, Möhne, Edersee...">
+</div>
+
+<!-- NEU: Dynamisches Zusatzfeld für die genaue Stelle -->
+<div class="form-group" id="genaue-stelle-gruppe" style="display: none;">
+    <label for="genaue-stelle">📍 Genaue Stelle (optional)</label>
+    <input type="text" id="genaue-stelle" list="stellen-vorschlaege" placeholder="z.B. hinterm dicken Baum, unter der Brücke...">
+    <datalist id="stellen-vorschlaege"></datalist>
 </div>
 
 <!-- Köder & Notiz Feld -->

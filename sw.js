@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asv-fangbuch-V1;
+const CACHE_NAME = 'asv-fangbuch-V2'; // Gleich auf V2 erhöht, damit der Cache frisch geladen wird!
 
 // Alle statischen Dateien der PWA mit relativer Pfadangabe
 const ASSETS = [
@@ -14,7 +14,8 @@ const ASSETS = [
   './partner.html',
   './galerie.html',
   './galerie.js',
-  './gesamtuebersicht.html'
+  './gesamtuebersicht.html',
+  './profil.html' // NEU: Damit die Profilseite auch offline verfügbar ist!
 ];
 
 // 1. Installation: Dateien vorab in den Cache laden & sofort aktivieren

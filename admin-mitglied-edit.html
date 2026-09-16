@@ -42,6 +42,7 @@
         }
         .btn-zurueck { background-color: #757575; }
         .btn-danger { background-color: #c0392b; }
+        .btn-darkdanger { background-color: #78281f; }
         
         input[type="text"], input[type="email"], input[type="tel"], select, textarea {
             width: 100%;
@@ -84,7 +85,7 @@
             display: block;
         }
 
-        /* Modal für Kontosperrung */
+        /* Modals */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -216,19 +217,33 @@
             </div>
             
             <button class="btn btn-danger" onclick="zeigeWarnung()" style="margin-top: 15px;">🔄 Konto zurücksetzen (Kennung 0000)</button>
+            <button class="btn btn-darkdanger" onclick="zeigeLoeschWarnung()" style="margin-top: 10px;">🗑️ Mitglied komplett aus Datenbank löschen</button>
         </div>
     </div>
 
-    <!-- Das rote Warn-Fenster (Modal) -->
+    <!-- Das rote Warn-Fenster für Kontosperrung -->
     <div class="modal-overlay" id="warn-modal">
         <div class="modal-box">
-            <h3>🚨 ACHTUNG! KONTO SPERREN</h3>
+            <h3>🚨 KONTO SPERREN</h3>
             <p>Möchtest du das Konto von <strong id="warn-name">diesem Mitglied</strong> wirklich zurücksetzen?</p>
             <p style="background: #f8d7da; padding: 10px; border-radius: 6px; border: 1px solid #f5c6cb; color: #721c24;">
-                Die Kennung wird auf <strong>0000</strong> gesetzt. Das Mitglied wird sofort ausgeloggt und kann sich nicht mehr anmelden!
+                Die Kennung wird auf <strong>0000</strong> gesetzt. Das Mitglied kann sich nicht mehr anmelden.
             </p>
-            <button class="btn btn-danger" onclick="kontoZuruecksetzenJetzt()">Ja, Konto jetzt sperren!</button>
+            <button class="btn btn-danger" onclick="kontoZuruecksetzenJetzt()">Ja, Konto sperren!</button>
             <button class="btn btn-zurueck" onclick="schliesseWarnung()">Abbrechen</button>
+        </div>
+    </div>
+
+    <!-- Das rote Warn-Fenster für KOMPLETTES LÖSCHEN -->
+    <div class="modal-overlay" id="loesch-modal">
+        <div class="modal-box" style="border-color: #78281f; background: #fdfefe;">
+            <h3 style="color: #78281f;">⚠️ MITGLIED LÖSCHEN</h3>
+            <p>Möchtest du das Mitglied <strong id="loesch-name">diesem Mitglied</strong> <u>komplett</u> aus der Datenbank löschen?</p>
+            <p style="background: #fadbd8; padding: 10px; border-radius: 6px; border: 1px solid #f5b7b1; color: #78281f;">
+                Dieser Vorgang kann <strong>nicht</strong> rückgängig gemacht werden! Alle Daten dieses Mitglieds werden unwiderruflich entfernt.
+            </p>
+            <button class="btn btn-darkdanger" onclick="mitgliedKomplettLoeschenJetzt()">Ja, Mitglied unwiderruflich löschen!</button>
+            <button class="btn btn-zurueck" onclick="schliesseLoeschWarnung()">Abbrechen</button>
         </div>
     </div>
 
@@ -291,7 +306,9 @@
                 document.getElementById('admin-kein-foto').style.display = 'none';
             }
 
-            document.getElementById('warn-name').innerText = `${data.vorname || ''} ${data.nachname || ''}`;
+            const vollesName = `${data.vorname || ''} ${data.nachname || ''}`.trim() || data.email;
+            document.getElementById('warn-name').innerText = vollesName;
+            document.getElementById('loesch-name').innerText = vollesName;
 
             aktualisiereAnrufLink();
 
@@ -371,6 +388,28 @@
                 alert("Fehler beim Zurücksetzen: " + error.message);
             } else {
                 alert("Konto wurde erfolgreich zurückgesetzt (Kennung ist jetzt 0000).");
+                location.href = 'admin-mitglieder.html';
+            }
+        }
+
+        function zeigeLoeschWarnung() {
+            document.getElementById('loesch-modal').style.display = 'flex';
+        }
+
+        function schliesseLoeschWarnung() {
+            document.getElementById('loesch-modal').style.display = 'none';
+        }
+
+        async function mitgliedKomplettLoeschenJetzt() {
+            const { error } = await _supabase
+                .from('mitglieder')
+                .delete()
+                .eq('id', mitgliedId);
+
+            if (error) {
+                alert("Fehler beim Löschen: " + error.message);
+            } else {
+                alert("Mitglied wurde erfolgreich und vollständig aus der Datenbank gelöscht.");
                 location.href = 'admin-mitglieder.html';
             }
         }

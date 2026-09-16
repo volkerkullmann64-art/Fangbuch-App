@@ -10,18 +10,15 @@ document.addEventListener('touchmove', function(e) {
     const touchMove_Y = e.touches[0].clientY;
     const touchDiff_Y = touchMove_Y - touchStart_Y;
 
-    // Wenn der Nutzer nach unten zieht und wir ganz oben am Seitenanfang stehen
     if (window.scrollY === 0 && touchDiff_Y > 0) {
-        // Verhindere das Standardverhalten des Browsers (das Neuladen!)
         e.preventDefault();
     }
 }, { passive: false });
 
-// iOS-Aufweck-Schutz: NUR neu laden, wenn wirklich noch das Beenden-Fenster da steht!
+// iOS-Aufweck-Schutz
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
         const aktuellerInhalt = document.body.innerHTML;
-        // Absolut sicher: Keine Endlosschleife mehr beim Login!
         if (aktuellerInhalt.includes('Wiedersehen') || aktuellerInhalt.includes('ordnungsgemaess')) {
             window.location.reload();
         }
@@ -33,13 +30,15 @@ const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Zeige die Auswahl-Buttons (Mit Vorname + dynamischem Admin-Check)
+// Zeige die Auswahl-Buttons & prüfe im Hintergrund, ob Profildaten fehlen
 async function showDashboard() {
     const vorname = sessionStorage.getItem('userVorname') || localStorage.getItem('userVornameCache') || "";
     const begruessung = vorname ? `Willkommen ${vorname}` : "Willkommen";
 
+    // Grundgerüst des Dashboards (mit Platzhalter für den dezenten Hinweis)
     document.getElementById('app').innerHTML = `
         <h2>${begruessung}</h2>
+        <div id="profil-hinweis-container"></div>
         <button class="btn" onclick="location.href='fang-eintragen.html'">🐟 Fang eintragen</button>
         <button class="btn" onclick="location.href='auswertung.html'">📊 Meine-Fangübersicht</button>
         <button class="btn" onclick="location.href='gesamtuebersicht.html'">📊 Vereins-Gesamtübersicht</button>
@@ -50,28 +49,46 @@ async function showDashboard() {
         <button class="btn" style="background-color: #757575; margin-top: 25px;" onclick="beendeProgramm()">❌ Programm beenden</button>
     `;
 
-    // Admin-Rechte der angemeldeten E-Mail in Supabase prüfen
     const eingeloggteEmail = sessionStorage.getItem('userEmail') || localStorage.getItem('userEmailCache');
+    
     if (eingeloggteEmail && navigator.onLine) {
         try {
+            // Profildaten und Admin-Rechte parallel / nacheinander aus der Datenbank holen
             const { data, error } = await _supabase
                 .from('mitglieder')
-                .select('admin')
+                .select('admin, telefon, geburtsdatum, strasse, plz, ort')
                 .eq('email', eingeloggteEmail)
                 .maybeSingle();
 
-            if (!error && data && data.admin === true) {
-                const adminContainer = document.getElementById('admin-btn-container');
-                if (adminContainer) {
-                    adminContainer.innerHTML = `
-                        <button class="btn" style="background-color: #8e44ad; margin-top: 10px; font-weight: bold;" onclick="location.href='admin.html'">
-                            ⚙️ Vorstand / Admin-Bereich
-                        </button>
-                    `;
+            if (!error && data) {
+                // 1. Prüfen ob Daten unvollständig sind (außer IBAN)
+                const unvollstaendig = !data.telefon || !data.geburtsdatum || !data.strasse || !data.plz || !data.ort;
+                
+                if (unvollstaendig) {
+                    const hinweisDiv = document.getElementById('profil-hinweis-container');
+                    if (hinweisDiv) {
+                        hinweisDiv.innerHTML = `
+                            <div style="background-color: #fff8e1; border: 1px solid #ffe082; color: #8f6b00; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: left; line-height: 1.4;">
+                                💡 <b>Hinweis:</b> Deine persönlichen Daten sind noch nicht vollständig. Bitte ergänze sie unter <a href="profil.html" style="color: #b78103; font-weight: bold; text-decoration: underline;">„Persönliche Daten“</a>.
+                            </div>
+                        `;
+                    }
+                }
+
+                // 2. Admin-Check
+                if (data.admin === true) {
+                    const adminContainer = document.getElementById('admin-btn-container');
+                    if (adminContainer) {
+                        adminContainer.innerHTML = `
+                            <button class="btn" style="background-color: #8e44ad; margin-top: 10px; font-weight: bold;" onclick="location.href='admin.html'">
+                                ⚙️ Vorstand / Admin-Bereich
+                            </button>
+                        `;
+                    }
                 }
             }
         } catch (e) {
-            console.warn("Admin-Check im Dashboard fehlgeschlagen:", e);
+            console.warn("Profil- oder Admin-Check im Dashboard fehlgeschlagen:", e);
         }
     }
 }
@@ -215,7 +232,7 @@ function beendeProgramm() {
     }
 }
 
-// Beim Starten der Seite prüfen (Mit absolutem 1,5-Sekunden-Offline-Failsafe!)
+// Beim Starten der Seite prüfen
 window.onload = async function() {
     const gespeicherteKennung = localStorage.getItem('userKennung');
     const gecachteEmail = localStorage.getItem('userEmailCache');
@@ -306,7 +323,7 @@ async function trySyncOfflineFange() {
             }
         }
 
-        q = q.filter((item, index) => !erfolgreicheIndizes.includes(index));
+    q = q.filter((item, index) => !erfolgreicheIndizes.includes(index));
         localStorage.setItem('offlineFange', JSON.stringify(q));
 
         if (q.length === 0) {

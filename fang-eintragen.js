@@ -127,7 +127,7 @@ async function ladeOderAktualisiereFischRegelnCache() {
 
 // Hilfsfunktion: Prüft, ob ein Datum (im Format MM-DD) innerhalb einer Schonzeit liegt
 function istInSchonzeit(schonzeitVon, schonzeitBis, datumStr) {
-    if (!schonzeitVon || !schonzeitBis || datumStr) return false;
+    if (!schonzeitVon || !schonzeitBis || !datumStr) return false;
     
     const teile = datumStr.split('-');
     if (teile.length !== 3) return false;
@@ -362,16 +362,22 @@ function updateVerbleibOptions(modus) {
     verbleibSelect.options.add(placeholder);
 
     if (modus === "untermasig" || modus === "schonzeit") { 
-        verbleibSelect.options.add(new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt")); 
+        const opt1 = new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt");
+        if (modus === "schonzeit") opt1.selected = true; // Automatische Vorauswahl bei geschützten Arten!
+        verbleibSelect.options.add(opt1); 
         verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); 
     }
     else if (modus === "invasiv") { 
-        verbleibSelect.options.add(new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)")); 
+        const opt2 = new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)");
+        opt2.selected = true; // Automatische Vorauswahl bei invasiven Arten!
+        verbleibSelect.options.add(opt2); 
     }
     else { 
         verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); 
         verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); 
     }
+
+    if (!bisherigeAuswahl) return; // Wenn vorher nichts gewählt war, greift die automatische Vorauswahl oben
 
     if (warEntnommen) {
         for (let i = 0; i < verbleibSelect.options.length; i++) {

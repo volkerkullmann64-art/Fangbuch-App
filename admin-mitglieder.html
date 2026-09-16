@@ -193,6 +193,12 @@
     <div class="modal-overlay" id="anlegen-modal">
         <div class="modal-content">
             <h3>➕ Neues Mitglied anlegen</h3>
+
+            <div>
+                <span class="info-label">Mitgliedsnummer:</span>
+                <input type="text" id="neu-mitgliedsnummer" placeholder="z.B. 1234">
+            </div>
+
             <div class="grid-2">
                 <div>
                     <span class="info-label">Vorname:</span>
@@ -203,6 +209,7 @@
                     <input type="text" id="neu-nachname" placeholder="Nachname">
                 </div>
             </div>
+            
             <div class="grid-2">
                 <div>
                     <span class="info-label">E-Mail:</span>
@@ -324,6 +331,7 @@
         }
 
         async function mitgliedAnlegen() {
+            const mitgliedsnummer = document.getElementById('neu-mitgliedsnummer').value.trim();
             const vorname = document.getElementById('neu-vorname').value.trim();
             const nachname = document.getElementById('neu-nachname').value.trim();
             const email = document.getElementById('neu-email').value.trim().toLowerCase();
@@ -341,6 +349,7 @@
             const { error } = await _supabase
                 .from('mitglieder')
                 .insert([{
+                    mitgliedsnummer: mitgliedsnummer,
                     vorname: vorname,
                     nachname: nachname,
                     email: email,
@@ -356,6 +365,7 @@
                 alert("Fehler beim Anlegen: " + error.message);
             } else {
                 alert("Mitglied erfolgreich angelegt!");
+                document.getElementById('neu-mitgliedsnummer').value = '';
                 document.getElementById('neu-vorname').value = '';
                 document.getElementById('neu-nachname').value = '';
                 document.getElementById('neu-email').value = '';

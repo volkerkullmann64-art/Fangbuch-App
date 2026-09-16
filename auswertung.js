@@ -41,15 +41,45 @@ async function ladeMeineFaenge() {
             return;
         }
 
-        // Statistiken berechnen
-        let gesamtAngeltage = data.length;
-        let schneiderTage = data.filter(f => f.ist_schneider === true).length;
-        let erfolgreicheFänge = gesamtAngeltage - schneiderTage;
+        // Korrekte Auswertung nach eindeutigen Angeltagen (Datum)
+        // Wir sammeln alle eindeutigen Daten, an denen der Angler unterwegs war
+        const datenMap = {};
+
+        data.forEach(fang => {
+            const datum = fang.datum || 'unbekannt';
+            if (!datenMap[datum]) {
+                datenMap[datum] = {
+                    hatFisch: false,
+                    hatSchneider: false
+                };
+            }
+            if (fang.ist_schneider === true) {
+                datenMap[datum].hatSchneider = true;
+            } else {
+                datenMap[datum].hatFisch = true; // Mindestens ein Fisch an diesem Tag gefangen
+            }
+        });
+
+        let alleDaten = Object.keys(datenMap);
+        let gesamtAngeltage = alleDaten.length;
+        let erfolgreicheAngeltage = 0;
+        let schneiderTage = 0;
+
+        alleDaten.forEach(datum => {
+            const info = datenMap[datum];
+            // Wenn an dem Tag mindestens ein Fisch gefangen wurde, werten wir ihn als erfolgreich
+            // (selbst wenn es am selben Tag evtl. auch einen Schneider-Eintrag gab)
+            if (info.hatFisch) {
+                erfolgreicheAngeltage++;
+            } else if (info.hatSchneider) {
+                schneiderTage++;
+            }
+        });
 
         // Zähler-Boxen oben befüllen und anzeigen
         if (statistikBox) {
             document.getElementById('stat-gesamt').innerText = gesamtAngeltage;
-            document.getElementById('stat-erfolgreich').innerText = erfolgreicheFänge;
+            document.getElementById('stat-erfolgreich').innerText = erfolgreicheAngeltage;
             document.getElementById('stat-schneider').innerText = schneiderTage;
             statistikBox.style.display = 'flex';
         }

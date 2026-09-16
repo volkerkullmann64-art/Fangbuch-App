@@ -361,23 +361,35 @@ function updateVerbleibOptions(modus) {
     placeholder.selected = true; 
     verbleibSelect.options.add(placeholder);
 
-    if (modus === "untermasig" || modus === "schonzeit") { 
-        const opt1 = new Option("Zurückgesetzt (" + (modus === "untermasig" ? "Untermaßig" : "Schonzeit / Schutz") + ")", "Zurückgesetzt");
-        if (modus === "schonzeit") opt1.selected = true; // Automatische Vorauswahl bei geschützten Arten!
+    if (modus === "untermasig") { 
+        const opt1 = new Option("Zurückgesetzt (Untermaßig)", "Zurückgesetzt");
+        opt1.selected = true; // Automatische Vorauswahl bei untermaßigen Fischen!
         verbleibSelect.options.add(opt1); 
         verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); 
     }
-    else if (modus === "invasiv") { 
-        const opt2 = new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)");
-        opt2.selected = true; // Automatische Vorauswahl bei invasiven Arten!
+    else if (modus === "schonzeit") { 
+        const opt2 = new Option("Zurückgesetzt (Schonzeit / Schutz)", "Zurückgesetzt");
+        opt2.selected = true; // Automatische Vorauswahl bei Schonzeit oder geschützten Arten!
         verbleibSelect.options.add(opt2); 
+        verbleibSelect.options.add(new Option("Entnommen & Verwertet (Wegen Verletzung)", "Entnommen & Verwertet (Verletzt)")); 
+    }
+    else if (modus === "kapital") { 
+        const opt3 = new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)");
+        opt3.selected = true; // Automatische Vorauswahl bei kapitale Laichfischen!
+        verbleibSelect.options.add(opt3);
+        verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)"));
+    }
+    else if (modus === "invasiv") { 
+        const opt4 = new Option("Entnommen / Verwertet (Invasive Art - Pflicht!)", "Entnommen (Invasive Art)");
+        opt4.selected = true; // Automatische Vorauswahl bei invasiven Arten!
+        verbleibSelect.options.add(opt4); 
     }
     else { 
         verbleibSelect.options.add(new Option("Entnommen (Küche)", "Entnommen (Küche)")); 
         verbleibSelect.options.add(new Option("Zurückgesetzt (Schonung / Kapital)", "Zurückgesetzt (Kapital)")); 
     }
 
-    if (!bisherigeAuswahl) return; // Wenn vorher nichts gewählt war, greift die automatische Vorauswahl oben
+    if (!bisherigeAuswahl) return; 
 
     if (warEntnommen) {
         for (let i = 0; i < verbleibSelect.options.length; i++) {
@@ -455,10 +467,10 @@ function validateFisch() {
                 aktuellerModus = "untermasig";
             }
             if (regel.maximalmass_cm > 0 && laenge > regel.maximalmass_cm) {
-                // Kameradschaftlicher Appell für kapitale Laichfische statt starrem Verbot
+                // Kameradschaftlicher Appell für kapitale Laichfische + automatischer Kapital-Modus
                 infoTexte.push(`🎣 Wunderschöner Kapitale! Dieser große Fisch ist wichtig für die Nachzucht. Bitte schonend zurücksetzen! 🙏`); 
-                istWarnung = false; // Als freundlicher Hinweis (gelb/grünlich statt rot)
-                aktuellerModus = "masig"; // Angler darf entscheiden, wird aber gebeten
+                istWarnung = false; 
+                aktuellerModus = "kapital"; // Schaltet Verbleib direkt auf "Zurückgesetzt (Schonung / Kapital)"
             }
         }
 

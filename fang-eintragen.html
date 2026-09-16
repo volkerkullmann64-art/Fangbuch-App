@@ -42,6 +42,15 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 .hint-box.warning { background: #fadbd8; color: var(--warning-color); border: 1px solid var(--warning-color); }
 .hint-box.ok { background: #d4efdf; color: var(--primary-color); border: 1px solid var(--primary-color); }
 
+/* Schneider-Box Styling */
+.schneider-box { background-color: #f9f9f9; border: 2px dashed #ccc; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.schneider-label { display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer; color: #555; font-size: 15px; }
+.schneider-checkbox { width: 22px; height: 22px; accent-color: var(--secondary-color); cursor: pointer; }
+.info-icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px; border-radius: 50%; }
+
+/* Info-Popup für den Schneider-Haken */
+.schneider-tooltip { display: none; font-size: 13px; color: #444; background-color: #eef7f2; border: 1px solid var(--secondary-color); padding: 10px; border-radius: 6px; margin-bottom: 18px; line-height: 1.4; }
+
 /* Dezenter Datenschutz-Hinweis für das Stellen-Feld */
 .stelle-hinweis { font-size: 13px; color: #555; background-color: #f0f7f4; border-left: 3px solid var(--secondary-color); padding: 8px 10px; margin-bottom: 6px; border-radius: 0 6px 6px 0; line-height: 1.3; }
 
@@ -80,58 +89,74 @@ input:focus, select:focus { border-color: var(--secondary-color); }
     </div>
 </div>
 
-<div class="form-group">
-    <label for="fischart">Fischart <span class="pflicht-stern">*</span></label>
-    <select id="fischart" onchange="validateFisch()" required>
-        <option value="" disabled selected>Bitte wählen...</option>
-        <optgroup label="Edelfische / Raubfische">
-            <option value="Bachforelle">Bachforelle</option>
-            <option value="Regenbogenforelle">Regenbogenforelle</option>
-            <option value="Seeforelle">Seeforelle</option>
-            <option value="Bachsaibling">Bachsaibling</option>
-            <option value="Äsche">Äsche</option>
-            <option value="Hecht">Hecht</option>
-            <option value="Zander">Zander</option>
-            <option value="Flussbarsch">Flussbarsch</option>
-            <option value="Aal">Aal</option>
-            <option value="Wels">Wels</option>
-        </optgroup>
-        <optgroup label="Friedfische (Karpfenartige)">
-            <option value="Barbe">Barbe</option><option value="Nase">Nase</option><option value="Karpfen">Karpfen</option><option value="Schleie">Schleie</option><option value="Döbel">Döbel</option><option value="Brassen">Brassen (Blei)</option><option value="Aland">Aland</option><option value="Rotauge">Rotauge</option><option value="Rotfeder">Rotfeder</option>
-        </optgroup>
-        <optgroup label="Kleinfische & Begleitarten">
-            <option value="Kaulbarsch">Kaulbarsch</option><option value="Bachschmerle">Bachschmerle</option><option value="Gründling">Gründling</option><option value="Elritze">Elritze</option>
-        </optgroup>
-        <optgroup label="Invasive Arten (Meldepflichtig)">
-            <option value="Schwarzmund-Grundel">Schwarzmund-Grundel</option>
-        </optgroup>
-        <optgroup label="Ganzjährig geschützte Arten (Rote Liste)">
-            <option value="Groppe">Groppe (Mühlkoppe)</option><option value="Bitterling">Bitterling</option><option value="Moderlieschen">Moderlieschen</option>
-        </optgroup>
-    </select>
+<!-- NEU: Schneider-Tag Schalter direkt weit oben -->
+<div class="schneider-box">
+    <label class="schneider-label">
+        <input type="checkbox" id="ist-schneider" class="schneider-checkbox" onchange="toggleSchneiderModus()">
+        <span>🎣 Heute Schneider (kein Fisch gefangen)</span>
+    </label>
+    <button type="button" class="info-icon-btn" onclick="toggleSchneiderInfo()" title="Wofür ist das gut?">ℹ️</button>
+</div>
 
-    <div id="fisch-erkennung" class="fisch-info-box">
-        <img id="fisch-erkennung-bild" src="" alt="Fischbild zur Erkennung">
-        <span id="fisch-erkennung-name"></span>
+<div id="schneider-info-box" class="schneider-tooltip">
+    💡 <b>Wofür ist das gut?</b> Auch Schneider-Tage sind extrem wichtig! Sie helfen dir bei späteren persönlichen Auswertungen zu erkennen, an welchen Tagen, bei welchem Luftdruck oder Wetter du leer ausgegangen bist, um deine Taktik zu verfeinern. <b>Nur für dich sichtbar!</b>
+</div>
+
+<!-- Fangrelevante Felder (werden bei Schneider-Modus eingeklappt) -->
+<div id="fisch-fang-bereich">
+    <div class="form-group">
+        <label for="fischart">Fischart <span class="pflicht-stern">*</span></label>
+        <select id="fischart" onchange="validateFisch()">
+            <option value="" disabled selected>Bitte wählen...</option>
+            <optgroup label="Edelfische / Raubfische">
+                <option value="Bachforelle">Bachforelle</option>
+                <option value="Regenbogenforelle">Regenbogenforelle</option>
+                <option value="Seeforelle">Seeforelle</option>
+                <option value="Bachsaibling">Bachsaibling</option>
+                <option value="Äsche">Äsche</option>
+                <option value="Hecht">Hecht</option>
+                <option value="Zander">Zander</option>
+                <option value="Flussbarsch">Flussbarsch</option>
+                <option value="Aal">Aal</option>
+                <option value="Wels">Wels</option>
+            </optgroup>
+            <optgroup label="Friedfische (Karpfenartige)">
+                <option value="Barbe">Barbe</option><option value="Nase">Nase</option><option value="Karpfen">Karpfen</option><option value="Schleie">Schleie</option><option value="Döbel">Döbel</option><option value="Brassen">Brassen (Blei)</option><option value="Aland">Aland</option><option value="Rotauge">Rotauge</option><option value="Rotfeder">Rotfeder</option>
+            </optgroup>
+            <optgroup label="Kleinfische & Begleitarten">
+                <option value="Kaulbarsch">Kaulbarsch</option><option value="Bachschmerle">Bachschmerle</option><option value="Gründling">Gründling</option><option value="Elritze">Elritze</option>
+            </optgroup>
+            <optgroup label="Invasive Arten (Meldepflichtig)">
+                <option value="Schwarzmund-Grundel">Schwarzmund-Grundel</option>
+            </optgroup>
+            <optgroup label="Ganzjährig geschützte Arten (Rote Liste)">
+                <option value="Groppe">Groppe (Mühlkoppe)</option><option value="Bitterling">Bitterling</option><option value="Moderlieschen">Moderlieschen</option>
+            </optgroup>
+        </select>
+
+        <div id="fisch-erkennung" class="fisch-info-box">
+            <img id="fisch-erkennung-bild" src="" alt="Fischbild zur Erkennung">
+            <span id="fisch-erkennung-name"></span>
+        </div>
     </div>
-</div>
 
-<div class="form-group">
-    <label for="laenge">Länge (cm) <span class="pflicht-stern">*</span></label>
-    <input type="text" id="laenge" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="z.B. 45" oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateFisch();" required>
-    <div id="status-hint" class="hint-box"></div>
-    <div id="hitparade-meldung" style="display: none;"></div>
-</div>
+    <div class="form-group">
+        <label for="laenge">Länge (cm) <span class="pflicht-stern">*</span></label>
+        <input type="text" id="laenge" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="z.B. 45" oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateFisch();">
+        <div id="status-hint" class="hint-box"></div>
+        <div id="hitparade-meldung" style="display: none;"></div>
+    </div>
 
-<div class="form-group">
-    <label for="gewicht">Gewicht (g)</label>
-    <input type="number" id="gewicht" min="0" placeholder="Wird automatisch geschätzt...">
-    <small style="color: #777; display:block; margin-top:2px;">Kann manuell überschrieben werden.</small>
-</div>
+    <div class="form-group">
+        <label for="gewicht">Gewicht (g)</label>
+        <input type="number" id="gewicht" min="0" placeholder="Wird automatisch geschätzt...">
+        <small style="color: #777; display:block; margin-top:2px;">Kann manuell überschrieben werden.</small>
+    </div>
 
-<div class="form-group">
-    <label for="verbleib">Verbleib des Fisches <span class="pflicht-stern">*</span></label>
-    <select id="verbleib" required></select>
+    <div class="form-group">
+        <label for="verbleib">Verbleib des Fisches <span class="pflicht-stern">*</span></label>
+        <select id="verbleib"></select>
+    </div>
 </div>
 
 <div class="row">
@@ -182,8 +207,8 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 </div>
 
 <!-- Köder & Notiz Feld -->
-<div class="form-group">
-    <label for="notiz">Köder / Notiz</label>
+<div class="form-group" id="koeder-gruppen-bereich">
+    <label for="notiz">Köder / Notiz (optional bei Schneider)</label>
     <div class="input-with-btn">
         <input type="text" id="notiz" list="koeder-vorschlaege" placeholder="z.B. Tauwurm, Maden, Nymphe..." oninput="validateFisch()">
         <button type="button" class="icon-btn" id="mic-btn" onclick="startSpeechRecognition()">🎙️</button>
@@ -203,6 +228,41 @@ input:focus, select:focus { border-color: var(--secondary-color); }
 </form>
 </div>
 
+<script>
+    // Kleine Hilfsfunktionen für die UI-Interaktion direkt im HTML
+    function toggleSchneiderInfo() {
+        const box = document.getElementById('schneider-info-box');
+        box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function toggleSchneiderModus() {
+        const istSchneider = document.getElementById('ist-schneider').checked;
+        const fischBereich = document.getElementById('fisch-fang-bereich');
+        
+        const fischartInput = document.getElementById('fischart');
+        const laengeInput = document.getElementById('laenge');
+        const verbleibInput = document.getElementById('verbleib');
+        
+        if (istSchneider) {
+            fischBereich.style.display = 'none';
+            fischartInput.removeAttribute('required');
+            laengeInput.removeAttribute('required');
+            verbleibInput.removeAttribute('required');
+            document.getElementById('form-titel').innerText = "Schneider-Tag eintragen";
+            document.getElementById('speichern-btn').innerText = "Schneider-Tag speichern";
+        } else {
+            fischBereich.style.display = 'block';
+            fischartInput.setAttribute('required', 'true');
+            laengeInput.setAttribute('setAttribute', 'true'); // bzw. required
+            verbleibInput.setAttribute('required', 'true');
+            document.getElementById('form-titel').innerText = "Fang eintragen (Ruhr)";
+            document.getElementById('speichern-btn').innerText = "Fang speichern";
+        }
+        if (typeof pruefePflichtfelder === 'function') {
+            pruefePflichtfelder();
+        }
+    }
+</script>
 <script src="fang-eintragen.js"></script>
 </body>
 </html>

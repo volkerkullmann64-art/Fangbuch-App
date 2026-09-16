@@ -18,13 +18,9 @@ function toggleEditMode() {
     ladeMeineFaenge();
 }
 
-// -----------------------------------------------------------------
-// ASTRONOMISCHE HILFSFUNKTION: Sonnenaufgang/-untergang & Dämmerung
-// -----------------------------------------------------------------
+// Fallback-Hilfsfunktion für ältere Einträge ohne gespeichertes Feld
 function ermittleAnglerTageszeit(datumStr, uhrzeitStr) {
     if (!datumStr || !uhrzeitStr) return "";
-
-    // Datum parsen (YYYY-MM-DD)
     const teileDatum = datumStr.split('-');
     if (teileDatum.length !== 3) return "";
     const jahr = parseInt(teileDatum[0], 10);
@@ -35,43 +31,20 @@ function ermittleAnglerTageszeit(datumStr, uhrzeitStr) {
     const startDesJahres = new Date(jahr, 0, 1);
     const pastDays = Math.floor((datumObj - startDesJahres) / (24 * 60 * 60 * 1000));
 
-    // Grobe, aber für Mitteleuropa (ca. 51.5° N - Ruhrgebiet/Sauerland) sehr zuverlässige Näherung
-    // Sonnenaufgang in Minuten nach Mitternacht über das Jahr (Sinus-Verlauf)
-    // Kürzester Tag (Dezember): Aufgang ca. 8:30 (510 Min), Untergang ca. 16:30 (990 Min)
-    // Längster Tag (Juni): Aufgang ca. 5:15 (315 Min), Untergang ca. 21:45 (1305 Min)
     const zeitSumme = Math.round(412 + 100 * Math.sin((pastDays - 80) * 2 * Math.PI / 365));
     const untergangSumme = Math.round(1147 - 100 * Math.sin((pastDays - 80) * 2 * Math.PI / 365));
 
-    const aufgangStunden = Math.floor(zeitSumme / 60);
-    const aufgangMinuten = zeitSumme % 60;
+    const aufgangMin = Math.floor(zeitSumme / 60) * 60 + (zeitSumme % 60);
+    const untergangMin = Math.floor(untergangSumme / 60) * 60 + (untergangSumme % 60);
 
-    const untergangStunden = Math.floor(untergangSumme / 60);
-    const untergangMinuten = untergangSumme % 60;
-
-    // Uhrzeit in Minuten nach Mitternacht umwandeln
     const zeitTeile = uhrzeitStr.split(':');
     if (zeitTeile.length < 2) return "";
     const fangMinuten = parseInt(zeitTeile[0], 10) * 60 + parseInt(zeitTeile[1], 10);
 
-    const aufgangMin = aufgangStunden * 60 + aufgangMinuten;
-    const untergangMin = untergangStunden * 60 + untergangMinuten;
-
-    // Dämmerungs-Fenster definieren (ca. 60 Minuten vor Aufgang / nach Untergang)
-    const morgensDämmerungStart = aufgangMin - 60;
-    const morgensDämmerungEnde = aufgangMin + 45;
-
-    const abendsDämmerungStart = untergangMin - 45;
-    const abendsDämmerungEnde = untergangMin + 60;
-
-    if (fangMinuten >= morgensDämmerungStart && fangMinuten <= morgensDämmerungEnde) {
-        return "Morgendämmerung 🌅";
-    } else if (fangMinuten >= abendsDämmerungStart && fangMinuten <= abendsDämmerungEnde) {
-        return "Abenddämmerung 🌇";
-    } else if (fangMinuten > morgensDämmerungEnde && fangMinuten < abendsDämmerungStart) {
-        return "Tag ☀️";
-    } else {
-        return "Nacht 🌙";
-    }
+    if (fangMinuten >= aufgangMin - 60 && fangMinuten <= aufgangMin + 45) return "Morgendämmerung 🌅";
+    if (fangMinuten >= untergangMin - 45 && fangMinuten <= untergangMin + 60) return "Abenddämmerung 🌇";
+    if (fangMinuten > aufgangMin + 45 && fangMinuten < untergangMin - 45) return "Tag ☀️";
+    return "Nacht 🌙";
 }
 
 async function ladeMeineFaenge() {
@@ -97,22 +70,14 @@ async function ladeMeineFaenge() {
             return;
         }
 
-        // Korrekte Auswertung nach eindeutigen Angeltagen (Datum)
         const datenMap = {};
-
         data.forEach(fang => {
             const datum = fang.datum || 'unbekannt';
             if (!datenMap[datum]) {
-                datenMap[datum] = {
-                    hatFisch: false,
-                    hatSchneider: false
-                };
+                datenMap[datum] = { hatFisch: false, hatSchneider: false };
             }
-            if (fang.ist_schneider === true) {
-                datenMap[datum].hatSchneider = true;
-            } else {
-                datenMap[datum].hatFisch = true;
-            }
+            if (fang.ist_schneider === true) datenMap[datum].hatSchneider = true;
+            else datenMap[datum].hatFisch = true;
         });
 
         let alleDaten = Object.keys(datenMap);
@@ -122,14 +87,10 @@ async function ladeMeineFaenge() {
 
         alleDaten.forEach(datum => {
             const info = datenMap[datum];
-            if (info.hatFisch) {
-                erfolgreicheAngeltage++;
-            } else if (info.hatSchneider) {
-                schneiderTage++;
-            }
+            if (info.hatFisch) erfolgreicheAngeltage++;
+            else if (info.hatSchneider) schneiderTage++;
         });
 
-        // Zähler-Boxen oben befüllen und anzeigen
         if (statistikBox) {
             document.getElementById('stat-gesamt').innerText = gesamtAngeltage;
             document.getElementById('stat-erfolgreich').innerText = erfolgreicheAngeltage;
@@ -167,7 +128,10 @@ async function ladeMeineFaenge() {
             }
 
             const uhrzeitRoh = fang.uhrzeit ? fang.uhrzeit.substring(0, 5) : '';
-            const tageszeitInfo = ermittleAnglerTageszeit(fang.datum, uhrzeitRoh);
+            
+            // PRIMÄR aus der DB auslesen, Fallback auf Berechnung falls DB-Feld leer ist
+            const tageszeitInfo = fang.tageszeit || ermittleAnglerTageszeit(fang.datum, uhrzeitRoh);
+            
             const uhrzeitAnzeige = uhrzeitRoh ? `${uhrzeitRoh} Uhr` : '-';
             const tageszeitText = tageszeitInfo ? ` <span style="color: #d68c45; font-weight: bold;">(${tageszeitInfo})</span>` : '';
 

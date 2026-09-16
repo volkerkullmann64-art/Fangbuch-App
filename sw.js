@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asv-fangbuch-V2'; // Gleich auf V2 erhöht, damit der Cache frisch geladen wird!
+const CACHE_NAME = 'asv-fangbuch-V3'; // Gleich auf V2 erhöht, damit der Cache frisch geladen wird!
 
 // Alle statischen Dateien der PWA mit relativer Pfadangabe
 const ASSETS = [

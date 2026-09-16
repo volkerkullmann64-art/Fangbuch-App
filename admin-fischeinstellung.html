@@ -54,8 +54,8 @@
                     <th>Fischart</th>
                     <th>Mindestmaß (cm)</th>
                     <th>Maximalmaß / Fenster (cm)</th>
-                    <th>Schonzeit Von</th>
-                    <th>Schonzeit Bis</th>
+                    <th>Schonzeit Von (TT-MM)</th>
+                    <th>Schonzeit Bis (TT-MM)</th>
                     <th>Schutzstatus</th>
                 </tr>
             </thead>
@@ -101,20 +101,30 @@
             tbody.innerHTML = '';
 
             geladeneRegelnCache.forEach((regel, index) => {
-                // Bereinigung von alten Datenbank-Leichen (z.B. wenn "null" als Text drinsteht)
-                let vonWert = regel.schonzeit_von;
-                if (!vonWert || vonWert === 'null' || vonWert === 'undefined') vonWert = '';
-                
-                let bisWert = regel.schonzeit_bis;
-                if (!bisWert || bisWert === 'null' || bisWert === 'undefined') bisWert = '';
+                // Strikte Bereinigung, damit leere Felder auch wirklich leer bleiben
+                let vonWert = '';
+                if (regel.schonzeit_von) {
+                    const sauberVon = String(regel.schonzeit_von).trim();
+                    if (sauberVon !== '' && sauberVon !== 'null' && sauberVon !== 'undefined') {
+                        vonWert = sauberVon;
+                    }
+                }
+
+                let bisWert = '';
+                if (regel.schonzeit_bis) {
+                    const sauberBis = String(regel.schonzeit_bis).trim();
+                    if (sauberBis !== '' && sauberBis !== 'null' && sauberBis !== 'undefined') {
+                        bisWert = sauberBis;
+                    }
+                }
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight: bold; color: #9b59b6;">${regel.fischart}</td>
-                    <td><input type="number" id="min-${index}" value="${regel.mindestmass_cm || 0}" min="0" max="300"></td>
-                    <td><input type="number" id="max-${index}" value="${regel.maximalmass_cm || 0}" min="0" max="300"></td>
-                    <td><input type="text" id="von-${index}" value="${vonWert}" placeholder="09-20"></td>
-                    <td><input type="text" id="bis-${index}" value="${bisWert}" placeholder="02-15"></td>
+                    <td><input type="number" id="min-${index}" value="${regel.mindestmass_cm || 0}" min="0" max="300" autocomplete="off"></td>
+                    <td><input type="number" id="max-${index}" value="${regel.maximalmass_cm || 0}" min="0" max="300" autocomplete="off"></td>
+                    <td><input type="text" id="von-${index}" value="${vonWert}" placeholder="20-09" autocomplete="off"></td>
+                    <td><input type="text" id="bis-${index}" value="${bisWert}" placeholder="15-02" autocomplete="off"></td>
                     <td>
                         <select id="status-${index}">
                             <option value="normal" ${regel.schutzstatus === 'normal' ? 'selected' : ''}>Normal</option>

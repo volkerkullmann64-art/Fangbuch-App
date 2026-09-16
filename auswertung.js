@@ -18,6 +18,62 @@ function toggleEditMode() {
     ladeMeineFaenge();
 }
 
+// -----------------------------------------------------------------
+// ASTRONOMISCHE HILFSFUNKTION: Sonnenaufgang/-untergang & Dämmerung
+// -----------------------------------------------------------------
+function ermittleAnglerTageszeit(datumStr, uhrzeitStr) {
+    if (!datumStr || !uhrzeitStr) return "";
+
+    // Datum parsen (YYYY-MM-DD)
+    const teileDatum = datumStr.split('-');
+    if (teileDatum.length !== 3) return "";
+    const jahr = parseInt(teileDatum[0], 10);
+    const monat = parseInt(teileDatum[1], 10);
+    const tag = parseInt(teileDatum[2], 10);
+
+    const datumObj = new Date(jahr, monat - 1, tag);
+    const startDesJahres = new Date(jahr, 0, 1);
+    const pastDays = Math.floor((datumObj - startDesJahres) / (24 * 60 * 60 * 1000));
+
+    // Grobe, aber für Mitteleuropa (ca. 51.5° N - Ruhrgebiet/Sauerland) sehr zuverlässige Näherung
+    // Sonnenaufgang in Minuten nach Mitternacht über das Jahr (Sinus-Verlauf)
+    // Kürzester Tag (Dezember): Aufgang ca. 8:30 (510 Min), Untergang ca. 16:30 (990 Min)
+    // Längster Tag (Juni): Aufgang ca. 5:15 (315 Min), Untergang ca. 21:45 (1305 Min)
+    const zeitSumme = Math.round(412 + 100 * Math.sin((pastDays - 80) * 2 * Math.PI / 365));
+    const untergangSumme = Math.round(1147 - 100 * Math.sin((pastDays - 80) * 2 * Math.PI / 365));
+
+    const aufgangStunden = Math.floor(zeitSumme / 60);
+    const aufgangMinuten = zeitSumme % 60;
+
+    const untergangStunden = Math.floor(untergangSumme / 60);
+    const untergangMinuten = untergangSumme % 60;
+
+    // Uhrzeit in Minuten nach Mitternacht umwandeln
+    const zeitTeile = uhrzeitStr.split(':');
+    if (zeitTeile.length < 2) return "";
+    const fangMinuten = parseInt(zeitTeile[0], 10) * 60 + parseInt(zeitTeile[1], 10);
+
+    const aufgangMin = aufgangStunden * 60 + aufgangMinuten;
+    const untergangMin = untergangStunden * 60 + untergangMinuten;
+
+    // Dämmerungs-Fenster definieren (ca. 60 Minuten vor Aufgang / nach Untergang)
+    const morgensDämmerungStart = aufgangMin - 60;
+    const morgensDämmerungEnde = aufgangMin + 45;
+
+    const abendsDämmerungStart = untergangMin - 45;
+    const abendsDämmerungEnde = untergangMin + 60;
+
+    if (fangMinuten >= morgensDämmerungStart && fangMinuten <= morgensDämmerungEnde) {
+        return "Morgendämmerung 🌅";
+    } else if (fangMinuten >= abendsDämmerungStart && fangMinuten <= abendsDämmerungEnde) {
+        return "Abenddämmerung 🌇";
+    } else if (fangMinuten > morgensDämmerungEnde && fangMinuten < abendsDämmerungStart) {
+        return "Tag ☀️";
+    } else {
+        return "Nacht 🌙";
+    }
+}
+
 async function ladeMeineFaenge() {
     const container = document.getElementById('faenge-tabelle-container');
     const statistikBox = document.getElementById('statistik-container');
@@ -110,7 +166,11 @@ async function ladeMeineFaenge() {
                 if (t.length === 3) datumFormatiert = `${t[2]}.${t[1]}.${t[0]}`;
             }
 
-            const uhrzeit = fang.uhrzeit ? fang.uhrzeit.substring(0, 5) + ' Uhr' : '-';
+            const uhrzeitRoh = fang.uhrzeit ? fang.uhrzeit.substring(0, 5) : '';
+            const tageszeitInfo = ermittleAnglerTageszeit(fang.datum, uhrzeitRoh);
+            const uhrzeitAnzeige = uhrzeitRoh ? `${uhrzeitRoh} Uhr` : '-';
+            const tageszeitText = tageszeitInfo ? ` <span style="color: #d68c45; font-weight: bold;">(${tageszeitInfo})</span>` : '';
+
             const gewicht = istSchneider ? '-' : (fang.gewicht ? `${fang.gewicht} g` : '-');
             const verbleib = istSchneider ? '-' : (fang.verbleib || '-');
             const fangort = fang.fangort || '-';
@@ -134,7 +194,7 @@ async function ladeMeineFaenge() {
                             <p>⚖️ <b>Gewicht:</b> ${gewicht}</p>
                             <p>🐟 <b>Verbleib:</b> ${verbleib}</p>
                         `}
-                        <p>⏰ <b>Uhrzeit:</b> ${uhrzeit}</p>
+                        <p>⏰ <b>Uhrzeit:</b> ${uhrzeitAnzeige}${tageszeitText}</p>
                         <p>📍 <b>Fangort / Abschnitt:</b> ${fangort} (${gewaesser})</p>
                         <p>📌 <b>Genaue Stelle:</b> ${genaueStelle}</p>
                         <p>🌤️ <b>Wetter:</b> ${wetter} | 📊 <b>Luftdruck:</b> ${luftdruck}</p>

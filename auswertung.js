@@ -67,6 +67,7 @@ async function ladeMeineFaenge() {
             const verbleib = fang.verbleib || '-';
             const fangort = fang.fangort || '-';
             const gewaesser = fang.gewaesser || 'Ruhr';
+            const genaueStelle = fang.genaue_stelle || '-';
             const notiz = fang.notiz || '-';
 
             html += `
@@ -80,7 +81,8 @@ async function ladeMeineFaenge() {
                     <td colspan="${isEditMode ? 4 : 3}" style="padding: 10px; font-size: 13px; color: #444;">
                         <p>⚖️ <b>Gewicht:</b> ${gewicht}</p>
                         <p>🐟 <b>Verbleib:</b> ${verbleib}</p>
-                        <p>📍 <b>Stelle / Ort:</b> ${fangort} (${gewaesser})</p>
+                        <p>📍 <b>Fangort / Abschnitt:</b> ${fangort} (${gewaesser})</p>
+                        <p>📌 <b>Genaue Stelle:</b> ${genaueStelle}</p>
                         <p>📝 <b>Notiz / Köder:</b> ${notiz}</p>
                     </td>
                 </tr>

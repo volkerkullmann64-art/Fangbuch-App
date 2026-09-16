@@ -23,6 +23,12 @@ body { background-color: var(--bg-color); color: var(--text-color); padding: 15p
 
 h2 { color: #2e7d32; text-align: center; margin-bottom: 15px; font-size: 20px; }
 
+/* Statistik-Zähler Boxen oben */
+.statistik-grid { display: flex; gap: 8px; margin-bottom: 15px; }
+.statistik-card { flex: 1; background: #f4f8f5; border: 1px solid #d0e1d4; padding: 10px 5px; border-radius: 8px; text-align: center; }
+.statistik-card .zahl { display: block; font-size: 18px; font-weight: bold; color: #2e7d32; margin-top: 2px; }
+.statistik-card .label { font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
+
 .fang-tabelle { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 14px; }
 .fang-tabelle th { background-color: #2e7d32; color: white; text-align: left; padding: 10px 6px; font-size: 13px; }
 .fang-tabelle td { padding: 10px 6px; border-bottom: 1px solid #eee; color: #333; }
@@ -40,8 +46,24 @@ h2 { color: #2e7d32; text-align: center; margin-bottom: 15px; font-size: 20px; }
 
     <h2>📊 Meine Fangübersicht</h2>
 
+    <!-- NEU: Kleine Zähler-Boxen oben -->
+    <div id="statistik-container" class="statistik-grid" style="display: none;">
+        <div class="statistik-card">
+            <span class="label">Angeltage</span>
+            <span id="stat-gesamt" class="zahl">0</span>
+        </div>
+        <div class="statistik-card">
+            <span class="label">Erfolgreich</span>
+            <span id="stat-erfolgreich" class="zahl" style="color: #2e7d32;">0</span>
+        </div>
+        <div class="statistik-card">
+            <span class="label">Schneider</span>
+            <span id="stat-schneider" class="zahl" style="color: #c0392b;">0</span>
+        </div>
+    </div>
+
     <div id="faenge-tabelle-container">
-        <div style="text-align: center; padding: 20px; color: #666;">⏳ Lade Fänge...</div>
+        <div style="text-align: center; padding: 20px; color: #666;">⏳ Lade Einträge...</div>
     </div>
 </div>
 

@@ -23,7 +23,7 @@
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 900px; /* Schön breit am PC */
+            max-width: 900px;
             box-sizing: border-box;
         }
         h2, h3 { color: #8e44ad; text-align: center; margin-top: 0; }
@@ -72,13 +72,9 @@
             margin: 10px 0;
         }
         
-        /* Layout-Grids für Handys und PCs */
         .grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr; gap: 15px; }
-
         @media (min-width: 650px) {
             .grid-2 { grid-template-columns: 1fr 1fr; }
-            .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
         }
 
         .info-label {
@@ -88,7 +84,7 @@
             display: block;
         }
 
-        /* Knallrotes Warnfenster */
+        /* Modal für Kontosperrung */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -119,6 +115,26 @@
         <div id="lade-hinweis" style="text-align: center; color: #666;">Lade Mitgliedsdaten...</div>
 
         <div id="edit-formular" style="display: none;">
+            
+            <!-- Profilfoto Vorschau für den Admin -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img id="admin-profil-foto" src="" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #8e44ad; display: none; margin: 0 auto;">
+                <p id="admin-kein-foto" style="color: #888; font-size: 13px; font-style: italic;">Kein Profilfoto vom Mitglied hinterlegt</p>
+            </div>
+
+            <!-- DSGVO Status Info Box -->
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 13px;">
+                <b>🛡️ DSGVO Einwilligungen des Mitglieds:</b>
+                <p style="margin: 5px 0;" id="admin-dsgvo-name">Namensanzeige: -</p>
+                <p style="margin: 5px 0;" id="admin-dsgvo-foto">Foto-Anzeige: -</p>
+            </div>
+
+            <div class="section-header">📋 Vereinsdaten</div>
+            <div>
+                <span class="info-label">Mitgliedsnummer:</span>
+                <input type="text" id="edit-mitgliedsnummer" placeholder="z.B. 1234">
+            </div>
+
             <div class="section-header">👤 Persönliche Daten & Kontakt</div>
             <div class="grid-2">
                 <div>
@@ -196,7 +212,7 @@
 
             <div class="grid-2" style="margin-top: 20px;">
                 <button class="btn" onclick="mitgliedSpeichern()">💾 Änderungen speichern</button>
-                <button class="btn btn-zurueck" onclick="location.href='admin-mitglieder.html'">❌ Schließen / Abbrechen</button>
+                <button class="btn btn-zurueck" onclick="location.href='admin-mitglieder.html'">❌ Abbrechen</button>
             </div>
             
             <button class="btn btn-danger" onclick="zeigeWarnung()" style="margin-top: 15px;">🔄 Konto zurücksetzen (Kennung 0000)</button>
@@ -258,9 +274,22 @@
             document.getElementById('edit-plz').value = data.plz || '';
             document.getElementById('edit-ort').value = data.ort || '';
             document.getElementById('edit-iban').value = data.iban || '';
+            document.getElementById('edit-mitgliedsnummer').value = data.mitgliedsnummer || '';
             document.getElementById('edit-bemerkung').value = data.bemerkung || '';
             document.getElementById('edit-kennung').value = data.kennung || 'Keine Kennung';
             document.getElementById('edit-admin').checked = !!data.admin;
+
+            // DSGVO Status anzeigen
+            document.getElementById('admin-dsgvo-name').innerText = `Namensanzeige: ${data.einwilligung_name ? '✅ Eingewilligt' : '❌ Nicht eingewilligt'}`;
+            document.getElementById('admin-dsgvo-foto').innerText = `Foto-Anzeige: ${data.einwilligung_foto ? '✅ Eingewilligt' : '❌ Nicht eingewilligt'}`;
+
+            // Profilfoto anzeigen falls vorhanden
+            if (data.foto_url) {
+                const img = document.getElementById('admin-profil-foto');
+                img.src = data.foto_url;
+                img.style.display = 'block';
+                document.getElementById('admin-kein-foto').style.display = 'none';
+            }
 
             document.getElementById('warn-name').innerText = `${data.vorname || ''} ${data.nachname || ''}`;
 
@@ -293,6 +322,7 @@
             const plz = document.getElementById('edit-plz').value.trim();
             const ort = document.getElementById('edit-ort').value.trim();
             const iban = document.getElementById('edit-iban').value.trim();
+            const mitgliedsnummer = document.getElementById('edit-mitgliedsnummer').value.trim();
             const bemerkung = document.getElementById('edit-bemerkung').value.trim();
             const isAdmin = document.getElementById('edit-admin').checked;
 
@@ -309,6 +339,7 @@
                     plz: plz,
                     ort: ort,
                     iban: iban,
+                    mitgliedsnummer: mitgliedsnummer,
                     bemerkung: bemerkung,
                     admin: isAdmin
                 })

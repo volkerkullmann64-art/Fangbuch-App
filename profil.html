@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASV Langschede - Persönliche Daten</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px;
+            box-sizing: border-box;
+        }
+        h2 { color: #2e7d32; text-align: center; margin-top: 0; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            background-color: #2e7d32;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-zurueck { background-color: #757575; }
+        input[type="text"], input[type="email"], input[type="tel"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 4px 0 12px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .section-header {
+            font-weight: bold;
+            color: #2e7d32;
+            border-bottom: 2px solid #2e7d32;
+            padding-bottom: 4px;
+            margin: 20px 0 12px 0;
+            font-size: 15px;
+        }
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 650px) {
+            .grid-2 { grid-template-columns: 1fr 1fr; }
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>👤 Meine persönlichen Daten</h2>
+        <div id="lade-hinweis" style="text-align: center; color: #666;">Lade Profil...</div>
+
+        <div id="edit-formular" style="display: none;">
+            
+            <div class="section-header">📸 Profilfoto & Datenschutz (DSGVO)</div>
+            
+            <!-- Selfie / Foto Upload -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="margin-bottom: 10px;">
+                    <img id="profil-foto-vorschau" src="" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #2e7d32; display: none; margin: 0 auto;">
+                </div>
+                <label for="profil-foto-input" style="display: inline-block; background-color: #d68c45; color: white; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">
+                    📸 Selfie / Foto aufnehmen / auswählen
+                </label>
+                <input type="file" id="profil-foto-input" accept="image/*" style="display: none;" onchange="verarbeiteProfilFoto(event)">
+            </div>
+
+            <!-- DSGVO Einwilligungen -->
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+                <div class="form-row" style="margin: 8px 0;">
+                    <input type="checkbox" id="check-einwilligung-name" style="transform: scale(1.2);">
+                    <label for="check-einwilligung-name" style="font-size: 13px; color: #333; cursor: pointer;">
+                        <b>Namensanzeige:</b> Ich bin damit einverstanden, dass mein Name bei meinen Fängen und in der Hitparade im Verein angezeigt wird.
+                    </label>
+                </div>
+                
+                <div class="form-row" style="margin: 8px 0;">
+                    <input type="checkbox" id="check-einwilligung-foto" style="transform: scale(1.2);">
+                    <label for="check-einwilligung-foto" style="font-size: 13px; color: #333; cursor: pointer;">
+                        <b>Foto-Anzeige:</b> Ich bin damit einverstanden, dass mein Profilfoto (Selfie) für andere Vereinsmitglieder sichtbar ist.
+                    </label>
+                </div>
+            </div>
+
+            <div class="section-header">📋 Vereinsdaten</div>
+            <div>
+                <span class="info-label">Mitgliedsnummer:</span>
+                <input type="text" id="edit-mitgliedsnummer" placeholder="z.B. 1234">
+            </div>
+
+            <div class="section-header">👤 Kontaktdaten</div>
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Vorname:</span>
+                    <input type="text" id="edit-vorname">
+                </div>
+                <div>
+                    <span class="info-label">Nachname:</span>
+                    <input type="text" id="edit-nachname">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">E-Mail Adresse:</span>
+                    <input type="email" id="edit-email">
+                </div>
+                <div>
+                    <span class="info-label">Telefonnummer:</span>
+                    <input type="tel" id="edit-telefon" placeholder="0171 1234567">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">Geburtsdatum:</span>
+                    <input type="text" id="edit-geburtsdatum" placeholder="TT.MM.JJJJ">
+                </div>
+                <div>
+                    <span class="info-label">Gruppe:</span>
+                    <select id="edit-gruppe">
+                        <option value="Erwachsene">Erwachsene</option>
+                        <option value="Jugendgruppe">Jugendgruppe</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-header">📍 Anschrift</div>
+            <span class="info-label">Straße & Hausnummer:</span>
+            <input type="text" id="edit-strasse">
+
+            <div class="grid-2">
+                <div>
+                    <span class="info-label">PLZ:</span>
+                    <input type="text" id="edit-plz">
+                </div>
+                <div>
+                    <span class="info-label">Ort:</span>
+                    <input type="text" id="edit-ort">
+                </div>
+            </div>
+
+            <div class="section-header">🏦 Bankverbindung</div>
+            <div>
+                <span class="info-label">IBAN:</span>
+                <input type="text" id="edit-iban" placeholder="DE00 0000 0000 0000 0000 00">
+            </div>
+
+            <div class="grid-2" style="margin-top: 25px;">
+                <button class="btn" onclick="profilSpeichern()">💾 Speichern</button>
+                <button class="btn btn-zurueck" onclick="location.href='index.html'">❌ Zurück zur Startseite</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://eadleysrezkhxxbhqbdx.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_Y0g8anBpKs3bsC85iado6w_rYske-SZ";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let aktuellesEmail = "";
+        let profilFotoBlob = null;
+
+        window.onload = function() {
+            aktuellesEmail = sessionStorage.getItem('userEmail');
+            if (!aktuellesEmail) {
+                alert("Bitte zuerst anmelden!");
+                location.href = 'index.html';
+                return;
+            }
+            profilLaden(aktuellesEmail);
+        };
+
+        async function profilLaden(email) {
+            const { data, error } = await _supabase
+                .from('mitglieder')
+                .select('*')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (error) {
+                console.error("Fehler beim Laden:", error);
+            }
+
+            if (data) {
+                document.getElementById('edit-vorname').value = data.vorname || '';
+                document.getElementById('edit-nachname').value = data.nachname || '';
+                document.getElementById('edit-email').value = data.email || '';
+                document.getElementById('edit-telefon').value = data.telefon || '';
+                document.getElementById('edit-geburtsdatum').value = data.geburtsdatum || '';
+                document.getElementById('edit-gruppe').value = data.gruppe || 'Erwachsene';
+                document.getElementById('edit-strasse').value = data.strasse || '';
+                document.getElementById('edit-plz').value = data.plz || '';
+                document.getElementById('edit-ort').value = data.ort || '';
+                document.getElementById('edit-iban').value = data.iban || '';
+                document.getElementById('edit-mitgliedsnummer').value = data.mitgliedsnummer || '';
+
+                // DSGVO Haken setzen
+                document.getElementById('check-einwilligung-name').checked = !!data.einwilligung_name;
+                document.getElementById('check-einwilligung-foto').checked = !!data.einwilligung_foto;
+
+                // Foto anzeigen falls vorhanden
+                if (data.foto_url) {
+                    const img = document.getElementById('profil-foto-vorschau');
+                    img.src = data.foto_url;
+                    img.style.display = 'block';
+                }
+            }
+
+            document.getElementById('lade-hinweis').style.display = 'none';
+            document.getElementById('edit-formular').style.display = 'block';
+        }
+
+        function verarbeiteProfilFoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 500;
+
+                    if (width > height) {
+                        if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
+                    } else {
+                        if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        profilFotoBlob = blob;
+                        const vorschau = document.getElementById('profil-foto-vorschau');
+                        vorschau.src = URL.createObjectURL(blob);
+                        vorschau.style.display = 'block';
+                    }, 'image/jpeg', 0.8);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function profilSpeichern() {
+            let uploadedFotoUrl = null;
+
+            try {
+                // Wenn ein neues Foto aufgenommen/gewählt wurde, in Supabase Storage hochladen
+                if (profilFotoBlob) {
+                    const dateiname = `profil_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+                    
+                    const { error: storageError } = await _supabase.storage
+                        .from('hitparade-fotos')
+                        .upload(dateiname, profilFotoBlob, { contentType: 'image/jpeg' });
+
+                    if (storageError) throw new Error("Foto-Upload fehlgeschlagen: " + storageError.message);
+
+                    const { data: urlData } = _supabase.storage
+                        .from('hitparade-fotos')
+                        .getPublicUrl(dateiname);
+
+                    if (urlData) uploadedFotoUrl = urlData.publicUrl;
+                }
+
+                const updateDaten = {
+                    vorname: document.getElementById('edit-vorname').value.trim(),
+                    nachname: document.getElementById('edit-nachname').value.trim(),
+                    email: document.getElementById('edit-email').value.trim().toLowerCase(),
+                    telefon: document.getElementById('edit-telefon').value.trim(),
+                    geburtsdatum: document.getElementById('edit-geburtsdatum').value.trim(),
+                    gruppe: document.getElementById('edit-gruppe').value,
+                    strasse: document.getElementById('edit-strasse').value.trim(),
+                    plz: document.getElementById('edit-plz').value.trim(),
+                    ort: document.getElementById('edit-ort').value.trim(),
+                    iban: document.getElementById('edit-iban').value.trim(),
+                    mitgliedsnummer: document.getElementById('edit-mitgliedsnummer').value.trim(),
+                    einwilligung_name: document.getElementById('check-einwilligung-name').checked,
+                    einwilligung_foto: document.getElementById('check-einwilligung-foto').checked
+                };
+
+                if (uploadedFotoUrl) {
+                    updateDaten.foto_url = uploadedFotoUrl;
+                }
+
+                const { error } = await _supabase
+                    .from('mitglieder')
+                    .update(updateDaten)
+                    .eq('email', aktuellesEmail);
+
+                if (error) throw new Error(error.message);
+
+                alert("✅ Deine persönlichen Daten wurden erfolgreich gespeichert!");
+                location.href = 'index.html';
+
+            } catch (err) {
+                alert("⚠️ Fehler beim Speichern: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

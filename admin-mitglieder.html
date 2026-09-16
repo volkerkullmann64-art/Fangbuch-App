@@ -85,12 +85,6 @@
             font-weight: bold;
             margin-left: 5px;
         }
-        .form-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr;
@@ -222,17 +216,12 @@
             </div>
             
             <span class="info-label">Gruppe:</span>
-            <select id="neu-gruppe">
+            <select id="neu-gruppe" style="margin-bottom: 20px;">
                 <option value="Erwachsene">Erwachsene</option>
                 <option value="Jugendgruppe">Jugendgruppe</option>
             </select>
 
-            <div class="form-row">
-                <input type="checkbox" id="neu-admin" style="transform: scale(1.2);">
-                <label for="neu-admin" style="font-weight: bold; color: #8e44ad;">Als Vorstand/Admin festlegen</label>
-            </div>
-
-            <button class="btn" style="margin-top: 15px;" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
+            <button class="btn" style="margin-top: 5px;" onclick="mitgliedAnlegen()">Mitglied jetzt speichern</button>
             <button class="btn btn-zurueck" onclick="schliesseAnlegenModal()">Abbrechen</button>
         </div>
     </div>
@@ -337,7 +326,6 @@
             const email = document.getElementById('neu-email').value.trim().toLowerCase();
             const telefon = document.getElementById('neu-telefon').value.trim();
             const gruppe = document.getElementById('neu-gruppe').value;
-            const isAdmin = document.getElementById('neu-admin').checked;
 
             if (!vorname || !nachname || !email) {
                 alert("Bitte Vorname, Nachname und E-Mail ausfüllen.");
@@ -355,7 +343,7 @@
                     email: email,
                     telefon: telefon,
                     gruppe: gruppe,
-                    admin: isAdmin,
+                    admin: false, // Standardmäßig kein Admin bei Neuanlage
                     kennung: neueKennung,
                     einwilligung_name: false,
                     einwilligung_foto: false
@@ -370,7 +358,6 @@
                 document.getElementById('neu-nachname').value = '';
                 document.getElementById('neu-email').value = '';
                 document.getElementById('neu-telefon').value = '';
-                document.getElementById('neu-admin').checked = false;
                 schliesseAnlegenModal();
                 mitgliederLaden();
             }

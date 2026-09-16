@@ -5,26 +5,52 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let editFangId = null;
 let geknipstesFotoBlob = null; // Speichert das komprimierte Foto im Speicher
 
+// Lokaler Cache für Fischregeln aus dem Admin-Bereich (mit intelligenten Fallbacks)
+let fischRegelnCache = {
+    "Bachforelle": { mindestmass_cm: 25, maximalmass_cm: 0, schonzeit_von: "09-20", schonzeit_bis: "02-15", schutzstatus: "normal" },
+    "Regenbogenforelle": { mindestmass_cm: 25, maximalmass_cm: 0, schonzeit_von: "09-20", schonzeit_bis: "02-15", schutzstatus: "normal" },
+    "Seeforelle": { mindestmass_cm: 60, maximalmass_cm: 0, schonzeit_von: "09-20", schonzeit_bis: "03-15", schutzstatus: "normal" },
+    "Bachsaibling": { mindestmass_cm: 25, maximalmass_cm: 0, schonzeit_von: "09-20", schonzeit_bis: "02-15", schutzstatus: "normal" },
+    "Äsche": { mindestmass_cm: 30, maximalmass_cm: 0, schonzeit_von: "02-01", schonzeit_bis: "03-30", schutzstatus: "normal" },
+    "Hecht": { mindestmass_cm: 45, maximalmass_cm: 0, schonzeit_von: "01-15", schonzeit_bis: "03-30", schutzstatus: "normal" },
+    "Zander": { mindestmass_cm: 50, maximalmass_cm: 0, schonzeit_von: "01-01", schonzeit_bis: "04-31", schutzstatus: "normal" },
+    "Flussbarsch": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Aal": { mindestmass_cm: 50, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Wels": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Barbe": { mindestmass_cm: 35, maximalmass_cm: 0, schonzeit_von: "04-15", schonzeit_bis: "05-15", schutzstatus: "normal" },
+    "Karpfen": { mindestmass_cm: 35, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Schleie": { mindestmass_cm: 25, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Döbel": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Brassen": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Aland": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Rotauge": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Rotfeder": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Kaulbarsch": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Bachschmerle": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Gründling": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Elritze": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "normal" },
+    "Schwarzmund-Grundel": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "invasiv" },
+    "Groppe": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "geschuetzt" },
+    "Bitterling": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "geschuetzt" },
+    "Moderlieschen": { mindestmass_cm: 0, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "geschuetzt" },
+    "Nase": { mindestmass_cm: 35, maximalmass_cm: 0, schonzeit_von: null, schonzeit_bis: null, schutzstatus: "geschuetzt" }
+};
+
+// Gewichtsfaktoren (K-Faktoren) für die automatische Gewichtsschätzung
+const fischK_Faktoren = {
+    "Bachforelle": 1.1, "Regenbogenforelle": 1.2, "Seeforelle": 1.1, "Bachsaibling": 1.1,
+    "Äsche": 1.0, "Hecht": 0.9, "Zander": 1.0, "Flussbarsch": 1.2, "Aal": 0.2, "Wels": 0.8,
+    "Barbe": 1.2, "Karpfen": 2.1, "Schleie": 2.0, "Döbel": 1.1, "Brassen": 1.3, "Aland": 1.1,
+    "Rotauge": 1.1, "Rotfeder": 1.2, "Kaulbarsch": 1.0, "Bachschmerle": 0.9, "Gründling": 1.0,
+    "Elritze": 0.9, "Schwarzmund-Grundel": 1.1, "Groppe": 1.0, "Bitterling": 1.0, "Moderlieschen": 0.9, "Nase": 1.0
+};
+
 // Initial-Fallbacks für den allerersten App-Start ohne bisherige Netzverbindung
 const offlineHitparadeMinimaFallback = {
-    "Bachforelle": 40,
-    "Regenbogenforelle": 40,
-    "Seeforelle": 50,
-    "Bachsaibling": 35,
-    "Äsche": 38,
-    "Hecht": 60,
-    "Zander": 40,
-    "Flussbarsch": 30,
-    "Aal": 70,
-    "Wels": 60,
-    "Barbe": 60,
-    "Karpfen": 55,
-    "Schleie": 30,
-    "Döbel": 30,
-    "Brassen": 25,
-    "Aland": 20,
-    "Rotauge": 20,
-    "Rotfeder": 20
+    "Bachforelle": 40, "Regenbogenforelle": 40, "Seeforelle": 50, "Bachsaibling": 35,
+    "Äsche": 38, "Hecht": 60, "Zander": 40, "Flussbarsch": 30, "Aal": 70, "Wels": 60,
+    "Barbe": 60, "Karpfen": 55, "Schleie": 30, "Döbel": 30, "Brassen": 25, "Aland": 20,
+    "Rotauge": 20, "Rotfeder": 20
 };
 
 // Vordefinierte Standardköder als Startbasis
@@ -34,12 +60,15 @@ const standardKoederListe = [
     "Nymphe", "Trockenfliege", "Streamer", "Köderfisch", "Boilie"
 ];
 
-window.addEventListener('load', function() {
+window.addEventListener('load', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     editFangId = urlParams.get('editId');
 
     initFormDefaults();
     ladeKoederVorschlaege();
+    
+    // Offline-Cache laden & online aktualisieren
+    await ladeOderAktualisiereFischRegelnCache();
 
     // Event-Listener für Pflichtfeld-Prüfung an alle relevanten Felder hängen
     document.getElementById('verbleib').addEventListener('change', pruefePflichtfelder);
@@ -62,6 +91,57 @@ window.addEventListener('load', function() {
     pruefePflichtfelder(); 
 });
 
+// Lädt Regeln aus Supabase (wenn online) oder aus dem localStorage (offline)
+async function ladeOderAktualisiereFischRegelnCache() {
+    try {
+        if (navigator.onLine) {
+            const { data, error } = await _supabase.from('fischarten_regeln').select('*');
+            if (!error && data && data.length > 0) {
+                const map = {};
+                data.forEach(row => {
+                    map[row.fischart] = {
+                        mindestmass_cm: row.mindestmass_cm || 0,
+                        maximalmass_cm: row.maximalmass_cm || 0,
+                        schonzeit_von: row.schonzeit_von || null,
+                        schonzeit_bis: row.schonzeit_bis || null,
+                        schutzstatus: row.schutzstatus || 'normal'
+                    };
+                });
+                fischRegelnCache = map;
+                localStorage.setItem('cachedFischRegeln', JSON.stringify(map));
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn("Konnte Regeln nicht online laden, nutze lokalen Cache.", e);
+    }
+
+    // Fallback auf lokalen Cache auf dem Smartphone
+    try {
+        const local = JSON.parse(localStorage.getItem('cachedFischRegeln'));
+        if (local && Object.keys(local).length > 0) {
+            fischRegelnCache = local;
+        }
+    } catch(e) {}
+}
+
+// Hilfsfunktion: Prüft, ob ein Datum (im Format MM-DD) innerhalb einer Schonzeit liegt
+function istInSchonzeit(schonzeitVon, schonzeitBis, datumStr) {
+    if (!schonzeitVon || !schonzeitBis || datumStr) return false;
+    
+    const teile = datumStr.split('-');
+    if (teile.length !== 3) return false;
+    const m = teile[1];
+    const d = teile[2];
+    const aktuellesDatumMMDD = `${m}-${d}`;
+
+    if (schonzeitVon <= schonzeitBis) {
+        return aktuellesDatumMMDD >= schonzeitVon && aktuellesDatumMMDD <= schonzeitBis;
+    } else {
+        return aktuellesDatumMMDD >= schonzeitVon || aktuellesDatumMMDD <= schonzeitBis;
+    }
+}
+
 // Lädt die Köder-Vorschlagsliste in das <datalist>-Element
 function ladeKoederVorschlaege() {
     const datalist = document.getElementById('koeder-vorschlaege');
@@ -72,7 +152,6 @@ function ladeKoederVorschlaege() {
         gespeicherteKoeder = JSON.parse(localStorage.getItem('gespeicherteKoeder')) || [];
     } catch(e) {}
 
-    // Vereinen von Standards und individuell eingegebenen Ködern
     const alleKoeder = Array.from(new Set([...standardKoederListe, ...gespeicherteKoeder])).sort((a,b) => a.localeCompare(b, 'de'));
 
     datalist.innerHTML = '';
@@ -83,7 +162,6 @@ function ladeKoederVorschlaege() {
     });
 }
 
-// Speichert einen neu eingegebenen Köder im lokalen Speicher
 function merkeNeuenKoeder(koederText) {
     if (!koederText || koederText.trim() === "") return;
     const sauber = koederText.trim();
@@ -100,7 +178,6 @@ function merkeNeuenKoeder(koederText) {
     }
 }
 
-// KORREKTUR: validateFisch() HIER ENTFERNT, DAMIT VERBLEIB NICHT ZURÜCKGESETZT WIRD!
 function pruefeFremdgewaesserAnzeige() {
     const fangortSelect = document.getElementById('fangort');
     const fremdGruppe = document.getElementById('fremdgewaesser-gruppe');
@@ -116,7 +193,6 @@ function pruefeFremdgewaesserAnzeige() {
     pruefePflichtfelder();
 }
 
-// INTELLIGENTE PFLICHTFELD-PRÜFUNG MIT DEZENTEM HINWEISTEXT
 function pruefePflichtfelder() {
     const datum = document.getElementById('datum').value;
     const uhrzeit = document.getElementById('uhrzeit').value;
@@ -141,7 +217,7 @@ function pruefePflichtfelder() {
 
     if (fehlendeFelder.length === 0) {
         btn.disabled = false;
-        btn.style.backgroundColor = '#2e5a44'; 
+        btn.style.backgroundColor = '#9b59b6'; 
         btn.style.cursor = "pointer";
         if (hinweisBox) hinweisBox.innerHTML = "";
     } else {
@@ -246,36 +322,6 @@ async function ladeFangDatenFuerEdit(id) {
     }
 }
 
-const fischDatenbank = {
-"Bachforelle": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
-"Regenbogenforelle": { mass: 25, k: 1.2, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
-"Seeforelle": { mass: 60, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 3, bisD: 15 } },
-"Bachsaibling": { mass: 25, k: 1.1, schonzeit: { vonM: 9, vonD: 20, bisM: 2, bisD: 15 } },
-"Äsche": { mass: 30, k: 1.0, schonzeit: { vonM: 2, vonD: 1, bisM: 3, bisD: 30 } },
-"Hecht": { mass: 45, k: 0.9, schonzeit: { vonM: 1, vonD: 15, bisM: 3, bisD: 30 } },
-"Zander": { mass: 50, k: 1.0, schonzeit: { vonM: 1, vonD: 1, bisM: 4, bisD: 31 } },
-"Flussbarsch": { mass: 0, k: 1.2 },
-"Aal": { mass: 50, k: 0.2 },
-"Wels": { mass: 0, k: 0.8 },
-"Barbe": { mass: 35, k: 1.2, schonzeit: { vonM: 4, vonD: 15, bisM: 5, bisD: 15 } },
-"Karpfen": { mass: 35, k: 2.1 },
-"Schleie": { mass: 25, k: 2.0 },
-"Döbel": { mass: 0, k: 1.1 },
-"Brassen": { mass: 0, k: 1.3 },
-"Aland": { mass: 0, k: 1.1 },
-"Rotauge": { mass: 0, k: 1.1 },
-"Rotfeder": { mass: 0, k: 1.2 },
-"Kaulbarsch": { mass: 0, k: 1.0 },
-"Bachschmerle": { mass: 0, k: 0.9 },
-"Gründling": { mass: 0, k: 1.0 },
-"Elritze": { mass: 0, k: 0.9 },
-"Schwarzmund-Grundel": { mass: 0, k: 1.1, invasiv: true },
-"Groppe": { mass: 0, k: 1.0, geschuetzt: true },
-"Bitterling": { mass: 0, k: 1.0, geschuetzt: true },
-"Moderlieschen": { mass: 0, k: 0.9, geschuetzt: true },
-"Nase": { mass: 35, k: 1.0, geschuetzt: true }
-};
-
 function initFormDefaults() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('datum').value = today;
@@ -302,7 +348,6 @@ function initFormDefaults() {
     pruefePflichtfelder();
 }
 
-// UPDATE VERBLEIB: BEHÄLT DIE VORHERIGE AUSWAHL DES ANGLERS BEI
 function updateVerbleibOptions(modus) {
     const verbleibSelect = document.getElementById('verbleib');
     const bisherigeAuswahl = verbleibSelect.value; 
@@ -345,9 +390,11 @@ function updateVerbleibOptions(modus) {
     }
 }
 
+// DYNAMISCHE VALIDIERUNG ANHAND DER ADMIN-REGELN (MIT NACHZUCHT-APPELL)
 function validateFisch() {
     const fischart = document.getElementById('fischart').value;
     const laenge = parseFloat(document.getElementById('laenge').value);
+    const datumVal = document.getElementById('datum').value;
     const statusHint = document.getElementById('status-hint');
     const gewichtInput = document.getElementById('gewicht');
     const erkennungsBox = document.getElementById('fisch-erkennung');
@@ -365,20 +412,48 @@ function validateFisch() {
         return; 
     }
     
-    const daten = fischDatenbank[fischart];
-    if (!daten) return;
+    const regel = fischRegelnCache[fischart];
+    const kFaktor = fischK_Faktoren[fischart] || 1.0;
 
     let infoTexte = []; let istWarnung = false; let aktuellerModus = "masig";
-    if (daten.geschuetzt || fischart === "Nase") { infoTexte.push("⚠️ STRENG GESCHÜTZT!"); istWarnung = true; aktuellerModus = "schonzeit"; }
-    else if (daten.invasiv) { infoTexte.push("🚨 INVASIVE ART!"); istWarnung = true; aktuellerModus = "invasiv"; }
+
+    // 1. Schutzstatus prüfen
+    if (regel && regel.schutzstatus === 'geschuetzt') {
+        infoTexte.push("⚠️ STRENG GESCHÜTZT!"); 
+        istWarnung = true; 
+        aktuellerModus = "schonzeit";
+    } else if (regel && regel.schutzstatus === 'invasiv') {
+        infoTexte.push("🚨 INVASIVE ART!"); 
+        istWarnung = true; 
+        aktuellerModus = "invasiv";
+    }
+
+    // 2. Schonzeit prüfen
+    if (regel && regel.schonzeit_von && regel.schonzeit_bis && datumVal) {
+        if (istInSchonzeit(regel.schonzeit_von, regel.schonzeit_bis, datumVal)) {
+            infoTexte.push(`⚠️ Schonzeit aktiv (${regel.schonzeit_von} bis ${regel.schonzeit_bis})!`);
+            istWarnung = true;
+            aktuellerModus = "schonzeit";
+        }
+    }
     
     if (!isNaN(laenge) && laenge > 0) {
-        if (daten.k) gewichtInput.placeholder = `ca. ${Math.round((daten.k * Math.pow(laenge, 3)) / 100)} g`;
+        // Gewicht schätzen
+        if (kFaktor) gewichtInput.placeholder = `ca. ${Math.round((kFaktor * Math.pow(laenge, 3)) / 100)} g`;
         
-        if (!daten.geschuetzt && fischart !== "Nase" && !daten.invasiv && daten.mass && laenge < daten.mass) { 
-            infoTexte.push("⚠️ Untermaßig!"); 
-            istWarnung = true; 
-            if(aktuellerModus !== "schonzeit") aktuellerModus = "untermasig"; 
+        // 3. Mindestmaß & Maximalmaß / Kapitalen-Appell prüfen
+        if (regel && regel.schutzstatus === 'normal' && aktuellerModus !== "schonzeit") {
+            if (regel.mindestmass_cm > 0 && laenge < regel.mindestmass_cm) {
+                infoTexte.push(`⚠️ Untermaßig! (Mindestmaß: ${regel.mindestmass_cm} cm)`); 
+                istWarnung = true; 
+                aktuellerModus = "untermasig";
+            }
+            if (regel.maximalmass_cm > 0 && laenge > regel.maximalmass_cm) {
+                // Kameradschaftlicher Appell für kapitale Laichfische statt starrem Verbot
+                infoTexte.push(`🎣 Wunderschöner Kapitale! Dieser große Fisch ist wichtig für die Nachzucht. Bitte schonend zurücksetzen! 🙏`); 
+                istWarnung = false; // Als freundlicher Hinweis (gelb/grünlich statt rot)
+                aktuellerModus = "masig"; // Angler darf entscheiden, wird aber gebeten
+            }
         }
 
         if (fangortVal.includes("Fremdgewässer")) {
@@ -387,7 +462,7 @@ function validateFisch() {
             holeMindestLaengeFuerHitparade(fischart).then((mindestLaenge) => {
                 if (!hitparadeBox) return;
 
-                if (laenge >= mindestLaenge && !daten.geschuetzt && fischart !== "Nase" && !daten.invasiv) {
+                if (laenge >= mindestLaenge && (!regel || regel.schutzstatus === 'normal') && aktuellerModus !== "schonzeit") {
                     if (notizText.includes("test") || notizText.includes("sofa")) {
                         console.log("🛠️ Test-Modus aktiv: GPS wird übersprungen!");
                         ZeigeHitparadeMeldung(hitparadeBox);
@@ -438,11 +513,11 @@ function ZeigeHitparadeMeldung(hitparadeBox) {
             Möchtest du diesen Prachtburschen mit einem Foto in der öffentlichen Galerie verewigen?<br>
             
             <div id="foto-vorschau-bereich" style="margin-top: 10px; display: ${hatFoto ? 'block' : 'none'};">
-                <img id="foto-vorschau-img" src="${hatFoto ? URL.createObjectURL(geknipstesFotoBlob) : ''}" style="max-width: 100%; max-height: 220px; border-radius: 8px; border: 2px solid #2e5a44; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                <img id="foto-vorschau-img" src="${hatFoto ? URL.createObjectURL(geknipstesFotoBlob) : ''}" style="max-width: 100%; max-height: 220px; border-radius: 8px; border: 2px solid #9b59b6; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
             </div>
 
             <div style="margin-top: 12px;">
-                <label for="foto-input" style="display: block; width: 100%; background-color: #2e5a44; color: white; padding: 14px 16px; border-radius: 8px; font-size: 17px; font-weight: bold; text-align: center; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.15); box-sizing: border-box;">
+                <label for="foto-input" style="display: block; width: 100%; background-color: #9b59b6; color: white; padding: 14px 16px; border-radius: 8px; font-size: 17px; font-weight: bold; text-align: center; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.15); box-sizing: border-box;">
                     ${btnText}
                 </label>
             </div>

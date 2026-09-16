@@ -101,13 +101,20 @@
             tbody.innerHTML = '';
 
             geladeneRegelnCache.forEach((regel, index) => {
+                // Bereinigung von alten Datenbank-Leichen (z.B. wenn "null" als Text drinsteht)
+                let vonWert = regel.schonzeit_von;
+                if (!vonWert || vonWert === 'null' || vonWert === 'undefined') vonWert = '';
+                
+                let bisWert = regel.schonzeit_bis;
+                if (!bisWert || bisWert === 'null' || bisWert === 'undefined') bisWert = '';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight: bold; color: #9b59b6;">${regel.fischart}</td>
                     <td><input type="number" id="min-${index}" value="${regel.mindestmass_cm || 0}" min="0" max="300"></td>
                     <td><input type="number" id="max-${index}" value="${regel.maximalmass_cm || 0}" min="0" max="300"></td>
-                    <td><input type="text" id="von-${index}" value="${regel.schonzeit_von || ''}" placeholder="09-20"></td>
-                    <td><input type="text" id="bis-${index}" value="${regel.schonzeit_bis || ''}" placeholder="02-15"></td>
+                    <td><input type="text" id="von-${index}" value="${vonWert}" placeholder="09-20"></td>
+                    <td><input type="text" id="bis-${index}" value="${bisWert}" placeholder="02-15"></td>
                     <td>
                         <select id="status-${index}">
                             <option value="normal" ${regel.schutzstatus === 'normal' ? 'selected' : ''}>Normal</option>
@@ -136,8 +143,12 @@
                 const regel = geladeneRegelnCache[i];
                 const neuesMindest = parseFloat(document.getElementById(`min-${i}`).value) || 0;
                 const neuesMaximal = parseFloat(document.getElementById(`max-${i}`).value) || 0;
-                const neueVon = document.getElementById(`von-${i}`).value.trim() || null;
-                const neueBis = document.getElementById(`bis-${i}`).value.trim() || null;
+                
+                const vonEingabe = document.getElementById(`von-${i}`).value.trim();
+                const bisEingabe = document.getElementById(`bis-${i}`).value.trim();
+                
+                const neueVon = vonEingabe !== "" ? vonEingabe : null;
+                const neueBis = bisEingabe !== "" ? bisEingabe : null;
                 const neuerStatus = document.getElementById(`status-${i}`).value;
 
                 const { error } = await _supabase

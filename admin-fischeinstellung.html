@@ -101,20 +101,20 @@
             tbody.innerHTML = '';
 
             geladeneRegelnCache.forEach((regel, index) => {
-                // Strikte Bereinigung, damit leere Felder auch wirklich leer bleiben
+                // Absolut saubere Filterung: Wenn in DB null oder leer, wird ein leerer String erzwungen
                 let vonWert = '';
-                if (regel.schonzeit_von) {
-                    const sauberVon = String(regel.schonzeit_von).trim();
-                    if (sauberVon !== '' && sauberVon !== 'null' && sauberVon !== 'undefined') {
-                        vonWert = sauberVon;
+                if (regel.schonzeit_von != null) {
+                    const sVon = String(regel.schonzeit_von).trim();
+                    if (sVon !== '' && sVon.toLowerCase() !== 'null' && sVon.toLowerCase() !== 'undefined') {
+                        vonWert = sVon;
                     }
                 }
 
                 let bisWert = '';
-                if (regel.schonzeit_bis) {
-                    const sauberBis = String(regel.schonzeit_bis).trim();
-                    if (sauberBis !== '' && sauberBis !== 'null' && sauberBis !== 'undefined') {
-                        bisWert = sauberBis;
+                if (regel.schonzeit_bis != null) {
+                    const sBis = String(regel.schonzeit_bis).trim();
+                    if (sBis !== '' && sBis.toLowerCase() !== 'null' && sBis.toLowerCase() !== 'undefined') {
+                        bisWert = sBis;
                     }
                 }
 
@@ -123,8 +123,8 @@
                     <td style="font-weight: bold; color: #9b59b6;">${regel.fischart}</td>
                     <td><input type="number" id="min-${index}" value="${regel.mindestmass_cm || 0}" min="0" max="300" autocomplete="off"></td>
                     <td><input type="number" id="max-${index}" value="${regel.maximalmass_cm || 0}" min="0" max="300" autocomplete="off"></td>
-                    <td><input type="text" id="von-${index}" value="${vonWert}" placeholder="20-09" autocomplete="off"></td>
-                    <td><input type="text" id="bis-${index}" value="${bisWert}" placeholder="15-02" autocomplete="off"></td>
+                    <td><input type="text" id="von-${index}" value="${vonWert}" placeholder="TT-MM" autocomplete="off"></td>
+                    <td><input type="text" id="bis-${index}" value="${bisWert}" placeholder="TT-MM" autocomplete="off"></td>
                     <td>
                         <select id="status-${index}">
                             <option value="normal" ${regel.schutzstatus === 'normal' ? 'selected' : ''}>Normal</option>
@@ -157,6 +157,7 @@
                 const vonEingabe = document.getElementById(`von-${i}`).value.trim();
                 const bisEingabe = document.getElementById(`bis-${i}`).value.trim();
                 
+                // Wenn das Feld leer ist, wird konsequent null in die DB geschrieben
                 const neueVon = vonEingabe !== "" ? vonEingabe : null;
                 const neueBis = bisEingabe !== "" ? bisEingabe : null;
                 const neuerStatus = document.getElementById(`status-${i}`).value;
